@@ -1,6 +1,10 @@
 package retrivers;
 
 public class RetriveThread extends Thread {
+	private long rowNumber = 0;
+	public long getRowNumber(){
+		return rowNumber;
+	}
 	
 	public void run(){
 		Retriver next;
@@ -12,6 +16,7 @@ public class RetriveThread extends Thread {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+			rowNumber += m.getRowNumber();
 		}
 	}
 }

@@ -32,6 +32,7 @@ public class Retriver {
 	}
 	
 	public static int concurrency = 10;
+	public static long totalRowNumber = 0;
 	public static void startRetrive() throws InterruptedException{
 		RetriveThread[] threads = new RetriveThread[concurrency];
 		for(int i = 0; i < concurrency; i++){
@@ -41,6 +42,13 @@ public class Retriver {
 		for(int i = 0; i < concurrency; i++){
 			threads[i].join();
 		}
+		for(int i = 0; i < concurrency; i++){
+			totalRowNumber += threads[i].getRowNumber();
+		}
+	}
+	
+	public static long getTotalRowNumber(){
+		return totalRowNumber;
 	}
 
 	public static List<Retriver> todo = new ArrayList<Retriver>();

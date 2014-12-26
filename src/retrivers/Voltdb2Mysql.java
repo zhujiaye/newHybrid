@@ -2,11 +2,15 @@ package retrivers;
 
 public class Voltdb2Mysql extends Thread{
 	
+	private long rowNumber = 0;
 	public int tenantId, volumnId;
 	
 	public Voltdb2Mysql(int tenantId, int volumnId){
 		this.tenantId = tenantId;
 		this.volumnId = volumnId;
+	}
+	public long getRowNumber(){
+		return rowNumber;
 	}
 	
 	public void run(){
@@ -41,6 +45,15 @@ public class Voltdb2Mysql extends Thread{
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		rowNumber += cr.getRowNumber();
+		rowNumber += dr.getRowNumber();
+		rowNumber += hr.getRowNumber();
+		rowNumber += nor.getRowNumber();
+		rowNumber += olr.getRowNumber();
+		rowNumber += or.getRowNumber();
+		rowNumber += sr.getRowNumber();
+		rowNumber += wr.getRowNumber();
+		rowNumber += ir.getRowNumber();
 	}
 	
 }

@@ -37,6 +37,14 @@ public class OrderLineRetriver extends Thread {
 		this.tenantId = tenantId;
 		this.volumnId = volumnId;
 	}
+	
+	private long rowNumber = 0;
+	public long getRowNumber() {
+		return rowNumber;
+	}
+	public void setRowNumber(long rowNumber) {
+		this.rowNumber = rowNumber;
+	}
 
 	@Override
 	public void run() {
@@ -105,6 +113,7 @@ public class OrderLineRetriver extends Thread {
 					statements[0].setInt(14,
 							(int) row.get("ol_number", VoltType.INTEGER));
 					statements[0].addBatch();
+					rowNumber++;
 				}
 				if (result.getRowCount() > 0) {
 					statements[0].executeBatch();
@@ -144,6 +153,7 @@ public class OrderLineRetriver extends Thread {
 					try {
 						statements[1].execute();
 						conn.commit();
+						rowNumber++;
 					} catch (Exception e) {
 					}
 				}
@@ -184,6 +194,7 @@ public class OrderLineRetriver extends Thread {
 					try {
 						statements[1].execute();
 						conn.commit();
+						rowNumber++;
 					} catch (Exception e) {
 					}
 				}

@@ -43,6 +43,14 @@ public class CustomerRetriver extends Thread {
 		this.tenantId = tenantId;
 		this.volumnId = volumnId;
 	}
+	
+	private long rowNumber = 0;
+	public long getRowNumber() {
+		return rowNumber;
+	}
+	public void setRowNumber(long rowNumber) {
+		this.rowNumber = rowNumber;
+	}
 
 	@Override
 	public void run() {
@@ -133,6 +141,7 @@ public class CustomerRetriver extends Thread {
 					statements[0].setShort(24,
 							(short) row.get("c_d_id", VoltType.SMALLINT));
 					statements[0].addBatch();
+					rowNumber++;
 				}
 				if (result.getRowCount() > 0) {
 					statements[0].executeBatch();
@@ -190,6 +199,7 @@ public class CustomerRetriver extends Thread {
 					try {
 						statements[1].execute();
 						conn.commit();
+						rowNumber++;
 					} catch (Exception e) {
 					}
 				}
@@ -248,6 +258,7 @@ public class CustomerRetriver extends Thread {
 					try {
 						statements[1].execute();
 						conn.commit();
+						rowNumber++;
 					} catch (Exception e) {
 					}
 				}

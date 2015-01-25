@@ -41,6 +41,7 @@ public class MemMonitor extends Thread {
 		}
 		BufferedWriter out = new BufferedWriter(fstream);
 		int time = 0;
+		System.out.println("***********MemMonitor START!!*************");
 		while (true) {
 			if (time<31*60) {
 				try {
@@ -91,6 +92,7 @@ public class MemMonitor extends Thread {
 		} catch (InterruptedException | IOException e) {
 			e.printStackTrace();
 		}
+		System.out.println("***********MemMonitor STOP!!*************");
 	}
 
 }

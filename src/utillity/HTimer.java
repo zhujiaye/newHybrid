@@ -26,6 +26,7 @@ public class HTimer implements Runnable {
 	public void run() {
 		long startTime = System.currentTimeMillis();
 		long lastTime = startTime;
+		System.out.println("***********Timer START!!*************");
 		while (true) {
 			if (isClientMonitor) {
 				((client.Monitor) obj).printQueryingTenants();
@@ -54,5 +55,6 @@ public class HTimer implements Runnable {
 				e.printStackTrace();
 			}
 		}
+		System.out.println("***********Timer STOP!!*************");
 	}
 }

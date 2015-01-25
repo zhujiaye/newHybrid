@@ -55,7 +55,7 @@ public class Monitor implements Runnable {
 	public void run() {
 		// TODO Auto-generated method stub
 		System.out.println("Monitoring.........");
-		new Thread(new HTimer(this, HConfig.SERVER_TIME_GAP)).start();
+		
 		// synchronized (this) {
 		// while (!isStarted()) {
 		// try {
@@ -70,7 +70,7 @@ public class Monitor implements Runnable {
 		while (!isStarted())
 			;
 		System.out.println("Start!");
-
+		new Thread(new HTimer(this, HConfig.SERVER_TIME_GAP)).start();
 		new MemMonitor(HConfig.VOLTDB_SERVER).start();
 		long startTime = System.currentTimeMillis();
 		// int estimatedInterval = 0;
@@ -177,6 +177,9 @@ public class Monitor implements Runnable {
 
 	public synchronized void getFinishedForTenant(int id) {
 		finishedTenants++;
+		if (finishedTenants%200==0){
+			System.out.println("Finished "+finishedTenants+" tenants!");
+		}
 		tenants[id - 1].setInterval(tenants[id - 1].getInterval() + 1);
 		if (finishedTenants == HConfig.TOTTENANTS) {
 			for (int i = 0; i < senderList.size(); i++) {

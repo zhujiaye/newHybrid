@@ -1,8 +1,11 @@
 package server;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.TreeMap;
 
 import utillity.HTenantDynamicInfo;
@@ -55,7 +58,7 @@ public class Monitor implements Runnable {
 	public void run() {
 		// TODO Auto-generated method stub
 		System.out.println("Monitoring.........");
-		
+
 		// synchronized (this) {
 		// while (!isStarted()) {
 		// try {
@@ -177,8 +180,8 @@ public class Monitor implements Runnable {
 
 	public synchronized void getFinishedForTenant(int id) {
 		finishedTenants++;
-		if (finishedTenants%200==0){
-			System.out.println("Finished "+finishedTenants+" tenants!");
+		if (finishedTenants % 200 == 0) {
+			System.out.println("Finished " + finishedTenants + " tenants!");
 		}
 		tenants[id - 1].setInterval(tenants[id - 1].getInterval() + 1);
 		if (finishedTenants == HConfig.TOTTENANTS) {
@@ -195,15 +198,47 @@ public class Monitor implements Runnable {
 			return;
 		if (tenants[id - 1] != null)
 			return;
-		//System.out.println("Tenant " + id + " ready!");
+		// System.out.println("Tenant " + id + " ready!");
 		Sender sender = map.get(receiver);
 		tenants[id - 1] = new Tenant(id, sender);
 		readyTenants++;
-		if (readyTenants%300==0){
-			System.out.println(readyTenants+" tenants ready.......");
+		if (readyTenants % 300 == 0) {
+			System.out.println(readyTenants + " tenants ready.......");
 		}
 		sender.sendConfirmedMessage(id);
 		if (readyTenants == HConfig.TOTTENANTS) {
+			if (HConfig.VOLTDB_TEST) {
+				initializeToVoltDBInfoList();
+				Scanner reader = null;
+				try {
+					reader = new Scanner(new File(HConfig.WL_FILE));
+					while (reader.hasNextLine()) {
+						String str = reader.nextLine();
+						String[] strs = str.split(" ");
+						int interval = Integer.valueOf(strs[0]);
+						if (interval != 1) {
+							System.out
+									.println("wrong workload information WTF!!!!!!!");
+							System.exit(1);
+						}
+						for (int i = 1; i < strs.length; i++) {
+							int tmpId = Integer.valueOf(strs[i]);
+							createToVoltDBInfoForTenant(tmpId + 1);
+						}
+					}
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				Thread t = new Thread(new Mover(toVoltDBInfos, true));
+				t.start();
+				try {
+					t.join();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 			for (int i = 0; i < senderList.size(); i++) {
 				senderList.get(i).sendAllConfirmedMessage();
 			}
@@ -238,6 +273,8 @@ public class Monitor implements Runnable {
 	}
 
 	private void findTenantsToMoveDB(int interval) {
+		if (HConfig.VOLTDB_TEST)
+			return;
 		if (isBurstInterval(interval))
 			return;
 		if (!HConfig.MOVEDB)
@@ -249,7 +286,7 @@ public class Monitor implements Runnable {
 		}
 		if (remainVoltDBSize < 0)
 			remainVoltDBSize = 0;
-		if (isBurstInterval(interval + 1) && remainVoltDBSize > 0
+		if (isBurstInterval(interval + 2) && remainVoltDBSize > 0
 				&& HConfig.USEVOLTDB) {
 			ArrayList<Integer> A = new ArrayList<>();
 			ArrayList<Integer> B = new ArrayList<>();
@@ -293,13 +330,11 @@ public class Monitor implements Runnable {
 				// if (threads != null)
 				// threads.clear();
 				// threads = new ArrayList<>();
-				if (toVoltDBInfos != null)
-					toVoltDBInfos.clear();
-				toVoltDBInfos = new ArrayList<>();
+				initializeToVoltDBInfoList();
 				while (nowid >= 0) {
 					if (pre[nowid][now] == 1) {
 						// System.out.println("Move Tenant:"+ID.get(nowid));
-						moveToVoltDB(ID.get(nowid));
+						createToVoltDBInfoForTenant(ID.get(nowid));
 						now -= A.get(nowid);
 						nowid--;
 					} else
@@ -348,7 +383,13 @@ public class Monitor implements Runnable {
 		}
 	}
 
-	private void moveToVoltDB(int id) {
+	private void initializeToVoltDBInfoList() {
+		if (toVoltDBInfos != null)
+			toVoltDBInfos.clear();
+		toVoltDBInfos = new ArrayList<>();
+	}
+
+	private void createToVoltDBInfoForTenant(int id) {
 		if (tenants[id - 1].isUsingVoltDB())
 			return;
 		int voltDB_id = voltDBMonitor.findIdForTenant(id);

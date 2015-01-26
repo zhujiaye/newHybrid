@@ -249,7 +249,7 @@ public class Monitor implements Runnable {
 		}
 		if (remainVoltDBSize < 0)
 			remainVoltDBSize = 0;
-		if (isBurstInterval(interval + 1) && remainVoltDBSize > 0
+		if (isBurstInterval(interval + 2) && remainVoltDBSize > 0
 				&& HConfig.USEVOLTDB) {
 			ArrayList<Integer> A = new ArrayList<>();
 			ArrayList<Integer> B = new ArrayList<>();

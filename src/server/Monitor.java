@@ -55,7 +55,7 @@ public class Monitor implements Runnable {
 	public void run() {
 		// TODO Auto-generated method stub
 		System.out.println("Monitoring.........");
-		
+
 		// synchronized (this) {
 		// while (!isStarted()) {
 		// try {
@@ -177,8 +177,8 @@ public class Monitor implements Runnable {
 
 	public synchronized void getFinishedForTenant(int id) {
 		finishedTenants++;
-		if (finishedTenants%200==0){
-			System.out.println("Finished "+finishedTenants+" tenants!");
+		if (finishedTenants % 200 == 0) {
+			System.out.println("Finished " + finishedTenants + " tenants!");
 		}
 		tenants[id - 1].setInterval(tenants[id - 1].getInterval() + 1);
 		if (finishedTenants == HConfig.TOTTENANTS) {
@@ -195,12 +195,12 @@ public class Monitor implements Runnable {
 			return;
 		if (tenants[id - 1] != null)
 			return;
-		//System.out.println("Tenant " + id + " ready!");
+		// System.out.println("Tenant " + id + " ready!");
 		Sender sender = map.get(receiver);
 		tenants[id - 1] = new Tenant(id, sender);
 		readyTenants++;
-		if (readyTenants%300==0){
-			System.out.println(readyTenants+" tenants ready.......");
+		if (readyTenants % 300 == 0) {
+			System.out.println(readyTenants + " tenants ready.......");
 		}
 		sender.sendConfirmedMessage(id);
 		if (readyTenants == HConfig.TOTTENANTS) {
@@ -249,7 +249,9 @@ public class Monitor implements Runnable {
 		}
 		if (remainVoltDBSize < 0)
 			remainVoltDBSize = 0;
-		if (isBurstInterval(interval + 2) && remainVoltDBSize > 0
+		if (interval + 2 <= HConfig.NUMBER_OF_INTERVAL
+				&& !isBurstInterval(interval + 1)
+				&& isBurstInterval(interval + 2) && remainVoltDBSize > 0
 				&& HConfig.USEVOLTDB) {
 			ArrayList<Integer> A = new ArrayList<>();
 			ArrayList<Integer> B = new ArrayList<>();

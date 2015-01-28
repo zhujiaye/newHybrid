@@ -1,8 +1,11 @@
 package server;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.TreeMap;
 
 import utillity.HTenantDynamicInfo;
@@ -204,6 +207,60 @@ public class Monitor implements Runnable {
 		}
 		sender.sendConfirmedMessage(id);
 		if (readyTenants == HConfig.TOTTENANTS) {
+			if (HConfig.VOLTDB_TEST) {
+				initializeToVoltDBInfoList();
+				Scanner reader = null;
+				int totSize = 0;
+				try {
+					reader = new Scanner(new File(HConfig.WL_FILE));
+					while (reader.hasNextLine()) {
+						String str = reader.nextLine();
+						String[] strs = str.split(" ");
+						int interval = Integer.valueOf(strs[0]);
+						if (interval != 1) {
+							System.out
+									.println("wrong workload information WTF!!!!!!!");
+							System.exit(1);
+						}
+						for (int i = 1; i < strs.length; i++) {
+							int tmpId = Integer.valueOf(strs[i]);
+							createToVoltDBInfoForTenant(tmpId + 1);
+							totSize += tenants[tmpId].getDataSize();
+						}
+						break;
+					}
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				System.out.println("tot_voltdb_memory_need:" + totSize);
+				if (totSize > HConfig.TOT_MEM) {
+					System.out
+							.println("@@@@@@@@@@@@Too much memory space to hold these tenants!!!@@@@@@@@@@@@@@");
+					System.exit(1);
+				} else {
+					System.out
+							.println("Memory space seems work for these tenants");
+					System.out.println("Whether to go on?(Y/N)");
+					Scanner in = new Scanner(System.in);
+					String str = in.next();
+					if (str.equals("N")) {
+						in.close();
+						System.exit(1);
+					}
+					in.close();
+				}
+				System.out
+						.println("Moving data from MySQL to VoltDB first....");
+				Thread t = new Thread(new Mover(toVoltDBInfos, true));
+				t.start();
+				try {
+					t.join();
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 			for (int i = 0; i < senderList.size(); i++) {
 				senderList.get(i).sendAllConfirmedMessage();
 			}
@@ -238,6 +295,8 @@ public class Monitor implements Runnable {
 	}
 
 	private void findTenantsToMoveDB(int interval) {
+		if (HConfig.VOLTDB_TEST)
+			return;
 		if (isBurstInterval(interval))
 			return;
 		if (!HConfig.MOVEDB)
@@ -295,13 +354,11 @@ public class Monitor implements Runnable {
 				// if (threads != null)
 				// threads.clear();
 				// threads = new ArrayList<>();
-				if (toVoltDBInfos != null)
-					toVoltDBInfos.clear();
-				toVoltDBInfos = new ArrayList<>();
+				initializeToVoltDBInfoList();
 				while (nowid >= 0) {
 					if (pre[nowid][now] == 1) {
 						// System.out.println("Move Tenant:"+ID.get(nowid));
-						moveToVoltDB(ID.get(nowid));
+						createToVoltDBInfoForTenant(ID.get(nowid));
 						now -= A.get(nowid);
 						nowid--;
 					} else
@@ -350,7 +407,13 @@ public class Monitor implements Runnable {
 		}
 	}
 
-	private void moveToVoltDB(int id) {
+	private void initializeToVoltDBInfoList() {
+		if (toVoltDBInfos != null)
+			toVoltDBInfos.clear();
+		toVoltDBInfos = new ArrayList<>();
+	}
+
+	private void createToVoltDBInfoForTenant(int id) {
 		if (tenants[id - 1].isUsingVoltDB())
 			return;
 		int voltDB_id = voltDBMonitor.findIdForTenant(id);

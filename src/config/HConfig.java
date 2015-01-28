@@ -73,6 +73,9 @@ public class HConfig {
 
 	final public static String SETTING_FILE = "setting";
 
+	public static boolean VOLTDB_TEST = false;
+	public static int TOT_MEM = 4000;
+
 	public static void load() {
 		Scanner in = null;
 		try {
@@ -118,6 +121,12 @@ public class HConfig {
 				if (strs[0].equals("MYSQLEXPORTER_CONCURRENCY")) {
 					MYSQLEXPORTER_CONCURRENCY = Integer.valueOf(strs[1]);
 				}
+				if (strs[0].equals("VOLTDB_TEST")) {
+					VOLTDB_TEST = Boolean.valueOf(strs[1]);
+				}
+				if (strs[0].equals("TOT_MEM")) {
+					TOT_MEM = Integer.valueOf(strs[1]);
+				}
 			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -136,10 +145,13 @@ public class HConfig {
 		System.out.println("CSVPATH:" + CSVPATH);
 		System.out.println("MOVER_CONCURRENCY:" + MOVER_CONCURRENCY);
 		System.out.println("TABLE_CONCURRENCY:" + TABLE_CONCURRENCY);
-		System.out.println("MYSQLEXPORTER_CONCURRENCY:" + MYSQLEXPORTER_CONCURRENCY);
+		System.out.println("MYSQLEXPORTER_CONCURRENCY:"
+				+ MYSQLEXPORTER_CONCURRENCY);
 		System.out.println("MYSQLPOOLINIT:" + MYSQLPOOLINIT);
 		System.out.println("VOLTDBPOOLINIT:" + VOLTDBPOOLINIT);
 		System.out.println("INFO_FILE:" + INFO_FILE);
 		System.out.println("debug:" + debug);
+		System.out.println("VOLTDB_TEST:" + VOLTDB_TEST);
+		System.out.println("TOT_MEM:" + TOT_MEM);
 	}
 }

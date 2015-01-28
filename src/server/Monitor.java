@@ -210,6 +210,7 @@ public class Monitor implements Runnable {
 			if (HConfig.VOLTDB_TEST) {
 				initializeToVoltDBInfoList();
 				Scanner reader = null;
+				int totSize = 0;
 				try {
 					reader = new Scanner(new File(HConfig.WL_FILE));
 					while (reader.hasNextLine()) {
@@ -224,12 +225,33 @@ public class Monitor implements Runnable {
 						for (int i = 1; i < strs.length; i++) {
 							int tmpId = Integer.valueOf(strs[i]);
 							createToVoltDBInfoForTenant(tmpId + 1);
+							totSize += tenants[tmpId].getDataSize();
 						}
+						break;
 					}
 				} catch (FileNotFoundException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				System.out.println("tot_voltdb_memory_need:" + totSize);
+				if (totSize > HConfig.TOT_MEM) {
+					System.out
+							.println("@@@@@@@@@@@@Too much memory space to hold these tenants!!!@@@@@@@@@@@@@@");
+					System.exit(1);
+				} else {
+					System.out
+							.println("Memory space seems work for these tenants");
+					System.out.println("Whether to go on?(Y/N)");
+					Scanner in = new Scanner(System.in);
+					String str = in.next();
+					if (str.equals("N")) {
+						in.close();
+						System.exit(1);
+					}
+					in.close();
+				}
+				System.out
+						.println("Moving data from MySQL to VoltDB first....");
 				Thread t = new Thread(new Mover(toVoltDBInfos, true));
 				t.start();
 				try {
@@ -286,7 +308,7 @@ public class Monitor implements Runnable {
 		}
 		if (remainVoltDBSize < 0)
 			remainVoltDBSize = 0;
-		if (isBurstInterval(interval + 2) && remainVoltDBSize > 0
+		if (isBurstInterval(interval + 1) && remainVoltDBSize > 0
 				&& HConfig.USEVOLTDB) {
 			ArrayList<Integer> A = new ArrayList<>();
 			ArrayList<Integer> B = new ArrayList<>();

@@ -10,6 +10,8 @@ import org.voltdb.VoltType;
 import org.voltdb.client.Client;
 import org.voltdb.client.ProcCallException;
 
+import config.HConfig;
+
 public class MemMonitor extends Thread {
 	public String voltdbServer;
 	Client voltdbConn = null;
@@ -43,7 +45,8 @@ public class MemMonitor extends Thread {
 		int time = 0;
 		System.out.println("***********MemMonitor START!!*************");
 		while (true) {
-			if (time<31*60) {
+			if (time < HConfig.NUMBER_OF_INTERVAL
+					* HConfig.NUMBER_OF_SPLITS_IN_INTERVAL * 60) {
 				try {
 					results = voltdbConn.callProcedure("@Statistics", "TABLE",
 							0).getResults();
@@ -81,8 +84,7 @@ public class MemMonitor extends Thread {
 				} catch (IOException | ProcCallException | InterruptedException e) {
 					e.printStackTrace();
 				}
-			}
-			else
+			} else
 				break;
 		}
 		try {

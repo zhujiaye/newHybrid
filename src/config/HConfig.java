@@ -25,9 +25,9 @@ public class HConfig {
 	final public static int ACTIVE_REMOVE_RATIO = 10;
 	final public static int ACTIVE_ADD_RATIO = ACTIVE_RATIO
 			* ACTIVE_REMOVE_RATIO / (100 - ACTIVE_RATIO);
-	final public static int NUMBER_OF_INTERVAL = 6;
-	final public static boolean[] ISBURST = { false, false, true, true, false,
-			false };
+	final public static int NUMBER_OF_INTERVAL = 7;
+	final public static boolean[] ISBURST = { false, false, false, true, true,
+			false, false };
 
 	public static String INFO_FILE = "tenants_info";
 	public static String WL_FILE = "load_a40.txt";

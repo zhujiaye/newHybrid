@@ -201,15 +201,16 @@ public class HTenant implements Runnable {
 				for (int i = 1; i < strs.length; i++) {
 					int tmpId = Integer.valueOf(strs[i]);
 					if (tmpId + 1 == id) {
-						activeInfo[interval - 1] = true;
+						activeInfo[interval] = true;
 						break;
 					}
 				}
-				if (c == HConfig.NUMBER_OF_INTERVAL)
+				if (c == HConfig.NUMBER_OF_INTERVAL - 1)
 					break;
 			}
+			activeInfo[0] = activeInfo[1];
 			// workload information
-			c = 0;
+			c = 5;
 			while (reader.hasNextLine()) {
 				String str = reader.nextLine();
 				String[] strs = str.split(" ");
@@ -219,6 +220,11 @@ public class HTenant implements Runnable {
 					* HConfig.NUMBER_OF_SPLITS_IN_INTERVAL) {
 				System.out.println("wrong workload information WTF!!!!!!!");
 				System.exit(1);
+			}
+			c = 5;
+			for (; c-- > 0;) {
+				workloadInfo[c] = workloadInfo[c
+						+ HConfig.NUMBER_OF_SPLITS_IN_INTERVAL];
 			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -311,8 +317,8 @@ public class HTenant implements Runnable {
 				else
 					doSQL(false);
 			} else {
-				closeMySQLConnection();
-				closeVoltDBConnection();
+				// closeMySQLConnection();
+				// closeVoltDBConnection();
 				synchronized (monitor) {
 					try {
 						// System.out.println("Tenant " + id +

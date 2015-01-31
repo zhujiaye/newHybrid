@@ -74,7 +74,7 @@ public class Monitor implements Runnable {
 			;
 		System.out.println("Start!");
 		new Thread(new HTimer(this, HConfig.SERVER_TIME_GAP)).start();
-		new MemMonitor(HConfig.VOLTDB_SERVER).start();
+		// new MemMonitor(HConfig.VOLTDB_SERVER).start();
 		long startTime = System.currentTimeMillis();
 		// int estimatedInterval = 0;
 		int actualInterval = 0;
@@ -135,7 +135,7 @@ public class Monitor implements Runnable {
 									/ (60.0 * 1000.0));
 					if (actualInterval > HConfig.NUMBER_OF_INTERVAL)
 						break;
-					if (actualInterval < HConfig.NUMBER_OF_INTERVAL)
+					if (actualInterval <= HConfig.NUMBER_OF_INTERVAL)
 						findTenantsToMoveDB(actualInterval);
 				}
 			}
@@ -396,7 +396,8 @@ public class Monitor implements Runnable {
 				// System.out.println("Move finished in " + ((double) (t2 - t1))
 				// / (60.0 * 1000.0) + " minutes");
 			}
-		} else if (interval > 1 && isBurstInterval(interval - 1)) {
+		} else if (interval > 2 && !isBurstInterval(interval - 1)
+				&& isBurstInterval(interval - 2)) {
 			ArrayList<TenantToVoltDBInfo> list = voltDBMonitor.getAll();
 			voltDBMonitor.removeAll();
 			for (int i = 0; i < list.size(); i++) {

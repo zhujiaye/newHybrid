@@ -126,8 +126,8 @@ public class Monitor implements Runnable {
 
 	public void setConfirmedForTenant(int id) {
 		confirmed++;
-		if (confirmed%50==0){
-			System.out.println("Confirmed "+confirmed+" tenants");
+		if (confirmed % 50 == 0) {
+			System.out.println("Confirmed " + confirmed + " tenants");
 		}
 	}
 
@@ -135,7 +135,7 @@ public class Monitor implements Runnable {
 		if (id >= fromID && id <= toID) {
 			tenants[id - fromID].setIsToUseVoltDB(true);
 			tenants[id - fromID].setIsToUseVoltDBID(voltDB_id);
-			tenants[id - fromID].updateUsingDB();
+			// tenants[id - fromID].updateUsingDB();
 		} else
 			System.out
 					.println("Error from changeToVoltDBForTenant: id out of index");
@@ -144,7 +144,7 @@ public class Monitor implements Runnable {
 	public void changeToMySQLDBForTenant(int id) {
 		if (id >= fromID && id <= toID) {
 			tenants[id - fromID].setIsToUseMySQLDB(true);
-			tenants[id - fromID].updateUsingDB();
+			// tenants[id - fromID].updateUsingDB();
 		} else
 			System.out
 					.println("Error from changeToMySQLDBForTenant: id out of index");

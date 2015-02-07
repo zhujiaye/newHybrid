@@ -21,6 +21,9 @@ public class Tenant {
 
 	private Sender sender;
 
+	private int[] workloadInfo;
+	private boolean[] activeInfo;
+
 	public Tenant(int id, Sender sender) {
 		this.id = id;
 		this.sender = sender;
@@ -29,12 +32,65 @@ public class Tenant {
 		// setIsActive(false);
 	}
 
+	public Tenant(int id) {
+		this.id = id;
+		workloadInfo = new int[HConfig.NUMBER_OF_INTERVAL
+				* HConfig.NUMBER_OF_SPLITS_IN_INTERVAL];
+		activeInfo = new boolean[HConfig.NUMBER_OF_INTERVAL];
+		for (int i = 0; i < HConfig.NUMBER_OF_INTERVAL; i++)
+			activeInfo[i] = false;
+	}
+
 	public Sender getSender() {
 		return sender;
 	}
 
+	public void setActive(int interval, boolean boo) {
+		activeInfo[interval - 1] = boo;
+	}
+
+	public boolean getActive(int interval) {
+		return activeInfo[interval - 1];
+	}
+
+	public void setWorkload(int split, int x) {
+		workloadInfo[split - 1] = x;
+	}
+
+	public int getWorkload(int split) {
+		return workloadInfo[split - 1];
+	}
+
 	public int getID() {
 		return id;
+	}
+
+	public int getSLO() {
+		return SLO;
+	}
+
+	public void setSLO(int SLO) {
+		this.SLO = SLO;
+	}
+
+	public int getEstimatedDataSizeInVoltDB() {
+		return dataSize;
+	}
+
+	public int getDataSize() {
+		return dataSize;
+	}
+
+	public void setDataSize(int dataSize) {
+		this.dataSize = dataSize;
+	}
+
+	public int getWriteHeavy() {
+		return writeHeavy;
+	}
+
+	public void setWriteHeavy(int writeHeavy) {
+		this.writeHeavy = writeHeavy;
 	}
 
 	public synchronized void setInterval(int interval) {
@@ -77,26 +133,36 @@ public class Tenant {
 		return isBurst;
 	}
 
-	public int getSLO() {
-		return SLO;
+	public boolean isActiveInBurst() {
+		for (int i = 1; i <= HConfig.NUMBER_OF_INTERVAL; i++) {
+			if (!HConfig.ISBURST[i - 1])
+				continue;
+			if (activeInfo[i - 1])
+				return true;
+		}
+		return false;
 	}
 
 	public int getEstimatedWorkLoadInBurst() {
-		int res = 0;
-		res += PossionDistribution.getRandomNumber(SLO);
-		return res;
+		int estimated = 0;
+		estimated += PossionDistribution.getRandomNumber(SLO)
+				* HConfig.NUMBER_OF_BURST_INTERVAL
+				* HConfig.NUMBER_OF_SPLITS_IN_INTERVAL;
+		// estimated += SLO * HConfig.NUMBER_OF_BURST_INTERVAL
+		// * HConfig.NUMBER_OF_SPLITS_IN_INTERVAL;
+		return estimated;
 	}
 
-	public int getEstimatedDataSizeInVoltDB() {
-		return dataSize;
-	}
-
-	public int getDataSize() {
-		return dataSize;
-	}
-
-	public int getWriteHeavy() {
-		return writeHeavy;
+	public int getActualWorkloadInBurst() {
+		int actual = 0;
+		for (int i = 1; i <= HConfig.NUMBER_OF_INTERVAL
+				* HConfig.NUMBER_OF_SPLITS_IN_INTERVAL; i++) {
+			int interval = (i - 1) / 5;
+			if (!HConfig.ISBURST[interval])
+				continue;
+			actual += workloadInfo[i - 1];
+		}
+		return actual;
 	}
 
 	private void getInfoFromFile() {
@@ -116,6 +182,60 @@ public class Tenant {
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
 			System.out.println(HConfig.INFO_FILE
+					+ " does not exist!Please call Procedure.main first!");
+		} finally {
+			if (reader != null)
+				reader.close();
+		}
+		workloadInfo = new int[HConfig.NUMBER_OF_INTERVAL
+				* HConfig.NUMBER_OF_SPLITS_IN_INTERVAL];
+		activeInfo = new boolean[HConfig.NUMBER_OF_INTERVAL];
+		for (int i = 0; i < HConfig.NUMBER_OF_INTERVAL; i++)
+			activeInfo[i] = false;
+		try {
+			reader = new Scanner(new File(HConfig.WL_FILE));
+			int c = 0;
+			// active information
+			while (reader.hasNextLine()) {
+				String str = reader.nextLine();
+				String[] strs = str.split(" ");
+				c++;
+				int interval = Integer.valueOf(strs[0]);
+				if (interval != c) {
+					System.out.println("wrong workload information WTF!!!!!!!");
+					System.exit(1);
+				}
+				for (int i = 1; i < strs.length; i++) {
+					int tmpId = Integer.valueOf(strs[i]);
+					if (tmpId + 1 == id) {
+						activeInfo[interval] = true;
+						break;
+					}
+				}
+				if (c == HConfig.NUMBER_OF_INTERVAL - 1)
+					break;
+			}
+			activeInfo[0] = activeInfo[1];
+			// workload information
+			c = 5;
+			while (reader.hasNextLine()) {
+				String str = reader.nextLine();
+				String[] strs = str.split(" ");
+				workloadInfo[c++] = Integer.valueOf(strs[id]);
+			}
+			if (c != HConfig.NUMBER_OF_INTERVAL
+					* HConfig.NUMBER_OF_SPLITS_IN_INTERVAL) {
+				System.out.println("wrong workload information WTF!!!!!!!");
+				System.exit(1);
+			}
+			c = 5;
+			for (; c-- > 0;) {
+				workloadInfo[c] = workloadInfo[c
+						+ HConfig.NUMBER_OF_SPLITS_IN_INTERVAL];
+			}
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			System.out.println(HConfig.WL_FILE
 					+ " does not exist!Please call Procedure.main first!");
 		} finally {
 			if (reader != null)

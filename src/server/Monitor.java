@@ -318,7 +318,10 @@ public class Monitor implements Runnable {
 			for (int i = 0; i < HConfig.TOTTENANTS; i++)
 				if (tenants[i].isActive() && !tenants[i].isUsingVoltDB()) {
 					A.add(tenants[i].getEstimatedDataSizeInVoltDB());
-					B.add(tenants[i].getEstimatedWorkLoadInBurst());
+					if (HConfig.ISDETERMINED)
+						B.add(tenants[i].getActualWorkloadInBurst());
+					else
+						B.add(tenants[i].getEstimatedWorkLoadInBurst());
 					ID.add(tenants[i].getID());
 				}
 			int n = A.size();
@@ -348,23 +351,23 @@ public class Monitor implements Runnable {
 							pre[i][j] = 1;
 						}
 					}
-				int nowid = n - 1, now = remainVoltDBSize;
-				System.out.println("Move workload about:" + f[nowid - 1][now]);
-				System.out.println("Remain voltDBSize before movement:" + now);
+				int index = n - 1, capacity = remainVoltDBSize;
+				System.out.println("Move workload about:" + f[n - 1][capacity]);
+				System.out.println("Remain voltDBSize before movement:" + capacity);
 				// if (threads != null)
 				// threads.clear();
 				// threads = new ArrayList<>();
 				initializeToVoltDBInfoList();
-				while (nowid >= 0) {
-					if (pre[nowid][now] == 1) {
+				while (index >= 0) {
+					if (pre[index][capacity] == 1) {
 						// System.out.println("Move Tenant:"+ID.get(nowid));
-						createToVoltDBInfoForTenant(ID.get(nowid));
-						now -= A.get(nowid);
-						nowid--;
+						createToVoltDBInfoForTenant(ID.get(index));
+						capacity -= A.get(index);
+						index--;
 					} else
-						nowid--;
+						index--;
 				}
-				System.out.println("Remain voltDBSize after movement:" + now);
+				System.out.println("Remain voltDBSize after movement:" + capacity);
 				if (toVoltDBInfos.size() > 0) {
 					// ArrayList<TenantToVoltDBInfo> tmplist = new
 					// ArrayList<>();

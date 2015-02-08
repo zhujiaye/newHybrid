@@ -77,6 +77,7 @@ public class HConfig {
 	public static boolean VOLTDB_TEST = false;
 	public static int TOT_MEM = 4000;
 	public static boolean ISDETERMINED = true;
+	public static boolean MEM_MONITOR = true;
 
 	public static void load() {
 		Scanner in = null;
@@ -132,6 +133,9 @@ public class HConfig {
 				if (strs[0].equals("ISDETERMINED")) {
 					ISDETERMINED = Boolean.valueOf(strs[1]);
 				}
+				if (strs[0].equals("MEM_MONITOR")) {
+					MEM_MONITOR = Boolean.valueOf(strs[1]);
+				}
 			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -159,5 +163,6 @@ public class HConfig {
 		System.out.println("VOLTDB_TEST:" + VOLTDB_TEST);
 		System.out.println("TOT_MEM:" + TOT_MEM);
 		System.out.println("ISDETERMINED:" + ISDETERMINED);
+		System.out.println("MEM_MONITOR:" + MEM_MONITOR);
 	}
 }

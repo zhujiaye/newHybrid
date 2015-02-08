@@ -74,7 +74,8 @@ public class Monitor implements Runnable {
 			;
 		System.out.println("Start!");
 		new Thread(new HTimer(this, HConfig.SERVER_TIME_GAP)).start();
-		// new MemMonitor(HConfig.VOLTDB_SERVER).start();
+		if (HConfig.MEM_MONITOR)
+			new MemMonitor(HConfig.VOLTDB_SERVER).start();
 		long startTime = System.currentTimeMillis();
 		// int estimatedInterval = 0;
 		int actualInterval = 0;
@@ -353,7 +354,8 @@ public class Monitor implements Runnable {
 					}
 				int index = n - 1, capacity = remainVoltDBSize;
 				System.out.println("Move workload about:" + f[n - 1][capacity]);
-				System.out.println("Remain voltDBSize before movement:" + capacity);
+				System.out.println("Remain voltDBSize before movement:"
+						+ capacity);
 				// if (threads != null)
 				// threads.clear();
 				// threads = new ArrayList<>();
@@ -367,7 +369,8 @@ public class Monitor implements Runnable {
 					} else
 						index--;
 				}
-				System.out.println("Remain voltDBSize after movement:" + capacity);
+				System.out.println("Remain voltDBSize after movement:"
+						+ capacity);
 				if (toVoltDBInfos.size() > 0) {
 					// ArrayList<TenantToVoltDBInfo> tmplist = new
 					// ArrayList<>();

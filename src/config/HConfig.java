@@ -1,168 +1,252 @@
 package config;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.io.IOException;
 import java.util.Scanner;
 
 public class HConfig {
-	public static boolean debug = false;
+	final private static String ENV_FILEPATH = "newhybrid-env";
 
-	public static String urlOfMySQL = "jdbc:mysql://10.171.5.28/tpcc3000";
-	final public static String userOfMySQL = "remote";
-	final public static String passwordOfMySQL = "remote";
+	private static HConfig conf = null;
+	private static boolean mUsemysql = true;
+	private static boolean mUsevoltdb = true;
+	private static String mInitdb = "mysql";
+	private static String mServerAddress;
+	private static int mServerPort = 12345;
+	private static boolean mSeverUseMemmonitor = true;
+	private static boolean mServerModelDeterministic = false;
+	private static String mMysqlServerAddress;
+	private static String mMysqlDbname;
+	private static String mMysqlUsername = "remote";
+	private static String mMysqlPassword = "remote";
+	private static String mVoltdbServerAddress;
+	private static int mVoltdbCapacity;
+	private static String mMysqlTempFolder = "/tmp";
+	private static int mMysqlExportConcurrency = 300;
+	private static int mMysqlTableConcurrency = 9;
+	// For test only
+	private static int mMysqlPoolInitsize = 40;
+	private static int mVoltdbPoolInitsize = 0;
+	private static String mWorkloadfilepath;
+	private static int mNumberOfVoltdbTables = 50;
+	private static int mNumberOfIntervals = 7;
+	private static int mNumberOfSplits = 5;
+	private static long mSplitTime = 60 * Constants.S;
 
-	final public static int TOTTENANTS = 3000;
-	final public static long INTERVAL_TIME = 5 * 60 * 1000;
-	final public static int INTERVAL_TIME_IN_MINUTES = 5;
+	public synchronized static HConfig getConf() throws IOException {
+		if (conf == null) {
+			conf = new HConfig();
+		}
+		return conf;
+	}
 
-	final public static int SPLIT_TIME = 1 * 60 * 1000;
-	final public static int SPLIT_TIME_IN_MINUTES = 1;
-	final public static int NUMBER_OF_SPLITS_IN_INTERVAL = 5;
-
-	final public static int ACTIVE_RATIO = 20;
-	final public static int ACTIVE_REMOVE_RATIO = 10;
-	final public static int ACTIVE_ADD_RATIO = ACTIVE_RATIO
-			* ACTIVE_REMOVE_RATIO / (100 - ACTIVE_RATIO);
-	final public static int NUMBER_OF_INTERVAL = 7;
-	final public static int NUMBER_OF_BURST_INTERVAL = 2;
-	final public static boolean[] ISBURST = { false, false, false, true, true,
-			false, false };
-
-	public static String INFO_FILE = "tenants_info";
-	public static String WL_FILE = "load_a40.txt";
-	final public static int[][] DISTRIBUTION_OF_SLO = { { 30, 20 }, { 50, 60 },
-			{ 20, 200 } };
-	final public static int[][] DISTRIBUTION_OF_DATASIZE = { { 1, 1500, 7 },
-			{ 1501, 2400, 16 }, { 2401, 3000, 35 } };
-	final public static int[][] DISTRIBUTION_OF_WRITEHEAVY = { { 40, 60 },
-			{ 60, 40 } };
-	final public static int NUMBER_OF_DISTRIBUTION_OF_SLO = 3;
-	final public static int NUMBER_OF_DISTRIBUTION_OF_DATASIZE = 3;
-	final public static int NUMBER_OF_DISTRIBUTION_OF_WRITEHEAVY = 2;
-
-	final public static int NUMBER_OF_TABLES = 9;
-	final public static int NUMBER_OF_TYPE_OF_QUERY = 2;
-	final public static int QTYPE_SELECT = 0;
-	final public static int QTYPE_UPDATE = 1;
-
-	final public static int SOCKET_PORT = 12345;
-	public static String SOCKET_HOST = "10.171.5.28";
-
-	public static String CSVPATH = "/host/tmp";
-	final public static int BATCH = 100;
-
-	final public static boolean USEVOLTDB = true;
-	public static int VOLTDB_SIZE = 500;
-	final public static int NUMBER_OF_ID_IN_VOLTDB = 50;
-	public static String VOLTDB_SERVER = "10.171.5.28";
-
-	final public static int CLIENT_TIME_GAP = 5;
-	final public static int SERVER_TIME_GAP = 10;
-
-	public static int MYSQLEXPORTER_CONCURRENCY = 300;
-	public static int MOVER_CONCURRENCY = 300;
-	public static int TABLE_CONCURRENCY = 2;
-	// final public static int TABLE_CONCURRENCY = 9;
-
-	public static int MYSQLPOOLINIT = 40;
-	public static int VOLTDBPOOLINIT = 0;
-
-	public static boolean MOVEDB = true;
-	final public static int CONCURRENCY_PROCESS = 15;
-
-	final public static String SETTING_FILE = "setting";
-
-	public static boolean VOLTDB_TEST = false;
-	public static int TOT_MEM = 4000;
-	public static boolean ISDETERMINED = true;
-	public static boolean MEM_MONITOR = true;
-
-	public static void load() {
+	private HConfig() throws IOException {
 		Scanner in = null;
 		try {
-			in = new Scanner(new File(SETTING_FILE));
+			in = new Scanner(new File(ENV_FILEPATH));
 			while (in.hasNextLine()) {
 				String line = in.nextLine();
-				String[] strs = line.split(" ");
-				if (strs[0].equals("MOVEDB")) {
-					MOVEDB = Boolean.valueOf(strs[1]);
+				String[] strs = line.trim().split(" ");
+				if (strs.length < 1 || strs[0].startsWith("#")
+						|| strs[0].startsWith("//"))
+					continue;
+				if (strs[0].equals("newhybrid.usemysql")) {
+					mUsemysql = Boolean.valueOf(strs[1]);
 				}
-				if (strs[0].equals("WL_FILE")) {
-					WL_FILE = strs[1];
+				if (strs[0].equals("newhybrid.usevoltdb")) {
+					mUsevoltdb = Boolean.valueOf(strs[1]);
 				}
-				if (strs[0].equals("VOLTDB_SIZE")) {
-					VOLTDB_SIZE = Integer.valueOf(strs[1]);
+				if (strs[0].equals("newhybrid.initdb")) {
+					mInitdb = strs[1];
 				}
-				if (strs[0].equals("SERVER_ADDRESS")) {
-					urlOfMySQL = "jdbc:mysql://" + strs[1] + "/tpcc3000";
-					SOCKET_HOST = strs[1];
-					VOLTDB_SERVER = strs[1];
+				if (strs[0].equals("newhybrid.server.address")) {
+					mServerAddress = strs[1];
 				}
-				if (strs[0].equals("CSVPATH")) {
-					CSVPATH = strs[1];
+				if (strs[0].equals("newhybrid.server.port")) {
+					mServerPort = Integer.valueOf(strs[1]);
 				}
-				if (strs[0].equals("MOVER_CONCURRENCY")) {
-					MOVER_CONCURRENCY = Integer.valueOf(strs[1]);
+				if (strs[0].equals("newhybrid.mysql.server.address")) {
+					mMysqlServerAddress = "jdbc:mysql://" + strs[1];
 				}
-				if (strs[0].equals("MYSQLPOOLINIT")) {
-					MYSQLPOOLINIT = Integer.valueOf(strs[1]);
+				if (strs[0].equals("newhybrid.mysql.server.dbname")) {
+					mMysqlDbname = strs[1];
 				}
-				if (strs[0].equals("VOLTDBPOOLINIT")) {
-					VOLTDBPOOLINIT = Integer.valueOf(strs[1]);
+				if (strs[0].equals("newhybrid.mysql.server.username")) {
+					mMysqlUsername = strs[1];
 				}
-				if (strs[0].equals("INFO_FILE")) {
-					INFO_FILE = strs[1];
+				if (strs[0].equals("newhybrid.mysql.server.password")) {
+					mMysqlPassword = strs[1];
 				}
-				if (strs[0].equals("debug")) {
-					debug = Boolean.valueOf(strs[1]);
+				if (strs[0].equals("newhybrid.voltdb.server.address")) {
+					mVoltdbServerAddress = strs[1];
 				}
-				if (strs[0].equals("TABLE_CONCURRENCY")) {
-					TABLE_CONCURRENCY = Integer.valueOf(strs[1]);
+				if (strs[0].equals("newhybrid.voltdb.server.capacity")) {
+					mVoltdbCapacity = Integer.valueOf(strs[1]);
 				}
-				if (strs[0].equals("MYSQLEXPORTER_CONCURRENCY")) {
-					MYSQLEXPORTER_CONCURRENCY = Integer.valueOf(strs[1]);
+
+				if (strs[0].equals("newhybrid.mysql.tempfolder")) {
+					mMysqlTempFolder = strs[1];
 				}
-				if (strs[0].equals("VOLTDB_TEST")) {
-					VOLTDB_TEST = Boolean.valueOf(strs[1]);
+				if (strs[0].equals("newhybrid.mysql.export.concurrency")) {
+					mMysqlExportConcurrency = Integer.valueOf(strs[1]);
 				}
-				if (strs[0].equals("TOT_MEM")) {
-					TOT_MEM = Integer.valueOf(strs[1]);
+
+				if (strs[0].equals("newhybrid.mysql.table.concurrency")) {
+					mMysqlTableConcurrency = Integer.valueOf(strs[1]);
 				}
-				if (strs[0].equals("ISDETERMINED")) {
-					ISDETERMINED = Boolean.valueOf(strs[1]);
+				if (strs[0].equals("newhybrid.mysql.pool.initsize")) {
+					mMysqlPoolInitsize = Integer.valueOf(strs[1]);
 				}
-				if (strs[0].equals("MEM_MONITOR")) {
-					MEM_MONITOR = Boolean.valueOf(strs[1]);
+				if (strs[0].equals("newhybrid.voltdb.pool.initsize")) {
+					mVoltdbPoolInitsize = Integer.valueOf(strs[1]);
+				}
+				if (strs[0].equals("newhybrid.test.workloadfile.path")) {
+					mWorkloadfilepath = strs[1];
+				}
+				if (strs[0].equals("newhybrid.server.model.isdeterministic")) {
+					mServerModelDeterministic = Boolean.valueOf(strs[1]);
+				}
+				if (strs[0].equals("newhybrid.sever.usememmonitor")) {
+					mSeverUseMemmonitor = Boolean.valueOf(strs[1]);
+				}
+				if (strs[0].equals("newhybrid.test.voltdbtable.number")) {
+					mNumberOfVoltdbTables = Integer.valueOf(strs[1]);
+				}
+				if (strs[0].equals("newhybrid.test.interval.number")) {
+					mNumberOfIntervals = Integer.valueOf(strs[1]);
+				}
+				if (strs[0].equals("newhybrid.test.split.number")) {
+					mNumberOfSplits = Integer.valueOf(strs[1]);
+				}
+				if (strs[0].equals("newhybrid.test.split.time")) {
+					mSplitTime = Long.valueOf(strs[1]);
 				}
 			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new IOException("Can not find environment file!");
+		} finally {
+			if (in != null)
+				in.close();
 		}
-
 	}
 
-	public static void print() {
-		System.out.println("WL_FILE:" + WL_FILE);
-		System.out.println("MOVEDB:" + MOVEDB);
-		System.out.println("VOLTDB_SIZE:" + VOLTDB_SIZE);
-		System.out.println("urlOfMySQL:" + urlOfMySQL);
-		System.out.println("SOCKET_HOST:" + SOCKET_HOST);
-		System.out.println("VOLTDB_SERVER:" + VOLTDB_SERVER);
-		System.out.println("CSVPATH:" + CSVPATH);
-		System.out.println("MOVER_CONCURRENCY:" + MOVER_CONCURRENCY);
-		System.out.println("TABLE_CONCURRENCY:" + TABLE_CONCURRENCY);
-		System.out.println("MYSQLEXPORTER_CONCURRENCY:"
-				+ MYSQLEXPORTER_CONCURRENCY);
-		System.out.println("MYSQLPOOLINIT:" + MYSQLPOOLINIT);
-		System.out.println("VOLTDBPOOLINIT:" + VOLTDBPOOLINIT);
-		System.out.println("INFO_FILE:" + INFO_FILE);
-		System.out.println("debug:" + debug);
-		System.out.println("VOLTDB_TEST:" + VOLTDB_TEST);
-		System.out.println("TOT_MEM:" + TOT_MEM);
-		System.out.println("ISDETERMINED:" + ISDETERMINED);
-		System.out.println("MEM_MONITOR:" + MEM_MONITOR);
+	public boolean isUseMysql() {
+		return mUsemysql;
+	}
+
+	public boolean isUseVoltdb() {
+		return mUsevoltdb;
+	}
+
+	public String getInitdb() {
+		return mInitdb;
+	}
+
+	public String getServerAddress() {
+		return mServerAddress;
+	}
+
+	public int getServerPort() {
+		return mServerPort;
+	}
+
+	public boolean isServerModelDeterministic() {
+		return mServerModelDeterministic;
+	}
+
+	public boolean isUseServerMemmonitor() {
+		return mSeverUseMemmonitor;
+	}
+
+	public String getMysqlServerAddress() {
+		return mMysqlServerAddress;
+	}
+
+	public String getMysqlDbname() {
+		return mMysqlDbname;
+	}
+
+	public String getMysqlUsername() {
+		return mMysqlUsername;
+	}
+
+	public String getMysqlPassword() {
+		return mMysqlPassword;
+	}
+
+	public String getMysqlTempFolder() {
+		return mMysqlTempFolder;
+	}
+
+	public int getMysqlExportConcurrency() {
+		return mMysqlExportConcurrency;
+	}
+
+	public int getMysqlTableConcurrency() {
+		return mMysqlTableConcurrency;
+	}
+
+	public int getMysqlPoolInitsize() {
+		return mMysqlPoolInitsize;
+	}
+
+	public String getVoltdbServerAddress() {
+		return mVoltdbServerAddress;
+	}
+
+	public int getVoltdbCapacity() {
+		return mVoltdbCapacity;
+	}
+
+	public int getVoltdbPoolInitsize() {
+		return mVoltdbPoolInitsize;
+	}
+
+	public synchronized static void print() {
+		System.out.println("[NewHybrid]");
+		System.out.println("\tnewhybrid.usemysql " + mUsemysql);
+		System.out.println("\tnewhybrid.usevoltdb " + mUsevoltdb);
+		System.out.println("\tnewhybrid.initdb " + mInitdb);
+		System.out.println("[Server]");
+		System.out.println("\tnewhybrid.server.address " + mServerAddress);
+		System.out.println("\tnewhybrid.server.port " + mServerPort);
+		System.out.println("\tnewhybrid.server.model.isdeterministic "
+				+ mServerModelDeterministic);
+		System.out.println("\tnewhybrid.sever.usememmonitor "
+				+ mSeverUseMemmonitor);
+		System.out.println("[MySQL server]");
+		System.out.println("\tnewhybrid.mysql.server.address "
+				+ mMysqlServerAddress);
+		System.out.println("\tnewhybrid.mysql.server.dbname " + mMysqlDbname);
+		System.out.println("\tnewhybrid.mysql.server.username "
+				+ mMysqlUsername);
+		System.out.println("\tnewhybrid.mysql.server.password "
+				+ mMysqlPassword);
+		System.out.println("\tnewhybrid.mysql.tempfolder " + mMysqlTempFolder);
+		System.out.println("\tnewhybrid.mysql.export.concurrency "
+				+ mMysqlExportConcurrency);
+		System.out.println("\tnewhybrid.mysql.table.concurrency "
+				+ mMysqlTableConcurrency);
+		System.out.println("\tnewhybrid.mysql.pool.initsize "
+				+ mMysqlPoolInitsize);
+		System.out.println("[VoltDB server]");
+		System.out.println("\tnewhybrid.voltdb.server.address "
+				+ mVoltdbServerAddress);
+		System.out.println("\tnewhybrid.voltdb.server.capacity "
+				+ mVoltdbCapacity);
+		System.out.println("\tnewhybrid.voltdb.pool.initsize "
+				+ mVoltdbPoolInitsize);
+		System.out.println("[For test]");
+		System.out.println("\tnewhybrid.test.workloadfile.path "
+				+ mWorkloadfilepath);
+		System.out.println("\tnewhybrsid.test.voltdbtable.number "
+				+ mNumberOfVoltdbTables);
+		System.out.println("\tnewhybrid.test.interval.number "
+				+ mNumberOfIntervals);
+		System.out.println("\tnewhybrid.test.split.number " + mNumberOfSplits);
+		System.out.println("\tnewhybrid.test.split.time " + mSplitTime);
+
 	}
 }

@@ -27,8 +27,8 @@ public class MemMonitor extends Thread {
 	}
 
 	public void run() {
-		VoltDBConnectionPool pool;
-		pool = new VoltDBConnectionPool();
+		VoltdbConnectionPool pool;
+		pool = new VoltdbConnectionPool();
 		// voltdbConn = DBManager.connectVoltdb(voltdbServer);
 		voltdbConn = pool.getConnection();
 		if (voltdbConn == null) {

@@ -7,7 +7,7 @@ import java.util.Random;
 /*
  * �����ж���������tpcc-mysql�ĺ���������������sql�����ʱ�õ�
  */
-public class Support {
+public class ValueGenerator {
 	public static Random ran = new Random();
 	public static int first = 1;
 	public static int C, C_255 = 0, C_1023 = 0, C_8191 = 0;

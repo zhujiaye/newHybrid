@@ -12,14 +12,14 @@ public class MySQLExporterForTenant implements Runnable {
 	private int tenantid;
 	private Connection conn;
 	private String savedFileName;
-	private MySQLConnectionPool pool;
+	private MysqlConnectionPool pool;
 
 	public MySQLExporterForTenant(String table_name, int tenantid) {
 		this.table_name = table_name;
 		this.tenantid = tenantid;
 		this.savedFileName = HConfig.CSVPATH + "/" + table_name + tenantid
 				+ ".csv";
-		this.pool = new MySQLConnectionPool();
+		this.pool = new MysqlConnectionPool();
 	}
 
 	@Override

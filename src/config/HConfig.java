@@ -2,8 +2,9 @@ package config;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Scanner;
+
+import newhybrid.HException;
 
 public class HConfig {
 	final private static String ENV_FILEPATH = "newhybrid-env";
@@ -34,14 +35,14 @@ public class HConfig {
 	private static int mNumberOfSplits = 5;
 	private static long mSplitTime = 60 * Constants.S;
 
-	public synchronized static HConfig getConf() throws IOException {
+	public synchronized static HConfig getConf() throws HException {
 		if (conf == null) {
 			conf = new HConfig();
 		}
 		return conf;
 	}
 
-	private HConfig() throws IOException {
+	private HConfig() throws HException {
 		Scanner in = null;
 		try {
 			in = new Scanner(new File(ENV_FILEPATH));
@@ -125,7 +126,7 @@ public class HConfig {
 			}
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
-			throw new IOException("Can not find environment file!");
+			throw new HException("Can not find environment file!");
 		} finally {
 			if (in != null)
 				in.close();
@@ -166,6 +167,10 @@ public class HConfig {
 
 	public String getMysqlDbname() {
 		return mMysqlDbname;
+	}
+
+	public String getMysqlCompleteAddress() {
+		return mMysqlServerAddress + "/" + mMysqlDbname;
 	}
 
 	public String getMysqlUsername() {

@@ -5,13 +5,13 @@
 	#newhybrid.initdb mysql
 [Server]
 	//server address must be defined
-	newhybrid.server.address 127.0.0.1
+	newhybrid.server.address 10.20.2.28
 	#newhybrid.server.port 12345
 	#newhybrid.server.model.isdeterministic false
 	#newhybrid.sever.usememmonitor true
 [MySQL server]
 	//mysql server address must be defined
-	newhybrid.mysql.server.address 127.0.0.1
+	newhybrid.mysql.server.address 10.20.2.28
 	//mysql server db name must be defined
 	newhybrid.mysql.server.dbname tpcc3000
 	#newhybrid.mysql.server.username remote
@@ -23,7 +23,7 @@
 	#newhybrid.mysql.pool.initsize 40
 [VoltDB server]
 	//voltdb server address must be defined
-	newhybrid.voltdb.server.address 127.0.0.1
+	newhybrid.voltdb.server.address 10.20.2.28
 	//voltdb server capacity must be defined in units of MB
 	newhybrid.voltdb.server.capacity 2000
 	#newhybrid.voltdb.pool.initsize 0

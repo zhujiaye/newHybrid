@@ -35,9 +35,9 @@ import dbInfo.StockTable;
 import dbInfo.Table;
 import dbInfo.WarehouseTable;
 import utillity.HTenantDynamicInfo;
-import utillity.MySQLConnectionPool;
+import utillity.MysqlConnectionPool;
 import utillity.PossionDistribution;
-import utillity.VoltDBConnectionPool;
+import utillity.VoltdbConnectionPool;
 
 public class HTenant implements Runnable {
 	private int id;
@@ -67,8 +67,8 @@ public class HTenant implements Runnable {
 	private Table[] tables;
 
 	private Monitor monitor;
-	private MySQLConnectionPool mySQLpool;
-	private VoltDBConnectionPool voltDBPool;
+	private MysqlConnectionPool mySQLpool;
+	private VoltdbConnectionPool voltDBPool;
 
 	private ArrayList<SplitInfo> splitInfoList;
 	private ArrayList<QueryInfo> queryInfoList;
@@ -246,8 +246,8 @@ public class HTenant implements Runnable {
 		tables[8] = new WarehouseTable(id);
 	}
 
-	public HTenant(int id, Monitor monitor, MySQLConnectionPool mySQLpool,
-			VoltDBConnectionPool voltDBpool) {
+	public HTenant(int id, Monitor monitor, MysqlConnectionPool mySQLpool,
+			VoltdbConnectionPool voltDBpool) {
 		this.id = id;
 		this.monitor = monitor;
 		this.mySQLpool = mySQLpool;

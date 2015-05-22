@@ -14,8 +14,8 @@ import org.voltdb.client.Client;
 import org.voltdb.client.ClientResponse;
 import org.voltdb.client.ProcCallException;
 
-import utillity.MySQLConnectionPool;
-import utillity.VoltDBConnectionPool;
+import utillity.MysqlConnectionPool;
+import utillity.VoltdbConnectionPool;
 
 public class DistrictRetriver extends Thread {
 	public String url, username, password;
@@ -48,8 +48,8 @@ public class DistrictRetriver extends Thread {
 
 	@Override
 	public void run() {
-		MySQLConnectionPool mysqlPool = new MySQLConnectionPool();
-		VoltDBConnectionPool voltdbPool = new VoltDBConnectionPool();
+		MysqlConnectionPool mysqlPool = new MysqlConnectionPool();
+		VoltdbConnectionPool voltdbPool = new VoltdbConnectionPool();
 		try {
 			// conn = DBManager.connectDB(url, username, password);
 			conn = mysqlPool.getConnection();

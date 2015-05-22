@@ -6,8 +6,8 @@ import java.net.UnknownHostException;
 
 import utillity.HTenantDynamicInfo;
 import utillity.HTimer;
-import utillity.MySQLConnectionPool;
-import utillity.VoltDBConnectionPool;
+import utillity.MysqlConnectionPool;
+import utillity.VoltdbConnectionPool;
 import config.HConfig;
 
 public class Monitor implements Runnable {
@@ -20,8 +20,8 @@ public class Monitor implements Runnable {
 	private Socket socket;
 
 	private boolean allConfirmed;
-	private MySQLConnectionPool mySQLpool;
-	private VoltDBConnectionPool voltDBpool;
+	private MysqlConnectionPool mySQLpool;
+	private VoltdbConnectionPool voltDBpool;
 
 	private int waiting_tenants;
 	private int confirmed = 0;
@@ -33,8 +33,8 @@ public class Monitor implements Runnable {
 		tenants = new HTenant[number_of_tenants];
 		threads = new Thread[number_of_tenants];
 		setAllConfirmed(false);
-		voltDBpool = new VoltDBConnectionPool(HConfig.VOLTDBPOOLINIT);
-		mySQLpool = new MySQLConnectionPool(HConfig.MYSQLPOOLINIT);
+		voltDBpool = new VoltdbConnectionPool(HConfig.VOLTDBPOOLINIT);
+		mySQLpool = new MysqlConnectionPool(HConfig.MYSQLPOOLINIT);
 		try {
 			socket = new Socket(HConfig.SOCKET_HOST, HConfig.SOCKET_PORT);
 			if (socket != null) {

@@ -105,6 +105,26 @@ public class HTenantClient {
 		return false;
 	}
 
+	// TODO complete this method
+	public void login() {
+
+	}
+
+	// TODO complete this method
+	public void logout() {
+
+	}
+
+	// TODO complete this method
+	public void start() {
+
+	}
+
+	// TODO complete this method
+	public void stop() {
+
+	}
+
 	public Connection getMysqlConnection() throws HException {
 		openMysqlConnection();
 		return mMysqlConnection;

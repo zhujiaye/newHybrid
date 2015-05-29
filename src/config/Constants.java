@@ -11,6 +11,7 @@ public class Constants {
 	 * number of tables;
 	 */
 	final public static int NUMBER_OF_TABLES = 9;
+	final public static int NUMBER_OF_TENANTS = 3000;
 	final public static int NUMBER_OF_TYPE_OF_QUERY = 2;
 	final public static int QTYPE_SELECT = 0;
 	final public static int QTYPE_UPDATE = 1;

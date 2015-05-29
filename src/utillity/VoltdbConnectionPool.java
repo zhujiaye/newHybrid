@@ -12,6 +12,7 @@ import org.voltdb.client.ClientConfig;
 import org.voltdb.client.ClientFactory;
 import org.voltdb.client.ClientResponse;
 import org.voltdb.client.ClientStatusListenerExt;
+import org.voltdb.client.NoConnectionsException;
 import org.voltdb.client.ProcedureCallback;
 
 import config.HConfig;
@@ -68,8 +69,9 @@ public class VoltdbConnectionPool {
 				tmp = iter.next();
 				if (tmp != null) {
 					try {
+						tmp.drain();
 						tmp.close();
-					} catch (InterruptedException e) {
+					} catch (InterruptedException | NoConnectionsException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}

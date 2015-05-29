@@ -101,5 +101,6 @@ public class DistrictTable extends Table {
 		mColumnValues[7] = ValueGenerator.MakeNumberString(9, 9);
 		mColumnValues[8] = String.valueOf((float) (ran.nextInt(20) / 100.0));
 		mColumnValues[9] = String.valueOf(30000.0);
+		mColumnValues[10] = String.valueOf(3001);
 	}
 }

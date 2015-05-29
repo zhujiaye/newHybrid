@@ -81,15 +81,15 @@ public abstract class Table {
 					int c = mPrimaryKeyColumnInMysql[i];
 					if (i > 0)
 						queryString.append(" AND ");
-					queryString.append(mColumnNamesInMysql[c] + "="
-							+ mColumnValuesInMysql[c]);
+					queryString.append(mColumnNamesInMysql[c] + "=" + "\""
+							+ mColumnValuesInMysql[c] + "\"");
 				}
 				long time1, time2;
 				time1 = System.nanoTime();
 				result = stmt.executeQuery(queryString.toString());
 				time2 = System.nanoTime();
-				return new HQueryResult(QueryType.SELECT, time2 - time1,
-						result, null, 0);
+				return new HQueryResult(QueryType.SELECT, time1, time2, result,
+						null, 0);
 			} catch (SQLTimeoutException e) {
 				throw new HSQLTimeOutException(e.getMessage());
 			} catch (SQLException e) {
@@ -118,7 +118,7 @@ public abstract class Table {
 				time2 = System.nanoTime();
 				if (response.getStatus() == ClientResponse.SUCCESS) {
 					result = response.getResults();
-					return new HQueryResult(QueryType.SELECT, time2 - time1,
+					return new HQueryResult(QueryType.SELECT, time1, time2,
 							null, result, 0);
 				} else
 					return new HQueryResult(null);
@@ -152,22 +152,23 @@ public abstract class Table {
 				for (int i = 0; i < mColumnNamesInMysql.length; i++) {
 					if (i > 0)
 						queryString.append(" , ");
-					queryString.append(mColumnNamesInMysql[i] + "="
-							+ mColumnValuesInMysql[i]);
+					queryString.append(mColumnNamesInMysql[i] + "=" + "\""
+							+ mColumnValuesInMysql[i] + "\"");
 				}
 				queryString.append(" WHERE ");
 				for (int i = 0; i < mPrimaryKeyColumnInMysql.length; i++) {
 					int c = mPrimaryKeyColumnInMysql[i];
 					if (i > 0)
 						queryString.append(" AND ");
-					queryString.append(mColumnNamesInMysql[c] + "="
-							+ mColumnValuesInMysql[c]);
+					queryString.append(mColumnNamesInMysql[c] + "=" + "\""
+							+ mColumnValuesInMysql[c] + "\"");
 				}
 				long time1, time2;
 				time1 = System.nanoTime();
 				result = stmt.executeUpdate(queryString.toString());
 				time2 = System.nanoTime();
-				return true;
+				return new HQueryResult(QueryType.UPDATE, time1, time2, null,
+						null, result);
 			} catch (SQLTimeoutException e) {
 				throw new HSQLTimeOutException(e.getMessage());
 			} catch (SQLException e) {
@@ -180,7 +181,7 @@ public abstract class Table {
 			VoltTable[] result;
 			voltdbConnection = HTC.getVoltdbConnection();
 			if (voltdbConnection == null)
-				return false;
+				return new HQueryResult(null);
 			generateNameInVoltdb();
 			generateAllColumnsInVoltdb(0, 1);
 			Object[] para = new Object[mColumnValuesInVoltdb.length
@@ -193,13 +194,17 @@ public abstract class Table {
 				para[mColumnValuesInVoltdb.length + i] = mColumnValuesInVoltdb[c];
 			}
 			try {
+				long time1, time2;
+				time1 = System.nanoTime();
 				response = voltdbConnection.callProcedure(
 						mNameInVoltdb.toUpperCase() + ".update", para);
+				time2 = System.nanoTime();
 				if (response.getStatus() == ClientResponse.SUCCESS) {
 					result = response.getResults();
-					return true;
+					return new HQueryResult(QueryType.UPDATE, time1, time2,
+							null, result, 0);
 				} else
-					return false;
+					return new HQueryResult(null);
 			} catch (NoConnectionsException e) {
 				throw new HException(e.getMessage());
 			} catch (IOException e) {

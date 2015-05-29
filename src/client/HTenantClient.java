@@ -96,13 +96,13 @@ public class HTenantClient {
 	// TODO complete this method
 	public int getIDInVoltdb() {
 		connect();
-		return 0;
+		return 1;
 	}
 
 	// TODO complete this method
 	public boolean isUseMysql() {
 		connect();
-		return true;
+		return false;
 	}
 
 	public Connection getMysqlConnection() throws HException {

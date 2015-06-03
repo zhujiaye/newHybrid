@@ -52,4 +52,14 @@ public class ServerServiceHandler implements ServerService.Iface {
 		return mServer.tenantIsStarted(id);
 	}
 
+	@Override
+	public int tenant_getDataSize(int id) throws TException {
+		return mServer.tenantGetDataSize(id);
+	}
+
+	@Override
+	public int tenant_getDataSizeKind(int id) throws TException {
+		return mServer.tenantGetDataSizeKind(id);
+	}
+
 }

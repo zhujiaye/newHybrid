@@ -5,8 +5,10 @@ import config.HConfig;
 
 public class HTenant {
 	final private HConfig mConf;
-	private HServer mServer;
-	private int mID;
+	final private int mID;
+	final private int mDataSize;
+	final private HServer mServer;
+
 	private boolean mLoggedIn;
 	private boolean mStarted;
 
@@ -19,6 +21,16 @@ public class HTenant {
 		mConf = HConfig.getConf();
 		mServer = server;
 		mID = tenant_id;
+		// TODO get right dataszie
+		if (mID >= 1 && mID <= 1500) {
+			mDataSize = 7;
+		} else if (mID > 1500 && mID <= 2400) {
+			mDataSize = 16;
+		} else if (mID > 2400 && mID <= 3000) {
+			mDataSize = 24;
+		} else {
+			mDataSize = -1;
+		}
 		mLoggedIn = false;
 		mStarted = false;
 	}
@@ -27,7 +39,23 @@ public class HTenant {
 		return mID;
 	}
 
-	public void login() {
+	public int getDataSize() {
+		return mDataSize;
+	}
+
+	public int getDataSizeKind() {
+		if (mID >= 1 && mID <= 1500) {
+			return 0;
+		} else if (mID > 1500 && mID <= 2400) {
+			return 1;
+		} else if (mID > 2400 && mID <= 3000) {
+			return 2;
+		} else {
+			return -1;
+		}
+	}
+
+	public synchronized void login() {
 		if (mLoggedIn)
 			return;
 		if (mConf.getInitdb() == "voltdb") {
@@ -41,7 +69,7 @@ public class HTenant {
 				mServer.getAddress(), mServer.getPort());
 	}
 
-	public void logout() {
+	public synchronized void logout() {
 		if (!mLoggedIn)
 			return;
 		stop();
@@ -54,7 +82,7 @@ public class HTenant {
 				mServer.getAddress(), mServer.getPort());
 	}
 
-	public void start() {
+	public synchronized void start() {
 		if (!mLoggedIn || mStarted)
 			return;
 		mStarted = true;
@@ -63,7 +91,7 @@ public class HTenant {
 				mServer.getAddress(), mServer.getPort());
 	}
 
-	public void stop() {
+	public synchronized void stop() {
 		if (!mLoggedIn || !mStarted)
 			return;
 		mStarted = false;
@@ -71,17 +99,17 @@ public class HTenant {
 				mServer.getAddress(), mServer.getPort());
 	}
 
-	public boolean isLoggedIn() {
+	public synchronized boolean isLoggedIn() {
 		return mLoggedIn;
 	}
 
-	public boolean isStarted() {
+	public synchronized boolean isStarted() {
 		if (!mLoggedIn)
 			return false;
 		return mStarted;
 	}
 
-	public boolean isUseMysql() {
+	public synchronized boolean isUseMysql() {
 		return mIsInMysql;
 	}
 }

@@ -196,6 +196,27 @@ public class HServer {
 		}
 	}
 
+	public int tenantGetDataSize(int id) {
+		HTenant tenant;
+		synchronized (mTenants) {
+			tenant = mTenants.get(id);
+			if (tenant != null) {
+				return tenant.getDataSize();
+			}
+			return -1;
+		}
+	}
+
+	public int tenantGetDataSizeKind(int id){
+		HTenant tenant;
+		synchronized (mTenants) {
+			tenant = mTenants.get(id);
+			if (tenant != null) {
+				return tenant.getDataSizeKind();
+			}
+			return -1;
+		}
+	}
 	public boolean tenantIsUseMysql(int id) {
 		HTenant tenant;
 		synchronized (mTenants) {

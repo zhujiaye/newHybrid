@@ -39,6 +39,7 @@ public class ServerClient {
 			mHeartbeatThread.shutdown();
 		}
 	}
+
 	public synchronized void connect() throws HException {
 		mLastAccessTime = System.nanoTime();
 		if (mIsShutdown) {
@@ -85,20 +86,47 @@ public class ServerClient {
 				+ mConf.getServerAddress() + ":" + mConf.getServerPort()
 				+ " after " + (tries - 1) + " attempts");
 	}
+
 	public synchronized void shutdown() throws HException {
 		if (mIsShutdown)
 			return;
 		cleanConnect();
 		mIsShutdown = true;
 	}
+
 	public synchronized long getLastAccessTime() {
 		return mLastAccessTime;
 	}
+
 	public synchronized int getIDInVoltdb(int tenant_id) throws HException {
 		while (!mIsShutdown) {
 			connect();
 			try {
 				return mClient.tenant_getIDInVoltdb(tenant_id);
+			} catch (TException e) {
+				throw new HException(e.getMessage());
+			}
+		}
+		throw new HException("Client has shutdown");
+	}
+
+	public synchronized int getDataSize(int tenant_id) throws HException {
+		while (!mIsShutdown) {
+			connect();
+			try {
+				return mClient.tenant_getDataSize(tenant_id);
+			} catch (TException e) {
+				throw new HException(e.getMessage());
+			}
+		}
+		throw new HException("Client has shutdown");
+	}
+
+	public synchronized int getDataSizeKind(int tenant_id) throws HException {
+		while (!mIsShutdown) {
+			connect();
+			try {
+				return mClient.tenant_getDataSize(tenant_id);
 			} catch (TException e) {
 				throw new HException(e.getMessage());
 			}

@@ -83,12 +83,13 @@ public class ItemTable extends Table {
 	 * catch block e.printStackTrace(); } } }
 	 */
 	@Override
-	public void generateAllColumns() {
+	public void generateAllColumns() throws HException {
 		if (mColumnValues == null)
 			mColumnValues = new String[mColumnNames.length];
 		Random ran = new Random(System.currentTimeMillis());
+		int dataSizeKind = HTC.getDataSizeKind();
 		mColumnValues[0] = String.valueOf(ValueGenerator.RandomNumber(1,
-				Constants.MAXITEMS));
+				Constants.MAXITEMS[dataSizeKind]));
 		mColumnValues[1] = String.valueOf(ran.nextInt(9999) + 1);
 		mColumnValues[2] = ValueGenerator.MakeAlphaString(14, 24);
 		mColumnValues[3] = String.valueOf((ran.nextInt(9900) + 100) / 100.0);

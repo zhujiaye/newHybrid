@@ -127,6 +127,14 @@ public class HTenantClient {
 		return mServerClient.getIDInVoltdb(mID);
 	}
 
+	public synchronized int getDataSize() throws HException {
+		return mServerClient.getDataSize(mID);
+	}
+
+	public synchronized int getDataSizeKind() throws HException {
+		return mServerClient.getDataSizeKind(mID);
+	}
+
 	public synchronized boolean isUseMysql() throws HException {
 		return mServerClient.isUseMysql(mID);
 	}

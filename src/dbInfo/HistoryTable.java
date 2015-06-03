@@ -85,13 +85,14 @@ public class HistoryTable extends Table {
 	 * catch block e.printStackTrace(); } } }
 	 */
 	@Override
-	public void generateAllColumns() {
+	public void generateAllColumns() throws HException {
 		if (mColumnValues == null)
 			mColumnValues = new String[mColumnNames.length];
+		int dataSizeKind = HTC.getDataSizeKind();
 		mColumnValues[0] = String.valueOf(ValueGenerator.RandomNumber(1,
-				Constants.CUST_PER_DIST));
+				Constants.CUST_PER_DIST[dataSizeKind]));
 		mColumnValues[1] = String.valueOf(ValueGenerator.RandomNumber(1,
-				Constants.DIST_PER_WARE));
+				Constants.DIST_PER_WARE[dataSizeKind]));
 		mColumnValues[2] = String.valueOf(ValueGenerator.RandomNumber(
 				Constants.min_ware, Constants.max_ware));
 		mColumnValues[3] = mColumnValues[1];

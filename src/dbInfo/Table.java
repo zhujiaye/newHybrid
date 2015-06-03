@@ -223,7 +223,7 @@ public abstract class Table {
 		mNameInVoltdb = mName + (HTC.getIDInVoltdb() - 1);
 	}
 
-	public abstract void generateAllColumns();
+	public abstract void generateAllColumns() throws HException;
 
 	public void generateAllColumnsInMysql() {
 		mColumnValuesInMysql = mColumnValues.clone();

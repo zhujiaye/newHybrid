@@ -14,7 +14,7 @@ public class HConfig {
 	private static boolean mUsevoltdb = true;
 	private static String mInitdb = "mysql";
 	private static String mServerAddress;
-	private static int mServerPort = 12345;
+	private static int mServerPort = Constants.SERVER_PORT;
 	private static boolean mSeverUseMemmonitor = true;
 	private static boolean mServerModelDeterministic = false;
 	private static String mMysqlServerAddress;

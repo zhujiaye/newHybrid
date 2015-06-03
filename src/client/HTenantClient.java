@@ -7,9 +7,18 @@ import java.util.Random;
 import newhybrid.HException;
 import newhybrid.HQueryResult;
 import newhybrid.HSQLTimeOutException;
+import newhybrid.HeartbeatThread;
 
+import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.transport.TFramedTransport;
+import org.apache.thrift.transport.TSocket;
+import org.apache.thrift.transport.TTransportException;
 import org.voltdb.client.Client;
 
+import server.ServerClient;
+import thrift.ServerService;
 import utillity.MysqlConnectionPool;
 import utillity.VoltdbConnectionPool;
 import config.Constants;
@@ -30,14 +39,14 @@ import dbInfo.WarehouseTable;
  * Every operation that a client need can be found here.
  */
 public class HTenantClient {
-	private int mId;
-	private boolean mIsConnected = false;
-	private boolean mIsShutdown = false;
+	private int mID;
 	private MysqlConnectionPool mMysqlPool = null;
 	private VoltdbConnectionPool mVoltdbPool = null;
 	private Connection mMysqlConnection = null;
 	private Client mVoltdbConnection = null;
 	private Table[] mTables = null;
+
+	private ServerClient mServerClient = null;
 
 	public HTenantClient(int tenantId) throws HException {
 		this(tenantId, null, null);
@@ -45,7 +54,7 @@ public class HTenantClient {
 
 	public HTenantClient(int tenantId, MysqlConnectionPool mysqlPool,
 			VoltdbConnectionPool voltdbPool) throws HException {
-		mId = tenantId;
+		mID = tenantId;
 		mMysqlPool = mysqlPool;
 		mVoltdbPool = voltdbPool;
 		if (mMysqlPool == null) {
@@ -64,79 +73,84 @@ public class HTenantClient {
 		mTables[6] = new OrdersTable(this);
 		mTables[7] = new StockTable(this);
 		mTables[8] = new WarehouseTable(this);
-	}
-
-	/*
-	 * TODO if a client not connect to server for a while, we should clean the
-	 * connection for saving resources
-	 */
-	public void cleanConnect() {
-	}
-
-	// TODO complete this method
-	public void connect() {
-		if (mIsShutdown)
-			return;
-		if (mIsConnected)
-			return;
-		mIsConnected = true;
-	}
-
-	// TODO complete this method
-	public void shutdown() {
-		if (mIsShutdown)
-			return;
-		mIsShutdown = true;
+		mServerClient = new ServerClient();
 	}
 
 	public int getID() {
-		return mId;
+		return mID;
 	}
 
-	// TODO complete this method
-	public int getIDInVoltdb() {
-		connect();
-		return 1;
+	public synchronized void connect() throws HException {
+		mServerClient.connect();
 	}
 
-	// TODO complete this method
-	public boolean isUseMysql() {
-		connect();
-		return false;
+	public synchronized void shutdown() throws HException {
+		mServerClient.shutdown();
+		releaseConnection();
+		if (mMysqlPool != null)
+			mMysqlPool.clear();
+		if (mVoltdbPool != null)
+			mVoltdbPool.clear();
 	}
 
-	// TODO complete this method
-	public void login() {
-
+	public synchronized boolean isLoggedIn() throws HException {
+		return mServerClient.isLoggedIn(mID);
 	}
 
-	// TODO complete this method
-	public void logout() {
-
+	public synchronized boolean isStarted() throws HException {
+		return mServerClient.isStarted(mID);
 	}
 
-	// TODO complete this method
-	public void start() {
-
+	/**
+	 * If the tenant is not registered yet this method will return false
+	 * 
+	 * @return whether this tenant logged in successfully
+	 * @throws HException
+	 */
+	public synchronized boolean login() throws HException {
+		return mServerClient.login(mID);
 	}
 
-	// TODO complete this method
-	public void stop() {
-
+	public synchronized boolean logout() throws HException {
+		return mServerClient.logout(mID);
 	}
 
-	public Connection getMysqlConnection() throws HException {
+	public synchronized boolean start() throws HException {
+		return mServerClient.start(mID);
+	}
+
+	public synchronized boolean stop() throws HException {
+		return mServerClient.stop(mID);
+	}
+
+	public synchronized int getIDInVoltdb() throws HException {
+		return mServerClient.getIDInVoltdb(mID);
+	}
+
+	public synchronized boolean isUseMysql() throws HException {
+		return mServerClient.isUseMysql(mID);
+	}
+
+	public synchronized Connection getMysqlConnection() throws HException {
 		openMysqlConnection();
 		return mMysqlConnection;
 	}
 
-	public Client getVoltdbConnection() throws HException {
+	public synchronized Client getVoltdbConnection() throws HException {
 		openVoltDBConnection();
 		return mVoltdbConnection;
 	}
 
-	public HQueryResult sqlRandomSelect() throws HException,
+	public synchronized HQueryResult sqlRandomSelect() throws HException,
 			HSQLTimeOutException {
+		if (!isLoggedIn()) {
+			System.out.println("Tenant " + mID + " not logged in!");
+			return null;
+		}
+		if (!isStarted()) {
+			System.out.println("Tenant " + mID + " not started!");
+			return null;
+		}
 		Random random = new Random(System.currentTimeMillis());
 		int tableIndex;
 		tableIndex = random.nextInt(mTables.length);
@@ -145,14 +159,27 @@ public class HTenantClient {
 		return result;
 	}
 
-	public HQueryResult sqlRandomUpdate() throws HException,
+	public synchronized HQueryResult sqlRandomUpdate() throws HException,
 			HSQLTimeOutException {
+		if (!isLoggedIn()) {
+			System.out.println("Tenant " + mID + " not logged in!");
+			return null;
+		}
+		if (!isStarted()) {
+			System.out.println("Tenant " + mID + " not started!");
+			return null;
+		}
 		Random random = new Random(System.currentTimeMillis());
 		int tableIndex;
 		tableIndex = random.nextInt(mTables.length);
 		HQueryResult result;
 		result = mTables[tableIndex].sqlRandomUpdate();
 		return result;
+	}
+
+	private void releaseConnection() throws HException {
+		closeMysqlConnection();
+		closeVoltDBConnection();
 	}
 
 	private void openMysqlConnection() throws HException {

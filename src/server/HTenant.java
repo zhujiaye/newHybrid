@@ -13,7 +13,7 @@ public class HTenant {
 	private long mLogInTime;
 	private long mStartTime;
 
-	private boolean isInMysql;
+	private boolean mIsInMysql;
 
 	public HTenant(HServer server, int tenant_id) throws HException {
 		mConf = HConfig.getConf();
@@ -31,8 +31,10 @@ public class HTenant {
 		if (mLoggedIn)
 			return;
 		if (mConf.getInitdb() == "voltdb") {
-			// TODO complete this part
-		}
+			// TODO move contents from mysql to voltdb
+			mIsInMysql = false;
+		} else
+			mIsInMysql = true;
 		mLoggedIn = true;
 		mLogInTime = System.nanoTime();
 		System.out.format("Tenant %d logged in server %s:%d%n", mID,
@@ -67,5 +69,19 @@ public class HTenant {
 		mStarted = false;
 		System.out.format("Tenant %d stop querying from server %s:%d%n", mID,
 				mServer.getAddress(), mServer.getPort());
+	}
+
+	public boolean isLoggedIn() {
+		return mLoggedIn;
+	}
+
+	public boolean isStarted() {
+		if (!mLoggedIn)
+			return false;
+		return mStarted;
+	}
+
+	public boolean isUseMysql() {
+		return mIsInMysql;
 	}
 }

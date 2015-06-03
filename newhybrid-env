@@ -2,10 +2,11 @@
 [NewHybrid]
 	#newhybrid.usemysql true
 	#newhybrid.usevoltdb true
+	newhybrid.usevoltdb false
 	#newhybrid.initdb mysql
 [Server]
 	//server address must be defined
-	newhybrid.server.address 10.20.2.28
+	newhybrid.server.address 127.0.0.1
 	#newhybrid.server.port 12345
 	#newhybrid.server.model.isdeterministic false
 	#newhybrid.sever.usememmonitor true

@@ -1,7 +1,7 @@
 package config;
 
 public class Constants {
-	final public static long S = 1000;
+	final public static long S = 1000000000;
 	final public static long MIN = 60 * S;
 	final public static long HOUR = 60 * MIN;
 	final public static long DAY = 24 * HOUR;
@@ -32,4 +32,14 @@ public class Constants {
 
 	final public static int MAX_NUM_ITEM = 15;
 	final public static int MAX_ITEM_LEN = 24;
+
+	/*
+	 * For thrift
+	 */
+	final public static int SERVER_PORT = 12345;
+	final public static long CONNECT_TIMEOUT = 5 * S;
+	final public static int MAX_CONNECT_TRY = 5;
+	final public static int SELECTOR_THREADS = 3;
+	final public static int QUEUE_SIZE_PER_SELECTOR = 3000;
+	final public static int SERVER_THREADS = 128;
 }

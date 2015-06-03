@@ -24,7 +24,7 @@ import client.HTenantClient;
 public abstract class Table {
 	protected final HConfig mConf;
 	protected final HTenantClient HTC;
-	protected final int mTenantID;
+
 	protected String mName;
 	protected String[] mColumnNames;
 	protected String[] mColumnValues;
@@ -42,7 +42,6 @@ public abstract class Table {
 
 	Table(HTenantClient htc) throws HException {
 		HTC = htc;
-		mTenantID = HTC.getID();
 		mConf = HConfig.getConf();
 	}
 
@@ -217,10 +216,10 @@ public abstract class Table {
 	}
 
 	public void generateNameInMysql() {
-		mNameInMysql = mName + (mTenantID - 1);
+		mNameInMysql = mName + (HTC.getID() - 1);
 	}
 
-	public void generateNameInVoltdb() {
+	public void generateNameInVoltdb() throws HException {
 		mNameInVoltdb = mName + (HTC.getIDInVoltdb() - 1);
 	}
 
@@ -237,7 +236,7 @@ public abstract class Table {
 		int n = mColumnNames.length;
 		for (int i = 0; i < n; i++)
 			mColumnValuesInVoltdb[i] = mColumnValues[i];
-		mColumnValuesInVoltdb[n] = String.valueOf(mTenantID);
+		mColumnValuesInVoltdb[n] = String.valueOf(HTC.getID());
 		mColumnValuesInVoltdb[n + 1] = String.valueOf(isInsert);
 		mColumnValuesInVoltdb[n + 2] = String.valueOf(isUpdate);
 

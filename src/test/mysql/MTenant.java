@@ -1,0 +1,82 @@
+package test.mysql;
+
+import java.util.Random;
+
+import newhybrid.HException;
+import newhybrid.HQueryResult;
+import newhybrid.HSQLTimeOutException;
+import client.HTenantClient;
+
+public class MTenant extends Thread {
+	private int id;
+	private final double writePercent = 0.2;
+	private int queryThisInterval = 0;
+	private int readThisInterval = 0;
+	private int writeThisInterval = 0;
+	public synchronized int queryNumber(int n){
+		if(n < 0){
+			queryThisInterval = 0;
+		}else{
+			queryThisInterval += n;
+		}
+		return queryThisInterval;
+	}
+	public synchronized int readNumber(int  n){
+		if(n < 0){
+			readThisInterval = 0;
+		}else{
+			readThisInterval += n;
+		}
+		return readThisInterval;
+	}
+	public synchronized int writeNumber(int n){
+		if(n < 0){
+			writeThisInterval = 0;
+		}else{
+			writeThisInterval += n;
+		}
+		return writeThisInterval;
+	}
+	
+	public MTenant(int id){
+		this.id = id;
+	}
+	
+	public void init() throws HException{
+		htc = new HTenantClient(id);
+		htc.login();
+		htc.start();
+	}
+	public void clean() throws HException{
+		htc.stop();
+		htc.logout();
+		htc.shutdown();
+	}
+	
+	public HTenantClient htc;
+	public void run(){
+		try {
+			Random rand = new Random(System.nanoTime());
+			HQueryResult result;
+			boolean isWrite;
+			while(MTestMain.checkIsActive()){
+				if(rand.nextDouble() < this.writePercent){
+					isWrite = true;
+					result = htc.sqlRandomUpdate();
+				}else{
+					isWrite = false;
+					result = htc.sqlRandomSelect();
+				}
+				if(result != null && result.isSuccess()){
+					this.queryNumber(1);
+					if(isWrite)	this.writeNumber(1);
+					else this.readNumber(1);
+				}
+			}
+		} catch (HException | HSQLTimeOutException e) {
+			e.printStackTrace();
+		}
+		
+	}
+
+}

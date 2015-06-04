@@ -13,6 +13,9 @@ public class MTestMain {
 	public static int TOTAL_INTERVAL = 1;
 	public static int TIME_PER_INTERVAL = 1*60*1000;
 	public static MTenant TENANT[];
+	//MVirtualTenant
+	public static int TOTAL_THREAD = 100;
+	public static int TENANT_PER_THREAD = 30;
 	
 	public static int[] START = {1, 1501, 2401};
 	public static double[] PERCENT = {0.5, 0.3, 0.2};
@@ -39,8 +42,8 @@ public class MTestMain {
 					index++;
 				}
 			}
-			for(; index < TOTAL_TENANT; index++){
-				TENANT[index] = new MTenant(index);
+			for(int j = 0; index < TOTAL_TENANT; index++, j++){
+				TENANT[index] = new MTenant(START[2]+j);
 				TENANT[index].init();
 			}
 			BufferedWriter out = new BufferedWriter(new FileWriter("MTest.txt", true));

@@ -9,10 +9,10 @@ import client.HTenantClient;
 
 public class MTenant extends Thread {
 	private int id;
-	private final double writePercent = 0.2;
-	private int queryThisInterval = 0;
-	private int readThisInterval = 0;
-	private int writeThisInterval = 0;
+	protected final double writePercent = 0.2;
+	protected int queryThisInterval = 0;
+	protected int readThisInterval = 0;
+	protected int writeThisInterval = 0;
 	public synchronized int queryNumber(int n){
 		if(n < 0){
 			queryThisInterval = 0;
@@ -38,6 +38,7 @@ public class MTenant extends Thread {
 		return writeThisInterval;
 	}
 	
+	public MTenant(){}
 	public MTenant(int id){
 		this.id = id;
 	}
@@ -76,7 +77,31 @@ public class MTenant extends Thread {
 		} catch (HException | HSQLTimeOutException e) {
 			e.printStackTrace();
 		}
-		
+	}
+	
+	/**
+	 * used by MVirtualTenant
+	 * @return
+	 * @throws HException
+	 * @throws HSQLTimeOutException
+	 */
+	public boolean doSelect() throws HException, HSQLTimeOutException{
+		HQueryResult result = htc.sqlRandomSelect();
+		if(result != null && result.isSuccess())
+			return true;
+		return false;
+	}
+	/**
+	 * used by MVirtualTenant
+	 * @return
+	 * @throws HException
+	 * @throws HSQLTimeOutException
+	 */
+	public boolean doUpdate() throws HException, HSQLTimeOutException{
+		HQueryResult result = htc.sqlRandomUpdate();
+		if(result != null && result.isSuccess())
+			return true;
+		return false;
 	}
 
 }

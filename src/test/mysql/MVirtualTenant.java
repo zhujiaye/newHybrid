@@ -14,7 +14,16 @@ public class MVirtualTenant extends MTenant {
 		tenant = new MTenant[MTestMain.TENANT_PER_THREAD];
 		for(int i = 0; i < MTestMain.TENANT_PER_THREAD; i++){
 			tenant[i] = new MTenant(MTestMain.TENANT_PER_THREAD * this.id + i + 1);
-			tenant[i].init();
+		}
+	}
+	public void init() throws HException{
+		for(MTenant t : tenant){
+			t.init();
+		}
+	}
+	public void clean() throws HException{
+		for(MTenant t : tenant){
+			t.clean();
 		}
 	}
 	

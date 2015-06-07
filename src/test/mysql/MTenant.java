@@ -2,12 +2,21 @@ package test.mysql;
 
 import java.util.Random;
 
+import utillity.MysqlConnectionPool;
+import utillity.VoltdbConnectionPool;
 import newhybrid.HException;
 import newhybrid.HQueryResult;
 import newhybrid.HSQLTimeOutException;
 import client.HTenantClient;
 
 public class MTenant extends Thread {
+	public static MysqlConnectionPool mPool;
+	public static VoltdbConnectionPool vPool;
+	public static void resetPool() throws HException{
+		mPool = new MysqlConnectionPool();
+		vPool = new VoltdbConnectionPool();
+	}
+	
 	private int id;
 	protected final double writePercent = 0.2;
 	protected int queryThisInterval = 0;
@@ -45,6 +54,11 @@ public class MTenant extends Thread {
 	
 	public void init() throws HException{
 		htc = new HTenantClient(id);
+		htc.login();
+		htc.start();
+	}
+	public void init_pool() throws HException{
+		htc = new HTenantClient(id, mPool, vPool);
 		htc.login();
 		htc.start();
 	}

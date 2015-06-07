@@ -45,18 +45,21 @@ public class MTestMain {
 		try {
 			//initialize
 			TENANT = new MTenant[TOTAL_TENANT];
+			MTenant.resetPool();
 			int index = 0;
 			for(int i = 0; i < 2; i++){
 				int number = (int) (TOTAL_TENANT * PERCENT[i]);
 				for(int j = 0; j < number; j++){
 					TENANT[index] = new MTenant(START[i] + j);
-					TENANT[index].init();
+//					TENANT[index].init();
+					TENANT[index].init_pool();
 					index++;
 				}
 			}
 			for(int j = 0; index < TOTAL_TENANT; index++, j++){
 				TENANT[index] = new MTenant(START[2]+j);
-				TENANT[index].init();
+//				TENANT[index].init();
+				TENANT[index].init_pool();
 			}
 			BufferedWriter out = new BufferedWriter(new FileWriter("MTest.txt", true));
 			DecimalFormat df = new DecimalFormat(".0000");

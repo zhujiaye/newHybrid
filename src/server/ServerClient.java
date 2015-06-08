@@ -126,7 +126,7 @@ public class ServerClient {
 		while (!mIsShutdown) {
 			connect();
 			try {
-				return mClient.tenant_getDataSize(tenant_id);
+				return mClient.tenant_getDataSizeKind(tenant_id);
 			} catch (TException e) {
 				throw new HException(e.getMessage());
 			}

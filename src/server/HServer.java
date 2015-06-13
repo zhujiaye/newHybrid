@@ -1,8 +1,10 @@
 package server;
 
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +37,8 @@ public class HServer {
 	final private int mVoltdbSpaceTotal;
 
 	private boolean isStarted;
-	private int mVoltdbSpaceAvailable;
 	private Map<Integer, HTenant> mTenants;
-	private Map<Integer, Integer> mTenantsVoltdbID;
+	// private Map<Integer, Integer> mTenantsVoltdbID;
 	private Map<Integer, List<Integer>> mVoltdbIDList;
 
 	private ServerServiceHandler mServerServiceHandler;
@@ -45,13 +46,16 @@ public class HServer {
 	private TServer mServerServiceServer;
 	private HeartbeatThread mHeartbeatThread = null;
 
+	private Mover mMover;
+
 	public HServer() throws HException {
 		mConf = HConfig.getConf();
 		mAddress = mConf.getServerAddress();
 		mPort = mConf.getServerPort();
 		mVoltdbSpaceTotal = mConf.getVoltdbCapacity();
 		mTenants = new HashMap<>();
-		mTenantsVoltdbID = new HashMap<>();
+		mMover = new Mover(this);
+		// mTenantsVoltdbID = new HashMap<>();
 		mVoltdbIDList = new HashMap<>();
 		isStarted = false;
 	}
@@ -64,16 +68,12 @@ public class HServer {
 			clearVoltdb();
 			System.out.println("voltdb contents cleared......20%%");
 		}
-		mVoltdbSpaceAvailable = mVoltdbSpaceTotal;
 		System.out.println("clearing tenants information.......");
 		mTenants.clear();
-		mTenantsVoltdbID.clear();
+		// mTenantsVoltdbID.clear();
 		mVoltdbIDList.clear();
 		System.out.println("tenants information cleared......40%%");
 		System.out.println("getting all registered tenants....");
-		/*
-		 * TODO Initialize all the tenants registered
-		 */
 		for (int i = 1; i <= Constants.NUMBER_OF_TENANTS; i++) {
 			HTenant tenant = new HTenant(this, i);
 			mTenants.put(i, tenant);
@@ -100,7 +100,7 @@ public class HServer {
 				.format("Server@%s:%d started!......%%100%n", mAddress, mPort);
 		mHeartbeatThread = new HeartbeatThread("Server_Monitor",
 				new ServerOffloaderHeartbeatExecutor(this),
-				Constants.MONITOR_FIXED_INTERVAL_TIME);
+				Constants.OFFLOADER_FIXED_INTERVAL_TIME);
 		mHeartbeatThread.start();
 		mServerServiceServer.serve();
 	}
@@ -197,11 +197,19 @@ public class HServer {
 	}
 
 	public int tenantGetIDInVoltdb(int id) {
-		synchronized (mTenantsVoltdbID) {
-			Integer result = mTenantsVoltdbID.get(id);
-			if (result == null)
-				return -1;
-			return result;
+		// synchronized (mTenantsVoltdbID) {
+		// Integer result = mTenantsVoltdbID.get(id);
+		// if (result == null)
+		// return -1;
+		// return result;
+		// }
+		HTenant tenant;
+		synchronized (mTenants) {
+			tenant = mTenants.get(id);
+			if (tenant != null) {
+				return tenant.getIDInVoltdb();
+			}
+			return -1;
 		}
 	}
 
@@ -244,24 +252,55 @@ public class HServer {
 		}
 		HTenant[] tenantsInMysqlAhead;
 		HTenant[] tenantsInMysqlNow;
+		HTenant[] tenantsInVoltdbAhead;
+		HTenant[] tenantsInVoltdbNow;
 		int workloadLimitInMysql;
 		int workloadInMysqlAhead, freeWorkloadInMysqlAhead;
 		int workloadInMysqlNow, freeWorkloadInMysqlNow;
+		int availableSpaceInVoltdbNow, availableSpaceInVoltdbAhead;
 		workloadLimitInMysql = getWorkloadLimitInMysql();
 		synchronized (mTenants) {
 			tenantsInMysqlAhead = findTenantsInMysqlAhead();
 			tenantsInMysqlNow = findTenantsInMysqlNow();
+			tenantsInVoltdbAhead = findTenantsInVoltdbAhead();
+			tenantsInVoltdbNow = findTenantsInVoltdbNow();
 			workloadInMysqlAhead = getWorkloadAhead(tenantsInMysqlAhead);
 			workloadInMysqlNow = getWorkloadNow(tenantsInMysqlNow);
+			availableSpaceInVoltdbNow = mVoltdbSpaceTotal
+					- getSpace(tenantsInVoltdbNow);
+			availableSpaceInVoltdbAhead = mVoltdbSpaceTotal
+					- getSpace(tenantsInVoltdbAhead);
 			freeWorkloadInMysqlAhead = workloadLimitInMysql
 					- workloadInMysqlAhead;
 			freeWorkloadInMysqlNow = workloadLimitInMysql - workloadInMysqlNow;
-			if (freeWorkloadInMysqlAhead<0){
-				int workloadNeedToOffload=-freeWorkloadInMysqlAhead;
-				while (workloadNeedToOffload>0){
-					
+			if (freeWorkloadInMysqlAhead < 0) {
+				Arrays.sort(tenantsInMysqlAhead);
+				Arrays.sort(tenantsInVoltdbAhead);
+				int workloadNeedToOffload = -freeWorkloadInMysqlAhead;
+				int j = tenantsInVoltdbAhead.length - 1;
+				for (int i = 0; i < tenantsInMysqlAhead.length
+						&& workloadNeedToOffload > 0; i++) {
+					HTenant tenant = tenantsInMysqlAhead[i];
+					while (availableSpaceInVoltdbAhead < tenant.getDataSize()
+							&& j >= 0) {
+						mMover.addThread(new VoltdbToMysqlMoverThread(
+								tenantsInMysqlAhead[j]));
+						availableSpaceInVoltdbAhead += tenantsInVoltdbAhead[j]
+								.getDataSize();
+						j--;
+					}
+					if (availableSpaceInVoltdbAhead >= tenant.getDataSize()) {
+						int voltdbID = getNewVoltdbIDForTenant(tenant);
+						mMover.addThread(new MysqlToVoltdbMoverThread(tenant,
+								voltdbID));
+						workloadNeedToOffload -= tenant.getWorkloadAhead();
+						availableSpaceInVoltdbAhead -= tenant.getDataSize();
+					} else
+						break;
 				}
 			}
+			mMover.updateConcurrencyLimit(getConcurrencyLimit(freeWorkloadInMysqlNow));
+			mMover.trigger();
 		}
 	}
 
@@ -269,6 +308,52 @@ public class HServer {
 			TTransportException {
 		HServer server = new HServer();
 		server.start();
+	}
+
+	private int getNewVoltdbIDForTenant(HTenant tenant) {
+		int voltdbID = -1;
+		int min = -1;
+		synchronized (mVoltdbIDList) {
+			for (int i = 1; i <= Constants.NUMBER_OF_VOLTDBID; i++) {
+				int tmp = mVoltdbIDList.get(i).size();
+				if (min == -1 || min > tmp) {
+					min = tmp;
+					voltdbID = i;
+				}
+			}
+			return voltdbID;
+		}
+	}
+
+	private boolean addVoltdbIDForTenant(HTenant tenant, int voltdbID) {
+		int id = tenant.getID();
+		synchronized (mVoltdbIDList) {
+			if (!mVoltdbIDList.get(voltdbID).contains(id)) {
+				mVoltdbIDList.get(voltdbID).add(id);
+				tenant.setIDInVoltdb(voltdbID);
+				return true;
+			}
+			return false;
+		}
+	}
+
+	private boolean removeVoltdbIDForTenant(HTenant tenant) {
+		int id = tenant.getID();
+		synchronized (mVoltdbIDList) {
+			for (int i = 1; i <= Constants.NUMBER_OF_VOLTDBID; i++) {
+				if (mVoltdbIDList.get(i).contains(id)) {
+					mVoltdbIDList.get(i).remove(id);
+					tenant.setIDInVoltdb(-1);
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
+	private int getConcurrencyLimit(int freeWorkloadInMysqlNow) {
+		// TODO complete this method
+		return 9;
 	}
 
 	private int getWorkloadLimitInMysql() {
@@ -287,6 +372,13 @@ public class HServer {
 		int res = 0;
 		for (int i = 0; i < tenants.length; i++)
 			res += tenants[i].getWorkloadAhead();
+		return res;
+	}
+
+	private int getSpace(HTenant[] tenants) {
+		int res = 0;
+		for (int i = 0; i < tenants.length; i++)
+			res += tenants[i].getDataSize();
 		return res;
 	}
 

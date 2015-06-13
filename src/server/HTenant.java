@@ -1,11 +1,9 @@
 package server;
 
-import com.sun.org.apache.xalan.internal.xsltc.compiler.sym;
-
 import newhybrid.HException;
 import config.HConfig;
 
-public class HTenant{
+public class HTenant implements Comparable<HTenant> {
 	final private HConfig mConf;
 	final private int mID;
 	final private int mDataSize;
@@ -20,6 +18,7 @@ public class HTenant{
 	private long mStartTime;
 
 	private boolean mIsInMysql;
+	private int mIDInVoltdb = -1;
 
 	public HTenant(HServer server, int tenant_id) throws HException {
 		mConf = HConfig.getConf();
@@ -59,6 +58,14 @@ public class HTenant{
 		} else {
 			return -1;
 		}
+	}
+
+	public synchronized int getIDInVoltdb() {
+		return mIDInVoltdb;
+	}
+
+	public synchronized void setIDInVoltdb(int IDInVoltdb) {
+		mIDInVoltdb = IDInVoltdb;
 	}
 
 	public synchronized void login() {
@@ -155,5 +162,15 @@ public class HTenant{
 	public int getWorkloadNow() {
 		// TODO complete this method
 		return 0;
+	}
+
+	@Override
+	public int compareTo(HTenant o) {
+		int x1 = this.getWorkloadAhead();
+		int y1 = this.getDataSize();
+		int x2 = o.getWorkloadAhead();
+		int y2 = o.getDataSize();
+
+		return x2 * y1 - x1 * y2;
 	}
 }

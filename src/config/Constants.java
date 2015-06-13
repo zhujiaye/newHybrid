@@ -44,7 +44,11 @@ public class Constants {
 	final public static int SERVER_THREADS = 128;
 
 	/*
-	 * For ServerMonitor
+	 * For ServerOffloader
 	 */
-	final public static long MONITOR_FIXED_INTERVAL_TIME = 5 * S;
+	final public static long OFFLOADER_FIXED_INTERVAL_TIME = 5 * S;
+	/*
+	 * Number of Voltdb ID, just for test
+	 */
+	final public static int NUMBER_OF_VOLTDBID = 50;
 }

@@ -42,4 +42,9 @@ public class Constants {
 	final public static int SELECTOR_THREADS = 3;
 	final public static int QUEUE_SIZE_PER_SELECTOR = 3000;
 	final public static int SERVER_THREADS = 128;
+
+	/*
+	 * For ServerMonitor
+	 */
+	final public static long MONITOR_FIXED_INTERVAL_TIME = 5 * S;
 }

@@ -1,9 +1,11 @@
 package server;
 
+import com.sun.org.apache.xalan.internal.xsltc.compiler.sym;
+
 import newhybrid.HException;
 import config.HConfig;
 
-public class HTenant {
+public class HTenant{
 	final private HConfig mConf;
 	final private int mID;
 	final private int mDataSize;
@@ -11,6 +13,8 @@ public class HTenant {
 
 	private boolean mLoggedIn;
 	private boolean mStarted;
+	private boolean mBeingMovingToVoltdb;
+	private boolean mBeingMovingToMysql;
 
 	private long mLogInTime;
 	private long mStartTime;
@@ -33,6 +37,8 @@ public class HTenant {
 		}
 		mLoggedIn = false;
 		mStarted = false;
+		mBeingMovingToMysql = false;
+		mBeingMovingToVoltdb = false;
 	}
 
 	public int getID() {
@@ -111,5 +117,43 @@ public class HTenant {
 
 	public synchronized boolean isUseMysql() {
 		return mIsInMysql;
+	}
+
+	public synchronized boolean isBeingMovingToVoltdb() {
+		return mBeingMovingToVoltdb;
+	}
+
+	public synchronized boolean isBeingMovingToMysql() {
+		return mBeingMovingToMysql;
+	}
+
+	public synchronized void finishMoving() {
+		if (mBeingMovingToMysql)
+			mIsInMysql = true;
+		mBeingMovingToMysql = false;
+		mBeingMovingToVoltdb = false;
+	}
+
+	public synchronized void cancelMoving() {
+		mBeingMovingToMysql = false;
+		mBeingMovingToVoltdb = false;
+	}
+
+	public synchronized void startMovingToVoltdb() {
+		mBeingMovingToVoltdb = true;
+	}
+
+	public synchronized void startMovingToMysql() {
+		mBeingMovingToMysql = true;
+	}
+
+	public int getWorkloadAhead() {
+		// TODO complete this method
+		return 0;
+	}
+
+	public int getWorkloadNow() {
+		// TODO complete this method
+		return 0;
 	}
 }

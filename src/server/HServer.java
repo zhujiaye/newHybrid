@@ -2,9 +2,11 @@ package server;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadedSelectorServer;
@@ -18,6 +20,8 @@ import org.voltdb.client.ProcCallException;
 import thrift.ServerService;
 import utillity.VoltdbConnectionPool;
 import newhybrid.HException;
+import newhybrid.HeartbeatExecutor;
+import newhybrid.HeartbeatThread;
 import config.Constants;
 import config.HConfig;
 
@@ -39,6 +43,7 @@ public class HServer {
 	private ServerServiceHandler mServerServiceHandler;
 	private TNonblockingServerSocket mServerTNonblockingServerSocket;
 	private TServer mServerServiceServer;
+	private HeartbeatThread mHeartbeatThread = null;
 
 	public HServer() throws HException {
 		mConf = HConfig.getConf();
@@ -93,6 +98,10 @@ public class HServer {
 		System.out.println("server service start to work......80%");
 		System.out
 				.format("Server@%s:%d started!......%%100%n", mAddress, mPort);
+		mHeartbeatThread = new HeartbeatThread("Server_Monitor",
+				new ServerOffloaderHeartbeatExecutor(this),
+				Constants.MONITOR_FIXED_INTERVAL_TIME);
+		mHeartbeatThread.start();
 		mServerServiceServer.serve();
 	}
 
@@ -207,7 +216,7 @@ public class HServer {
 		}
 	}
 
-	public int tenantGetDataSizeKind(int id){
+	public int tenantGetDataSizeKind(int id) {
 		HTenant tenant;
 		synchronized (mTenants) {
 			tenant = mTenants.get(id);
@@ -217,6 +226,7 @@ public class HServer {
 			return -1;
 		}
 	}
+
 	public boolean tenantIsUseMysql(int id) {
 		HTenant tenant;
 		synchronized (mTenants) {
@@ -228,10 +238,118 @@ public class HServer {
 		}
 	}
 
+	public void offloadWorkloads() {
+		if (!mConf.isUseMysql() || !mConf.isUseVoltdb()) {
+			return;
+		}
+		HTenant[] tenantsInMysqlAhead;
+		HTenant[] tenantsInMysqlNow;
+		int workloadLimitInMysql;
+		int workloadInMysqlAhead, freeWorkloadInMysqlAhead;
+		int workloadInMysqlNow, freeWorkloadInMysqlNow;
+		workloadLimitInMysql = getWorkloadLimitInMysql();
+		synchronized (mTenants) {
+			tenantsInMysqlAhead = findTenantsInMysqlAhead();
+			tenantsInMysqlNow = findTenantsInMysqlNow();
+			workloadInMysqlAhead = getWorkloadAhead(tenantsInMysqlAhead);
+			workloadInMysqlNow = getWorkloadNow(tenantsInMysqlNow);
+			freeWorkloadInMysqlAhead = workloadLimitInMysql
+					- workloadInMysqlAhead;
+			freeWorkloadInMysqlNow = workloadLimitInMysql - workloadInMysqlNow;
+			if (freeWorkloadInMysqlAhead<0){
+				int workloadNeedToOffload=-freeWorkloadInMysqlAhead;
+				while (workloadNeedToOffload>0){
+					
+				}
+			}
+		}
+	}
+
 	public static void main(String[] args) throws HException,
 			TTransportException {
 		HServer server = new HServer();
 		server.start();
+	}
+
+	private int getWorkloadLimitInMysql() {
+		// TODO complete this method
+		return 100000;
+	}
+
+	private int getWorkloadNow(HTenant[] tenants) {
+		int res = 0;
+		for (int i = 0; i < tenants.length; i++)
+			res += tenants[i].getWorkloadNow();
+		return res;
+	}
+
+	private int getWorkloadAhead(HTenant[] tenants) {
+		int res = 0;
+		for (int i = 0; i < tenants.length; i++)
+			res += tenants[i].getWorkloadAhead();
+		return res;
+	}
+
+	private HTenant[] findTenantsInMysqlNow() {
+		ArrayList<HTenant> list = new ArrayList<>();
+		synchronized (mTenants) {
+			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+				HTenant tenant = tenantEntry.getValue();
+				if (!tenant.isLoggedIn() || !tenant.isStarted())
+					continue;
+				if (!tenant.isUseMysql())
+					continue;
+				list.add(tenant);
+			}
+			return (HTenant[]) list.toArray();
+		}
+	}
+
+	private HTenant[] findTenantsInMysqlAhead() {
+		ArrayList<HTenant> list = new ArrayList<>();
+		synchronized (mTenants) {
+			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+				HTenant tenant = tenantEntry.getValue();
+				if (!tenant.isLoggedIn() || !tenant.isStarted())
+					continue;
+				if (tenant.isBeingMovingToMysql()
+						|| (tenant.isUseMysql() && !tenant
+								.isBeingMovingToVoltdb()))
+					list.add(tenant);
+			}
+			return (HTenant[]) list.toArray();
+		}
+	}
+
+	private HTenant[] findTenantsInVoltdbNow() {
+		ArrayList<HTenant> list = new ArrayList<>();
+		synchronized (mTenants) {
+			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+				HTenant tenant = tenantEntry.getValue();
+				if (!tenant.isLoggedIn() || !tenant.isStarted())
+					continue;
+				if (tenant.isUseMysql())
+					continue;
+				list.add(tenant);
+			}
+			return (HTenant[]) list.toArray();
+		}
+	}
+
+	private HTenant[] findTenantsInVoltdbAhead() {
+		ArrayList<HTenant> list = new ArrayList<>();
+		synchronized (mTenants) {
+			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+				HTenant tenant = tenantEntry.getValue();
+				if (!tenant.isLoggedIn() || !tenant.isStarted())
+					continue;
+				if (tenant.isBeingMovingToVoltdb()
+						|| (!tenant.isUseMysql() && !tenant
+								.isBeingMovingToMysql()))
+					list.add(tenant);
+			}
+			return (HTenant[]) list.toArray();
+		}
 	}
 
 	private void clearVoltdb() throws HException {

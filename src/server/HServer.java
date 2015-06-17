@@ -1,7 +1,6 @@
 package server;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,7 +21,6 @@ import org.voltdb.client.ProcCallException;
 import thrift.ServerService;
 import utillity.VoltdbConnectionPool;
 import newhybrid.HException;
-import newhybrid.HeartbeatExecutor;
 import newhybrid.HeartbeatThread;
 import config.Constants;
 import config.HConfig;
@@ -44,7 +42,7 @@ public class HServer {
 	private ServerServiceHandler mServerServiceHandler;
 	private TNonblockingServerSocket mServerTNonblockingServerSocket;
 	private TServer mServerServiceServer;
-	private HeartbeatThread mHeartbeatThread = null;
+	private HeartbeatThread mServerOffloaderThread = null;
 
 	private Mover mMover;
 
@@ -70,8 +68,10 @@ public class HServer {
 		}
 		System.out.println("clearing tenants information.......");
 		mTenants.clear();
-		// mTenantsVoltdbID.clear();
 		mVoltdbIDList.clear();
+		for (int i = 1; i <= Constants.NUMBER_OF_VOLTDBID; i++) {
+			mVoltdbIDList.put(i, new ArrayList<Integer>());
+		}
 		System.out.println("tenants information cleared......40%%");
 		System.out.println("getting all registered tenants....");
 		for (int i = 1; i <= Constants.NUMBER_OF_TENANTS; i++) {
@@ -98,22 +98,23 @@ public class HServer {
 		System.out.println("server service start to work......80%");
 		System.out
 				.format("Server@%s:%d started!......%%100%n", mAddress, mPort);
-		mHeartbeatThread = new HeartbeatThread("Server_Monitor",
-				new ServerOffloaderHeartbeatExecutor(this),
-				Constants.OFFLOADER_FIXED_INTERVAL_TIME);
-		mHeartbeatThread.start();
+		// mServerOffloaderThread = new HeartbeatThread("Server_Offloader",
+		// new ServerOffloaderHeartbeatExecutor(this),
+		// Constants.OFFLOADER_FIXED_INTERVAL_TIME);
+		// mServerOffloaderThread.start();
 		mServerServiceServer.serve();
 	}
 
-	public void stop() {
+	public void stop() throws HException {
 		if (!isStarted)
 			return;
-		/*
-		 * TODO move voltdb contents back to mysql and save all information
-		 * needed
-		 */
-		mServerServiceServer.stop();
-		mServerTNonblockingServerSocket.close();
+		// TODO logout every tenant who's logged in first
+		if (mServerServiceServer != null)
+			mServerServiceServer.stop();
+		if (mServerTNonblockingServerSocket != null)
+			mServerTNonblockingServerSocket.close();
+		if (mServerOffloaderThread != null)
+			mServerOffloaderThread.shutdown();
 		isStarted = false;
 		System.out.format("Server@%s:%d stopped!%n", mAddress, mPort);
 	}
@@ -126,28 +127,66 @@ public class HServer {
 		return mPort;
 	}
 
-	public boolean tenantLogin(int id) {
+	public boolean tenantLogin(int id) throws HException {
 		HTenant tenant;
-		synchronized (mTenants) {
-			tenant = mTenants.get(id);
-			if (tenant != null) {
-				tenant.login();
+		tenant = mTenants.get(id);
+		if (tenant != null) {
+			if (tenant.isLoggedIn())
 				return true;
+			if (mConf.getInitdb().equals(Constants.INITDB_VOLTDB)
+					&& mConf.isUseVoltdb()) {
+				int tenant_id = tenant.getID();
+				int voltdbID = getNewVoltdbIDForTenant(tenant_id);
+				addVoltdbIDForTenant(tenant_id, voltdbID);
+				MysqlToVoltdbMoverThread thread = new MysqlToVoltdbMoverThread(
+						tenant, voltdbID, false);
+				tenant.startMovingToVoltdb(thread);
+				thread.start();
+				System.out.println("Moving tenant " + tenant.getID()
+						+ " 's data to voltdb(" + voltdbID + ").....");
+				try {
+					thread.join();
+				} catch (InterruptedException e) {
+					throw new HException(
+							"ERROR when moving data to voltdb: interrupted!");
+				}
 			}
-			return false;
+			tenant.login();
+			return true;
 		}
+		return false;
 	}
 
-	public boolean tenantLogout(int id) {
+	public boolean tenantLogout(int id) throws HException {
 		HTenant tenant;
-		synchronized (mTenants) {
-			tenant = mTenants.get(id);
-			if (tenant != null) {
-				tenant.logout();
+		tenant = mTenants.get(id);
+		if (tenant != null) {
+			if (!tenant.isLoggedIn())
 				return true;
+			tenant.logout();
+			if (tenant.isBeingMovingToMysql()) {
+				tenant.getMovingToMysqlThread().shutdown();
 			}
-			return false;
+			if (tenant.isBeingMovingToVoltdb()) {
+				tenant.getMovingToVoltdbThread().shutdown();
+			}
+			if (!tenant.isInMysql() && mConf.isUseMysql()) {
+				VoltdbToMysqlMoverThread thread = new VoltdbToMysqlMoverThread(
+						tenant, false);
+				tenant.startMovingToMysql(thread);
+				thread.start();
+				System.out.println("Writing tenant " + tenant.getID()
+						+ " 's data back to mysql.....");
+				try {
+					thread.join();
+				} catch (InterruptedException e) {
+					throw new HException(
+							"ERROR when moving data back to mysql: interrupted!");
+				}
+			}
+			return true;
 		}
+		return false;
 	}
 
 	public boolean tenantStart(int id) {
@@ -240,13 +279,13 @@ public class HServer {
 		synchronized (mTenants) {
 			tenant = mTenants.get(id);
 			if (tenant != null) {
-				return tenant.isUseMysql();
+				return tenant.isInMysql();
 			}
 			return false;
 		}
 	}
 
-	public void offloadWorkloads() {
+	public void offloadWorkloads() throws HException {
 		if (!mConf.isUseMysql() || !mConf.isUseVoltdb()) {
 			return;
 		}
@@ -280,21 +319,39 @@ public class HServer {
 				int j = tenantsInVoltdbAhead.length - 1;
 				for (int i = 0; i < tenantsInMysqlAhead.length
 						&& workloadNeedToOffload > 0; i++) {
-					HTenant tenant = tenantsInMysqlAhead[i];
-					while (availableSpaceInVoltdbAhead < tenant.getDataSize()
-							&& j >= 0) {
-						mMover.addThread(new VoltdbToMysqlMoverThread(
-								tenantsInMysqlAhead[j]));
-						availableSpaceInVoltdbAhead += tenantsInVoltdbAhead[j]
+					HTenant tenantToOffload = tenantsInMysqlAhead[i];
+					while (availableSpaceInVoltdbAhead < tenantToOffload
+							.getDataSize() && j >= 0) {
+						HTenant tenantToWriteBack = tenantsInVoltdbAhead[j];
+						if (tenantToWriteBack.isBeingMovingToVoltdb()) {
+							tenantToWriteBack.getMovingToVoltdbThread()
+									.shutdown();
+						} else {
+							VoltdbToMysqlMoverThread thread = new VoltdbToMysqlMoverThread(
+									tenantToWriteBack, true);
+							tenantToWriteBack.startMovingToMysql(thread);
+							mMover.addThread(thread);
+						}
+						availableSpaceInVoltdbAhead += tenantToWriteBack
 								.getDataSize();
 						j--;
 					}
-					if (availableSpaceInVoltdbAhead >= tenant.getDataSize()) {
-						int voltdbID = getNewVoltdbIDForTenant(tenant);
-						mMover.addThread(new MysqlToVoltdbMoverThread(tenant,
-								voltdbID));
-						workloadNeedToOffload -= tenant.getWorkloadAhead();
-						availableSpaceInVoltdbAhead -= tenant.getDataSize();
+					if (availableSpaceInVoltdbAhead >= tenantToOffload
+							.getDataSize()) {
+						if (tenantToOffload.isBeingMovingToMysql()) {
+							tenantToOffload.getMovingToMysqlThread().shutdown();
+						} else {
+							int tenantToOffload_id = tenantToOffload.getID();
+							int voltdbID = getNewVoltdbIDForTenant(tenantToOffload_id);
+							MysqlToVoltdbMoverThread thread = new MysqlToVoltdbMoverThread(
+									tenantToOffload, voltdbID, true);
+							tenantToOffload.startMovingToVoltdb(thread);
+							mMover.addThread(thread);
+						}
+						workloadNeedToOffload -= tenantToOffload
+								.getWorkloadAhead();
+						availableSpaceInVoltdbAhead -= tenantToOffload
+								.getDataSize();
 					} else
 						break;
 				}
@@ -310,7 +367,15 @@ public class HServer {
 		server.start();
 	}
 
-	private int getNewVoltdbIDForTenant(HTenant tenant) {
+	public void completeOneMoverThread() {
+		mMover.completeOne();
+	}
+
+	public void trigger() {
+		mMover.trigger();
+	}
+
+	private int getNewVoltdbIDForTenant(int tenant_id) {
 		int voltdbID = -1;
 		int min = -1;
 		synchronized (mVoltdbIDList) {
@@ -325,25 +390,21 @@ public class HServer {
 		}
 	}
 
-	private boolean addVoltdbIDForTenant(HTenant tenant, int voltdbID) {
-		int id = tenant.getID();
+	public boolean addVoltdbIDForTenant(int tenant_id, int voltdbID) {
 		synchronized (mVoltdbIDList) {
-			if (!mVoltdbIDList.get(voltdbID).contains(id)) {
-				mVoltdbIDList.get(voltdbID).add(id);
-				tenant.setIDInVoltdb(voltdbID);
+			if (!mVoltdbIDList.get(voltdbID).contains(tenant_id)) {
+				mVoltdbIDList.get(voltdbID).add(tenant_id);
 				return true;
 			}
 			return false;
 		}
 	}
 
-	private boolean removeVoltdbIDForTenant(HTenant tenant) {
-		int id = tenant.getID();
+	public boolean removeVoltdbIDForTenant(int tenant_id) {
 		synchronized (mVoltdbIDList) {
 			for (int i = 1; i <= Constants.NUMBER_OF_VOLTDBID; i++) {
-				if (mVoltdbIDList.get(i).contains(id)) {
-					mVoltdbIDList.get(i).remove(id);
-					tenant.setIDInVoltdb(-1);
+				if (mVoltdbIDList.get(i).contains(tenant_id)) {
+					mVoltdbIDList.get(i).remove(tenant_id);
 					return true;
 				}
 			}
@@ -384,63 +445,75 @@ public class HServer {
 
 	private HTenant[] findTenantsInMysqlNow() {
 		ArrayList<HTenant> list = new ArrayList<>();
+		HTenant[] res = null;
 		synchronized (mTenants) {
 			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
 				HTenant tenant = tenantEntry.getValue();
 				if (!tenant.isLoggedIn() || !tenant.isStarted())
 					continue;
-				if (!tenant.isUseMysql())
+				if (!tenant.isInMysql())
 					continue;
 				list.add(tenant);
 			}
-			return (HTenant[]) list.toArray();
+			res = new HTenant[list.size()];
+			list.toArray(res);
+			return res;
 		}
 	}
 
 	private HTenant[] findTenantsInMysqlAhead() {
 		ArrayList<HTenant> list = new ArrayList<>();
+		HTenant[] res = null;
 		synchronized (mTenants) {
 			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
 				HTenant tenant = tenantEntry.getValue();
 				if (!tenant.isLoggedIn() || !tenant.isStarted())
 					continue;
 				if (tenant.isBeingMovingToMysql()
-						|| (tenant.isUseMysql() && !tenant
+						|| (tenant.isInMysql() && !tenant
 								.isBeingMovingToVoltdb()))
 					list.add(tenant);
 			}
-			return (HTenant[]) list.toArray();
+			res = new HTenant[list.size()];
+			list.toArray(res);
+			return res;
 		}
 	}
 
 	private HTenant[] findTenantsInVoltdbNow() {
 		ArrayList<HTenant> list = new ArrayList<>();
+		HTenant[] res = null;
 		synchronized (mTenants) {
 			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
 				HTenant tenant = tenantEntry.getValue();
 				if (!tenant.isLoggedIn() || !tenant.isStarted())
 					continue;
-				if (tenant.isUseMysql())
+				if (tenant.isInMysql())
 					continue;
 				list.add(tenant);
 			}
-			return (HTenant[]) list.toArray();
+			res = new HTenant[list.size()];
+			list.toArray(res);
+			return res;
 		}
 	}
 
 	private HTenant[] findTenantsInVoltdbAhead() {
 		ArrayList<HTenant> list = new ArrayList<>();
+		HTenant[] res = null;
 		synchronized (mTenants) {
 			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
 				HTenant tenant = tenantEntry.getValue();
 				if (!tenant.isLoggedIn() || !tenant.isStarted())
 					continue;
 				if (tenant.isBeingMovingToVoltdb()
-						|| (!tenant.isUseMysql() && !tenant
+						|| (!tenant.isInMysql() && !tenant
 								.isBeingMovingToMysql()))
 					list.add(tenant);
 			}
-			return (HTenant[]) list.toArray();
+			res = new HTenant[list.size()];
+			list.toArray(res);
+			return res;
 		}
 	}
 

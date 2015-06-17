@@ -1,5 +1,5 @@
 package newhybrid;
 
 public interface HeartbeatExecutor {
-	public void heartbeat();
+	public void heartbeat() throws HException;
 }

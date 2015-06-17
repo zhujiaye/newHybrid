@@ -46,6 +46,7 @@ public class HeartbeatThread extends Thread {
 		} catch (Exception e) {
 			System.out
 					.println("Uncaught exception in heartbeat executor, Heartbeat Thread shutting down");
+			e.printStackTrace();
 		}
 	}
 

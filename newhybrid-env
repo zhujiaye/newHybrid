@@ -2,8 +2,7 @@
 [NewHybrid]
 	#newhybrid.usemysql true
 	#newhybrid.usevoltdb true
-	newhybrid.usevoltdb false
-	#newhybrid.initdb mysql
+	newhybrid.initdb voltdb
 [Server]
 	//server address must be defined
 	newhybrid.server.address 127.0.0.1

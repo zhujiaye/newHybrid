@@ -1,5 +1,7 @@
 package server;
 
+import newhybrid.HException;
+
 import org.apache.thrift.TException;
 
 import thrift.ServerService;
@@ -24,12 +26,22 @@ public class ServerServiceHandler implements ServerService.Iface {
 
 	@Override
 	public boolean tenant_login(int id) throws TException {
-		return mServer.tenantLogin(id);
+		try {
+			return mServer.tenantLogin(id);
+		} catch (HException e) {
+			System.out.println(e.getMessage());
+			return false;
+		}
 	}
 
 	@Override
 	public boolean tenant_logout(int id) throws TException {
-		return mServer.tenantLogout(id);
+		try {
+			return mServer.tenantLogout(id);
+		} catch (HException e) {
+			System.out.println(e.getMessage());
+			return false;
+		}
 	}
 
 	@Override

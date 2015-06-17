@@ -1,6 +1,7 @@
 package server;
 
 import newhybrid.HException;
+import config.Constants;
 import config.HConfig;
 
 public class HTenant implements Comparable<HTenant> {
@@ -13,7 +14,8 @@ public class HTenant implements Comparable<HTenant> {
 	private boolean mStarted;
 	private boolean mBeingMovingToVoltdb;
 	private boolean mBeingMovingToMysql;
-
+	private MysqlToVoltdbMoverThread mMovingToVoltdbThread = null;
+	private VoltdbToMysqlMoverThread mMovingToMysqlThread = null;
 	private long mLogInTime;
 	private long mStartTime;
 
@@ -38,6 +40,11 @@ public class HTenant implements Comparable<HTenant> {
 		mStarted = false;
 		mBeingMovingToMysql = false;
 		mBeingMovingToVoltdb = false;
+		mIsInMysql = true;
+	}
+
+	public HServer getServer() {
+		return mServer;
 	}
 
 	public int getID() {
@@ -60,36 +67,24 @@ public class HTenant implements Comparable<HTenant> {
 		}
 	}
 
-	public synchronized int getIDInVoltdb() {
+	public int getIDInVoltdb() {
 		return mIDInVoltdb;
-	}
-
-	public synchronized void setIDInVoltdb(int IDInVoltdb) {
-		mIDInVoltdb = IDInVoltdb;
 	}
 
 	public synchronized void login() {
 		if (mLoggedIn)
 			return;
-		if (mConf.getInitdb() == "voltdb") {
-			// TODO move contents from mysql to voltdb
-			mIsInMysql = false;
-		} else
-			mIsInMysql = true;
+		mIsInMysql = true;
 		mLoggedIn = true;
 		mLogInTime = System.nanoTime();
 		System.out.format("Tenant %d logged in server %s:%d%n", mID,
 				mServer.getAddress(), mServer.getPort());
 	}
 
-	public synchronized void logout() {
+	public synchronized void logout() throws HException {
 		if (!mLoggedIn)
 			return;
 		stop();
-		/*
-		 * TODO before logged out, all updated contents in voltdb must be
-		 * writtern to mysql
-		 */
 		mLoggedIn = false;
 		System.out.format("Tenant %d logged out server %s:%d%n", mID,
 				mServer.getAddress(), mServer.getPort());
@@ -112,33 +107,45 @@ public class HTenant implements Comparable<HTenant> {
 				mServer.getAddress(), mServer.getPort());
 	}
 
-	public synchronized boolean isLoggedIn() {
+	public boolean isLoggedIn() {
 		return mLoggedIn;
 	}
 
-	public synchronized boolean isStarted() {
+	public boolean isStarted() {
 		if (!mLoggedIn)
 			return false;
 		return mStarted;
 	}
 
-	public synchronized boolean isUseMysql() {
+	public boolean isInMysql() {
 		return mIsInMysql;
 	}
 
-	public synchronized boolean isBeingMovingToVoltdb() {
+	public synchronized boolean isInMysqlPure() {
+		return mIsInMysql && !mBeingMovingToMysql && !mBeingMovingToVoltdb;
+	}
+
+	public synchronized boolean isInVoltdbPure() {
+		return !mIsInMysql && !mBeingMovingToMysql && !mBeingMovingToVoltdb;
+	}
+
+	public boolean isBeingMovingToVoltdb() {
 		return mBeingMovingToVoltdb;
 	}
 
-	public synchronized boolean isBeingMovingToMysql() {
+	public boolean isBeingMovingToMysql() {
 		return mBeingMovingToMysql;
 	}
 
-	public synchronized void finishMoving() {
-		if (mBeingMovingToMysql)
-			mIsInMysql = true;
-		mBeingMovingToMysql = false;
-		mBeingMovingToVoltdb = false;
+	public synchronized void finishMovingToMysql() {
+		mIsInMysql = true;
+		mBeingMovingToMysql = mBeingMovingToVoltdb = false;
+	}
+
+	public synchronized void finishMovingToVoltdb(int voltdbID) {
+		mIDInVoltdb = voltdbID;
+		mIsInMysql = false;
+		mBeingMovingToMysql = mBeingMovingToVoltdb = false;
 	}
 
 	public synchronized void cancelMoving() {
@@ -146,12 +153,22 @@ public class HTenant implements Comparable<HTenant> {
 		mBeingMovingToVoltdb = false;
 	}
 
-	public synchronized void startMovingToVoltdb() {
+	public synchronized void startMovingToVoltdb(MysqlToVoltdbMoverThread thread) {
+		mMovingToVoltdbThread = thread;
 		mBeingMovingToVoltdb = true;
 	}
 
-	public synchronized void startMovingToMysql() {
+	public synchronized void startMovingToMysql(VoltdbToMysqlMoverThread thread) {
+		mMovingToMysqlThread = thread;
 		mBeingMovingToMysql = true;
+	}
+
+	public MysqlToVoltdbMoverThread getMovingToVoltdbThread() {
+		return mMovingToVoltdbThread;
+	}
+
+	public VoltdbToMysqlMoverThread getMovingToMysqlThread() {
+		return mMovingToMysqlThread;
 	}
 
 	public int getWorkloadAhead() {

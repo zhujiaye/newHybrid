@@ -37,7 +37,7 @@ public class Constants {
 	 * For thrift
 	 */
 	final public static int SERVER_PORT = 12345;
-	final public static long CONNECT_TIMEOUT = 5 * S;
+	final public static long CONNECT_TIMEOUT = 10 * S;
 	final public static int MAX_CONNECT_TRY = 5;
 	final public static int SELECTOR_THREADS = 3;
 	final public static int QUEUE_SIZE_PER_SELECTOR = 3000;
@@ -51,4 +51,9 @@ public class Constants {
 	 * Number of Voltdb ID, just for test
 	 */
 	final public static int NUMBER_OF_VOLTDBID = 50;
+	/*
+	 * Flags for initial database mysql or voltdb
+	 */
+	final public static String INITDB_MYSQL = "mysql";
+	final public static String INITDB_VOLTDB = "voltdb";
 }

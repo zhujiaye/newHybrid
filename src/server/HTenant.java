@@ -121,6 +121,14 @@ public class HTenant implements Comparable<HTenant> {
 		return mIsInMysql;
 	}
 
+	public synchronized boolean isInMysqlAhead() {
+		return (mIsInMysql && !mBeingMovingToVoltdb) || mBeingMovingToMysql;
+	}
+
+	public synchronized boolean isInVoltdbAhead() {
+		return (!mIsInMysql && !mBeingMovingToMysql) || mBeingMovingToVoltdb;
+	}
+
 	public synchronized boolean isInMysqlPure() {
 		return mIsInMysql && !mBeingMovingToMysql && !mBeingMovingToVoltdb;
 	}

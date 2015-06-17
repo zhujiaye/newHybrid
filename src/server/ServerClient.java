@@ -29,7 +29,7 @@ public class ServerClient {
 
 	public synchronized void cleanConnect() {
 		if (mIsConnected) {
-//			System.out.println("serverClient Disconnecting from server....");
+			System.out.println("serverClient Disconnecting from server....");
 			mIsConnected = false;
 		}
 		if (mProtocol != null) {

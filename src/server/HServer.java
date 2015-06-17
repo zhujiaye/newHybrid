@@ -191,98 +191,76 @@ public class HServer {
 
 	public boolean tenantStart(int id) {
 		HTenant tenant;
-		synchronized (mTenants) {
-			tenant = mTenants.get(id);
-			if (tenant != null) {
-				tenant.start();
-				return true;
-			}
-			return false;
+		tenant = mTenants.get(id);
+		if (tenant != null) {
+			tenant.start();
+			return true;
 		}
+		return false;
 	}
 
 	public boolean tenantStop(int id) {
 		HTenant tenant;
-		synchronized (mTenants) {
-			tenant = mTenants.get(id);
-			if (tenant != null) {
-				tenant.stop();
-				return true;
-			}
-			return false;
+		tenant = mTenants.get(id);
+		if (tenant != null) {
+			tenant.stop();
+			return true;
 		}
+		return false;
 	}
 
 	public boolean tenantIsLoggedIn(int id) {
 		HTenant tenant;
-		synchronized (mTenants) {
-			tenant = mTenants.get(id);
-			if (tenant != null) {
-				return tenant.isLoggedIn();
-			}
-			return false;
+		tenant = mTenants.get(id);
+		if (tenant != null) {
+			return tenant.isLoggedIn();
 		}
+		return false;
 	}
 
 	public boolean tenantIsStarted(int id) {
 		HTenant tenant;
-		synchronized (mTenants) {
-			tenant = mTenants.get(id);
-			if (tenant != null) {
-				return tenant.isStarted();
-			}
-			return false;
+		tenant = mTenants.get(id);
+		if (tenant != null) {
+			return tenant.isStarted();
 		}
+		return false;
 	}
 
 	public int tenantGetIDInVoltdb(int id) {
-		// synchronized (mTenantsVoltdbID) {
-		// Integer result = mTenantsVoltdbID.get(id);
-		// if (result == null)
-		// return -1;
-		// return result;
-		// }
 		HTenant tenant;
-		synchronized (mTenants) {
-			tenant = mTenants.get(id);
-			if (tenant != null) {
-				return tenant.getIDInVoltdb();
-			}
-			return -1;
+		tenant = mTenants.get(id);
+		if (tenant != null) {
+			return tenant.getIDInVoltdb();
 		}
+		return -1;
 	}
 
 	public int tenantGetDataSize(int id) {
 		HTenant tenant;
-		synchronized (mTenants) {
-			tenant = mTenants.get(id);
-			if (tenant != null) {
-				return tenant.getDataSize();
-			}
-			return -1;
+		tenant = mTenants.get(id);
+		if (tenant != null) {
+			return tenant.getDataSize();
 		}
+		return -1;
 	}
 
 	public int tenantGetDataSizeKind(int id) {
 		HTenant tenant;
-		synchronized (mTenants) {
-			tenant = mTenants.get(id);
-			if (tenant != null) {
-				return tenant.getDataSizeKind();
-			}
-			return -1;
+		tenant = mTenants.get(id);
+		if (tenant != null) {
+			return tenant.getDataSizeKind();
 		}
+		return -1;
 	}
 
 	public boolean tenantIsUseMysql(int id) {
 		HTenant tenant;
-		synchronized (mTenants) {
-			tenant = mTenants.get(id);
-			if (tenant != null) {
-				return tenant.isInMysql();
-			}
-			return false;
+		tenant = mTenants.get(id);
+		if (tenant != null) {
+			return tenant.isInMysql();
 		}
+		return false;
 	}
 
 	public void offloadWorkloads() throws HException {
@@ -446,75 +424,63 @@ public class HServer {
 	private HTenant[] findTenantsInMysqlNow() {
 		ArrayList<HTenant> list = new ArrayList<>();
 		HTenant[] res = null;
-		synchronized (mTenants) {
-			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
-				HTenant tenant = tenantEntry.getValue();
-				if (!tenant.isLoggedIn() || !tenant.isStarted())
-					continue;
-				if (!tenant.isInMysql())
-					continue;
-				list.add(tenant);
-			}
-			res = new HTenant[list.size()];
-			list.toArray(res);
-			return res;
+		for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+			HTenant tenant = tenantEntry.getValue();
+			if (!tenant.isLoggedIn() || !tenant.isStarted())
+				continue;
+			if (!tenant.isInMysql())
+				continue;
+			list.add(tenant);
 		}
+		res = new HTenant[list.size()];
+		list.toArray(res);
+		return res;
 	}
 
 	private HTenant[] findTenantsInMysqlAhead() {
 		ArrayList<HTenant> list = new ArrayList<>();
 		HTenant[] res = null;
-		synchronized (mTenants) {
-			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
-				HTenant tenant = tenantEntry.getValue();
-				if (!tenant.isLoggedIn() || !tenant.isStarted())
-					continue;
-				if (tenant.isBeingMovingToMysql()
-						|| (tenant.isInMysql() && !tenant
-								.isBeingMovingToVoltdb()))
-					list.add(tenant);
-			}
-			res = new HTenant[list.size()];
-			list.toArray(res);
-			return res;
+		for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+			HTenant tenant = tenantEntry.getValue();
+			if (!tenant.isLoggedIn() || !tenant.isStarted())
+				continue;
+			if (tenant.isInMysqlAhead())
+				list.add(tenant);
 		}
+		res = new HTenant[list.size()];
+		list.toArray(res);
+		return res;
 	}
 
 	private HTenant[] findTenantsInVoltdbNow() {
 		ArrayList<HTenant> list = new ArrayList<>();
 		HTenant[] res = null;
-		synchronized (mTenants) {
-			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
-				HTenant tenant = tenantEntry.getValue();
-				if (!tenant.isLoggedIn() || !tenant.isStarted())
-					continue;
-				if (tenant.isInMysql())
-					continue;
-				list.add(tenant);
-			}
-			res = new HTenant[list.size()];
-			list.toArray(res);
-			return res;
+		for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+			HTenant tenant = tenantEntry.getValue();
+			if (!tenant.isLoggedIn() || !tenant.isStarted())
+				continue;
+			if (tenant.isInMysql())
+				continue;
+			list.add(tenant);
 		}
+		res = new HTenant[list.size()];
+		list.toArray(res);
+		return res;
 	}
 
 	private HTenant[] findTenantsInVoltdbAhead() {
 		ArrayList<HTenant> list = new ArrayList<>();
 		HTenant[] res = null;
-		synchronized (mTenants) {
-			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
-				HTenant tenant = tenantEntry.getValue();
-				if (!tenant.isLoggedIn() || !tenant.isStarted())
-					continue;
-				if (tenant.isBeingMovingToVoltdb()
-						|| (!tenant.isInMysql() && !tenant
-								.isBeingMovingToMysql()))
-					list.add(tenant);
-			}
-			res = new HTenant[list.size()];
-			list.toArray(res);
-			return res;
+		for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+			HTenant tenant = tenantEntry.getValue();
+			if (!tenant.isStarted())
+				continue;
+			if (tenant.isInVoltdbAhead())
+				list.add(tenant);
 		}
+		res = new HTenant[list.size()];
+		list.toArray(res);
+		return res;
 	}
 
 	private void clearVoltdb() throws HException {

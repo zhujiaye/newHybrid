@@ -30,7 +30,7 @@ public class MysqlToVoltdbMoverThread extends Thread {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		synchronized (this) {
+		synchronized (mTenant) {
 			mTenant.finishMovingToVoltdb(mVoltdbID);
 			if (mIsInMover) {
 				mTenant.getServer().completeOneMoverThread();
@@ -41,10 +41,10 @@ public class MysqlToVoltdbMoverThread extends Thread {
 
 	public void shutdown() {
 		// TODO shutdown thread for moving data
-		synchronized (this) {
+		mIsShutdown = true;
+		synchronized (mTenant) {
 			mTenant.cancelMoving();
 			mTenant.getServer().removeVoltdbIDForTenant(mTenant.getID());
-			mIsShutdown = true;
 			if (isAlive()) {
 				if (mIsInMover) {
 					mTenant.getServer().completeOneMoverThread();

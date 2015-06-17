@@ -74,7 +74,10 @@ public class HTenant implements Comparable<HTenant> {
 	public synchronized void login() {
 		if (mLoggedIn)
 			return;
-		mIsInMysql = true;
+		if (mConf.getInitdb().equals(Constants.INITDB_VOLTDB))
+			mIsInMysql = false;
+		else
+			mIsInMysql = true;
 		mLoggedIn = true;
 		mLogInTime = System.nanoTime();
 		System.out.format("Tenant %d logged in server %s:%d%n", mID,

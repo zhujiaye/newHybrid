@@ -4,13 +4,31 @@ import newhybrid.HException;
 import client.HTenantClient;
 
 public class Test {
-	public static void main(String[] args) throws HException {
-		HTenantClient[] clients = new HTenantClient[5];
-		for (int i = 0; i < 5; i++) {
-			clients[i] = new HTenantClient(i + 1);
+	static class ClientThread extends Thread {
+		private HTenantClient mClient;
+
+		public ClientThread(int id) throws HException {
+			mClient = new HTenantClient(id);
 		}
+
+		public void run() {
+			try {
+				if (mClient.login())
+					System.out.println("Tenant " + mClient.getID()
+							+ " logged in");
+				if (mClient.logout())
+					System.out.println("Tenant " + mClient.getID()
+							+ " logged out");
+			} catch (HException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
+	public static void main(String[] args) throws HException {
 		for (int i = 0; i < 5; i++) {
-			System.out.println(clients[i].login());
+			new Test.ClientThread(i + 1).start();
 		}
 	}
 }

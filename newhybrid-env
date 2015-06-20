@@ -2,7 +2,9 @@
 [NewHybrid]
 	#newhybrid.usemysql true
 	#newhybrid.usevoltdb true
-	newhybrid.initdb voltdb
+	#newhybrid.initdb voltdb
+	#newhybrid.debug false
+	newhybrid.debug true
 [Server]
 	//server address must be defined
 	newhybrid.server.address 127.0.0.1
@@ -25,7 +27,7 @@
 	//voltdb server address must be defined
 	newhybrid.voltdb.server.address 10.20.2.28
 	//voltdb server capacity must be defined in units of MB
-	newhybrid.voltdb.server.capacity 2000
+	newhybrid.voltdb.server.capacity 14
 	#newhybrid.voltdb.pool.initsize 0
 [For test]
 	//if test the workload file's path must be offered

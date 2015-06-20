@@ -1,6 +1,8 @@
 package server;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringBufferInputStream;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,6 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.log4j.Appender;
+import org.apache.log4j.Layout;
+import org.apache.log4j.Logger;
+import org.apache.log4j.spi.ErrorHandler;
+import org.apache.log4j.spi.Filter;
+import org.apache.log4j.spi.LoggingEvent;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TThreadedSelectorServer;
 import org.apache.thrift.transport.TNonblockingServerSocket;
@@ -29,6 +37,8 @@ import config.HConfig;
  * HServer maintains all the server-side information and is used to interact with clients
  */
 public class HServer {
+	final static private Logger LOG = Logger
+			.getLogger(Constants.LOGGER_NAME_SERVER);
 	final private HConfig mConf;
 	final private String mAddress;
 	final private int mPort;
@@ -61,26 +71,27 @@ public class HServer {
 	public void start() throws HException, TTransportException {
 		if (isStarted)
 			return;
-		System.out.println("Server starting....");
+		LOG.info("Server starting....");
 		if (mConf.isUseVoltdb()) {
-			System.out.println("clearing voltdb contents....");
+			LOG.info("clearing voltdb contents....");
 			clearVoltdb();
-			System.out.println("voltdb contents cleared......20%%");
+			LOG.info("voltdb contents cleared......20%");
 		}
-		System.out.println("clearing tenants information.......");
+		LOG.info("clearing tenants information.......");
 		mTenants.clear();
 		mVoltdbIDList.clear();
 		for (int i = 1; i <= Constants.NUMBER_OF_VOLTDBID; i++) {
 			mVoltdbIDList.put(i, new ArrayList<Integer>());
 		}
-		System.out.println("tenants information cleared......40%%");
-		System.out.println("getting all registered tenants....");
+		LOG.info("tenants information cleared......40%");
+		LOG.info("getting all registered tenants....");
+		// TODO For test : get workloads for all tenants
 		for (int i = 1; i <= Constants.NUMBER_OF_TENANTS; i++) {
 			HTenant tenant = new HTenant(this, i);
 			mTenants.put(i, tenant);
 		}
-		System.out.println("all registered tenants got.......60%%");
-		System.out.println("setting up server service......");
+		LOG.info("all registered tenants got.......60%");
+		LOG.info("setting up server service......");
 		mServerServiceHandler = new ServerServiceHandler(this);
 		ServerService.Processor<ServerServiceHandler> serverServiceProcessor = new ServerService.Processor<ServerServiceHandler>(
 				mServerServiceHandler);
@@ -96,39 +107,39 @@ public class HServer {
 								Constants.QUEUE_SIZE_PER_SELECTOR)
 						.workerThreads(Constants.SERVER_THREADS));
 		isStarted = true;
-		System.out.println("server service start to work......80%");
-		System.out
-				.format("Server@%s:%d started!......%%100%n", mAddress, mPort);
-		// mServerOffloaderThread = new HeartbeatThread("Server_Offloader",
-		// new ServerOffloaderHeartbeatExecutor(this),
-		// Constants.OFFLOADER_FIXED_INTERVAL_TIME);
-		// mServerOffloaderThread.start();
+		LOG.info("server service start to work......80%");
+		LOG.info("Server@" + mAddress + ":" + mPort + " started!......100%");
+		mServerOffloaderThread = new HeartbeatThread("Server_Offloader",
+				new ServerOffloaderHeartbeatExecutor(this),
+				Constants.OFFLOADER_FIXED_INTERVAL_TIME);
+		mServerOffloaderThread.start();
 		mServerServiceServer.serve();
 	}
 
 	public void stop() throws HException {
 		if (!isStarted)
 			return;
-		System.out.println("Server stopping!......");
+		LOG.info("Server stopping......");
+		LOG.info("Loggint out for all tenants......");
 		for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
 			HTenant tenant = tenantEntry.getValue();
 			tenantLogout(tenant.getID());
-			System.out.println("Tenant " + tenant.getID() + " logged out...");
+			LOG.debug("Tenant " + tenant.getID() + " logged out...");
 		}
 		if (mServerServiceServer != null) {
-			System.out.println("ServerService stopping...");
+			LOG.info("ServerService stopping...");
 			mServerServiceServer.stop();
 		}
 		if (mServerTNonblockingServerSocket != null) {
-			System.out.println("ServerSocket closing...");
+			LOG.info("ServerSocket closing...");
 			mServerTNonblockingServerSocket.close();
 		}
 		if (mServerOffloaderThread != null) {
-			System.out.println("ServerOffloader shutting down...");
+			LOG.info("ServerOffloader shutting down...");
 			mServerOffloaderThread.shutdown();
 		}
 		isStarted = false;
-		System.out.format("Server@%s:%d stopped!%n", mAddress, mPort);
+		LOG.info("Server@" + mAddress + ":" + mPort + " stopped!");
 	}
 
 	public String getAddress() {
@@ -153,7 +164,7 @@ public class HServer {
 						tenant, voltdbID, false);
 				tenant.startMovingToVoltdb(thread);
 				thread.start();
-				System.out.println("Moving tenant " + tenant.getID()
+				LOG.debug("Moving tenant " + tenant.getID()
 						+ " 's data to voltdb(" + voltdbID + ").....");
 				try {
 					thread.join();
@@ -177,10 +188,13 @@ public class HServer {
 			synchronized (tenant) {
 				tenant.logout();
 				if (tenant.isBeingMovingToMysql()) {
-					tenant.getMovingToMysqlThread().shutdown();
+					tenant.getMovingToMysqlThread().cancel();
+					tenant.cancelMoving();
 				}
 				if (tenant.isBeingMovingToVoltdb()) {
-					tenant.getMovingToVoltdbThread().shutdown();
+					tenant.getMovingToVoltdbThread().cancel();
+					tenant.cancelMoving();
+					removeVoltdbIDForTenant(tenant.getID());
 				}
 			}
 			if (!tenant.isInMysql() && mConf.isUseMysql()) {
@@ -188,7 +202,7 @@ public class HServer {
 						tenant, false);
 				tenant.startMovingToMysql(thread);
 				thread.start();
-				System.out.println("Writing tenant " + tenant.getID()
+				LOG.debug("Writing tenant " + tenant.getID()
 						+ " 's data back to mysql.....");
 				try {
 					thread.join();
@@ -277,6 +291,7 @@ public class HServer {
 	}
 
 	public void offloadWorkloads() throws HException {
+		LOG.info("offloader checking...");
 		if (!mConf.isUseMysql() || !mConf.isUseVoltdb()) {
 			return;
 		}
@@ -301,6 +316,52 @@ public class HServer {
 				- getSpace(tenantsInVoltdbAhead);
 		freeWorkloadInMysqlAhead = workloadLimitInMysql - workloadInMysqlAhead;
 		freeWorkloadInMysqlNow = workloadLimitInMysql - workloadInMysqlNow;
+
+		LOG.info(String.format("MySQL:%d tenants  VoltDB:%d tenants",
+				tenantsInMysqlNow.length, tenantsInVoltdbNow.length));
+		if (LOG.isDebugEnabled()) {
+			LOG.debug(String.format("MySQL workload NOW:%d(%d)",
+					workloadInMysqlNow, workloadLimitInMysql));
+			LOG.debug(String.format("MySQL workload AHEAD:%d(%d)",
+					workloadInMysqlAhead, workloadLimitInMysql));
+			LOG.debug(String.format("VoltDB memory NOW:%d(%d)",
+					availableSpaceInVoltdbNow, mVoltdbSpaceTotal));
+			LOG.debug(String.format("VoltDB memory AHEAD:%d(%d)",
+					availableSpaceInVoltdbAhead, mVoltdbSpaceTotal));
+			LOG.debug(String.format("%20s%10s%20s", "MySQL", "", "VoltDB"));
+			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+				HTenant tenant = tenantEntry.getValue();
+				synchronized (tenant) {
+					if (!tenant.isStarted())
+						continue;
+					StringBuilder str = new StringBuilder();
+					str.append(tenant.getID() + "(" + tenant.getWorkloadAhead()
+							+ "," + tenant.getDataSize() + ")");
+					if (tenant.isInMysql()) {
+						StringBuilder tmp = new StringBuilder();
+						if (tenant.isBeingMovingToVoltdb()) {
+							tmp.append("----");
+							tmp.append(tenant.getMovingToVoltdbThread()
+									.getVoltdbID());
+							tmp.append("-------->");
+							LOG.debug(String.format("%20s", str.toString())
+									+ String.format("%10s", tmp));
+						} else
+							LOG.debug(String.format("%20s", str.toString())
+									+ String.format("%10s", ""));
+					} else {
+						if (tenant.isBeingMovingToMysql())
+							LOG.debug(String.format("%20s", "")
+									+ String.format("%10s", "<------------")
+									+ String.format("%20s", str.toString()));
+						else
+							LOG.debug(String.format("%20s", "")
+									+ String.format("%10s", "")
+									+ String.format("%20s", str.toString()));
+					}
+				}
+			}
+		}
 		if (freeWorkloadInMysqlAhead < 0) {
 			Arrays.sort(tenantsInMysqlAhead);
 			Arrays.sort(tenantsInVoltdbAhead);
@@ -315,9 +376,16 @@ public class HServer {
 					synchronized (tenantToWriteBack) {
 						if (!tenantToWriteBack.isStarted())
 							continue;
+						if (tenantToWriteBack.getWorkloadAhead() > tenantToOffload
+								.getWorkloadAhead()) {
+							j--;
+							continue;
+						}
 						if (tenantToWriteBack.isBeingMovingToVoltdb()) {
 							tenantToWriteBack.getMovingToVoltdbThread()
-									.shutdown();
+									.cancel();
+							tenantToWriteBack.cancelMoving();
+							removeVoltdbIDForTenant(tenantToWriteBack.getID());
 						} else {
 							VoltdbToMysqlMoverThread thread = new VoltdbToMysqlMoverThread(
 									tenantToWriteBack, true);
@@ -338,7 +406,8 @@ public class HServer {
 						if (!tenantToOffload.isStarted())
 							continue;
 						if (tenantToOffload.isBeingMovingToMysql()) {
-							tenantToOffload.getMovingToMysqlThread().shutdown();
+							tenantToOffload.getMovingToMysqlThread().cancel();
+							tenantToOffload.cancelMoving();
 						} else {
 							int tenantToOffload_id = tenantToOffload.getID();
 							int voltdbID = getAndAddNewVoltdbIDForTenant(tenantToOffload_id);
@@ -358,6 +427,8 @@ public class HServer {
 		}
 		mMover.updateConcurrencyLimit(getConcurrencyLimit(freeWorkloadInMysqlNow));
 		mMover.trigger();
+		LOG.debug("Number of running moverthreads:"
+				+ mMover.getNumberOfRunningThreads());
 	}
 
 	public static void main(String[] args) throws HException,
@@ -416,7 +487,7 @@ public class HServer {
 
 	private int getWorkloadLimitInMysql() {
 		// TODO complete this method
-		return 100000;
+		return 100;
 	}
 
 	private int getWorkloadNow(HTenant[] tenants) {
@@ -526,7 +597,7 @@ public class HServer {
 								throw new HException("Can not delete table "
 										+ tableName);
 							} else {
-								System.out.println("voltdb table " + tableName
+								LOG.debug("voltdb table " + tableName
 										+ " cleared");
 							}
 						}

@@ -125,7 +125,6 @@ public class HConfig {
 				}
 			}
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			throw new HException("Can not find environment file!");
 		} finally {
 			if (in != null)

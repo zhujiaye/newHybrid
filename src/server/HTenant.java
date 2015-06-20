@@ -1,10 +1,13 @@
 package server;
 
+import org.apache.log4j.Logger;
 import newhybrid.HException;
 import config.Constants;
 import config.HConfig;
 
 public class HTenant implements Comparable<HTenant> {
+	final static private Logger LOG = Logger
+			.getLogger(Constants.LOGGER_NAME_SERVER);
 	final private HConfig mConf;
 	final private int mID;
 	final private int mDataSize;
@@ -21,6 +24,8 @@ public class HTenant implements Comparable<HTenant> {
 
 	private boolean mIsInMysql;
 	private int mIDInVoltdb = -1;
+
+	private int[] workloads;
 
 	public HTenant(HServer server, int tenant_id) throws HException {
 		mConf = HConfig.getConf();
@@ -41,6 +46,22 @@ public class HTenant implements Comparable<HTenant> {
 		mBeingMovingToMysql = false;
 		mBeingMovingToVoltdb = false;
 		mIsInMysql = true;
+
+		/*
+		 * TODO get workload information for the tenant the following is just
+		 * for test
+		 */
+		if (mID % 2 == 1) {
+			if (mID % 4 == 1)
+				workloads = new int[] { 5, 5, mID * 10, 5, 5, 5, 5, 5 };
+			else
+				workloads = new int[] { 5, 5, mID * 10, 5, 5, mID * 10, 5, 5 };
+		} else {
+			if (mID % 4 == 0)
+				workloads = new int[] { 5, 5, 5, 5, 5, mID * 10, 5, 5 };
+			else
+				workloads = new int[] { 5, 5, 5, 5, 5, 5, 5, 5 };
+		}
 	}
 
 	public HServer getServer() {
@@ -80,8 +101,8 @@ public class HTenant implements Comparable<HTenant> {
 			mIsInMysql = true;
 		mLoggedIn = true;
 		mLogInTime = System.nanoTime();
-		System.out.format("Tenant %d logged in server %s:%d%n", mID,
-				mServer.getAddress(), mServer.getPort());
+		LOG.info(String.format("Tenant %d logged in server %s:%d", mID,
+				mServer.getAddress(), mServer.getPort()));
 	}
 
 	public synchronized void logout() throws HException {
@@ -89,8 +110,8 @@ public class HTenant implements Comparable<HTenant> {
 			return;
 		stop();
 		mLoggedIn = false;
-		System.out.format("Tenant %d logged out server %s:%d%n", mID,
-				mServer.getAddress(), mServer.getPort());
+		LOG.info(String.format("Tenant %d logged out server %s:%d", mID,
+				mServer.getAddress(), mServer.getPort()));
 	}
 
 	public synchronized void start() {
@@ -98,16 +119,16 @@ public class HTenant implements Comparable<HTenant> {
 			return;
 		mStarted = true;
 		mStartTime = System.nanoTime();
-		System.out.format("Tenant %d start to query from server %s:%d%n", mID,
-				mServer.getAddress(), mServer.getPort());
+		LOG.info(String.format("Tenant %d start to query from server %s:%d",
+				mID, mServer.getAddress(), mServer.getPort()));
 	}
 
 	public synchronized void stop() {
 		if (!mLoggedIn || !mStarted)
 			return;
 		mStarted = false;
-		System.out.format("Tenant %d stop querying from server %s:%d%n", mID,
-				mServer.getAddress(), mServer.getPort());
+		LOG.info(String.format("Tenant %d stop querying from server %s:%d",
+				mID, mServer.getAddress(), mServer.getPort()));
 	}
 
 	public boolean isLoggedIn() {
@@ -182,14 +203,36 @@ public class HTenant implements Comparable<HTenant> {
 		return mMovingToMysqlThread;
 	}
 
+	/**
+	 * Get workload for the future consideration, and the workload returned is
+	 * the max workload in the following several splits
+	 * 
+	 * @return the workload in the future
+	 *
+	 */
 	public int getWorkloadAhead() {
-		// TODO complete this method
-		return 0;
+		long elapsedTime = (System.nanoTime() - mStartTime);
+		long split = elapsedTime / Constants.SPLIT_TIME;
+		int max = 0;
+		for (int i = 1; i <= Constants.NUMBEROF_AHEAD_SPLITS; i++) {
+			int tmp;
+			if (split + i >= workloads.length)
+				tmp = 0;
+			else
+				tmp = workloads[(int) split + i];
+			if (tmp > max)
+				max = tmp;
+		}
+		return max;
 	}
 
 	public int getWorkloadNow() {
-		// TODO complete this method
-		return 0;
+		long elapsedTime = (System.nanoTime() - mStartTime);
+		long split = elapsedTime / Constants.SPLIT_TIME;
+		if (split >= workloads.length)
+			return 0;
+		else
+			return workloads[(int) split];
 	}
 
 	@Override

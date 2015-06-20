@@ -1,6 +1,5 @@
 package server;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -9,7 +8,7 @@ public class Mover {
 
 	private int mConcurrency;
 	private int mConcurrencyLimit;
-	private Queue<Thread> mThreadsQueue;
+	private Queue<MoverThread> mThreadsQueue;
 
 	public Mover(HServer server) {
 		mServer = server;
@@ -22,7 +21,7 @@ public class Mover {
 		mConcurrencyLimit = concurrencyLimit;
 	}
 
-	public synchronized void addThread(Thread thread) {
+	public synchronized void addThread(MoverThread thread) {
 		mThreadsQueue.add(thread);
 	}
 
@@ -32,9 +31,14 @@ public class Mover {
 
 	public synchronized void trigger() {
 		while (mConcurrency < mConcurrencyLimit && !mThreadsQueue.isEmpty()) {
-			mConcurrency++;
-			Thread thread = mThreadsQueue.poll();
-			thread.start();
+			MoverThread thread = mThreadsQueue.poll();
+			synchronized (thread) {
+				if (thread.isFinished())
+					continue;
+				thread.startMovingData();
+				mConcurrency++;
+				thread.start();
+			}
 		}
 	}
 
@@ -42,4 +46,7 @@ public class Mover {
 		return mServer;
 	}
 
+	public synchronized int getNumberOfRunningThreads() {
+		return mConcurrency;
+	}
 }

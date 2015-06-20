@@ -12,7 +12,6 @@ public class ServerOffloaderHeartbeatExecutor implements HeartbeatExecutor {
 
 	@Override
 	public void heartbeat() throws HException {
-		System.out.println("ServerOffloader heartbeating!");
 		mServer.offloadWorkloads();
 	}
 

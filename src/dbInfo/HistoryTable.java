@@ -1,27 +1,9 @@
 package dbInfo;
 
-import java.io.IOException;
-import java.net.UnknownHostException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLTimeoutException;
-import java.util.Random;
-
 import newhybrid.HException;
-
-import org.voltdb.VoltTable;
-import org.voltdb.client.Client;
-import org.voltdb.client.ClientFactory;
-import org.voltdb.client.ClientResponse;
-import org.voltdb.client.NoConnectionsException;
-import org.voltdb.client.ProcCallException;
-
 import client.HTenantClient;
 import utillity.ValueGenerator;
 import config.Constants;
-import config.HConfig;
 
 public class HistoryTable extends Table {
 	public HistoryTable(HTenantClient htc) throws HException {
@@ -43,47 +25,6 @@ public class HistoryTable extends Table {
 		mPrimaryKeyColumnInVoltdb = new int[] { 0, 1, 2, n };
 	}
 
-	/*
-	 * private String getSelectSQLPreparedStmtString() { return "SELECT * FROM "
-	 * + tableNameInMySQL +
-	 * " WHERE h_c_id = ? AND h_c_d_id = ? AND h_c_w_id = ?"; }
-	 * 
-	 * private String getUpdateSQLPreParedStmtString() { return "UPDATE " +
-	 * tableNameInMySQL +
-	 * " SET h_d_id = ?,h_w_id = ?,h_date = ?,h_amount = ?,h_data = ? WHERE h_c_id = ? AND h_c_d_id = ? AND h_c_w_id = ?"
-	 * ;
-	 * 
-	 * }
-	 * 
-	 * private static String getSaveAllSQL(int tenantid) { return
-	 * "select concat(h_c_id , ',', h_c_d_id, ',', h_c_w_id, ',',h_d_id, ',',h_w_id, ',',h_date, ',',h_amount, ',',h_data, ',', '"
-	 * + tenantid + "', ',', '0', ',', '0' ) " + "from " + TABLENAME + tenantid
-	 * + " into outfile '" + mConf.getMysqlTempFolder() + "/" + TABLENAME +
-	 * tenantid + ".csv'";
-	 * 
-	 * }
-	 * 
-	 * private static String getSavedFileName(int tenantid) { return "/" +
-	 * TABLENAME + tenantid + ".csv"; }
-	 * 
-	 * private static String getProcedureName(int voltDB_id) { return "Offload"
-	 * + PROCENAME + "_" + voltDB_id; }
-	 * 
-	 * public static synchronized void deleteVoltDBID(int voltDB_id) { Client
-	 * client = null; ClientResponse response = null; client =
-	 * ClientFactory.createClient(); try {
-	 * client.createConnection(mConf.getVoltdbServerAddress()); try { response =
-	 * client.callProcedure("@AdHoc", "delete from " + TABLENAME + voltDB_id +
-	 * ";"); } catch (ProcCallException e) { // TODO Auto-generated catch block
-	 * e.printStackTrace(); } if (response.getStatus() !=
-	 * ClientResponse.SUCCESS) { System.out.println("Failed to delete " +
-	 * TABLENAME + " table in " + voltDB_id + "th slot"); } } catch
-	 * (UnknownHostException e) { // TODO Auto-generated catch block
-	 * e.printStackTrace(); } catch (IOException e) { // TODO Auto-generated
-	 * catch block e.printStackTrace(); } finally { if (client != null) try {
-	 * client.close(); } catch (InterruptedException e) { // TODO Auto-generated
-	 * catch block e.printStackTrace(); } } }
-	 */
 	@Override
 	public void generateAllColumns() throws HException {
 		if (mColumnValues == null)

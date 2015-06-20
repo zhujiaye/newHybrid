@@ -1,18 +1,16 @@
 package server;
 
+import org.omg.CORBA.OMGVMCID;
+
 import newhybrid.HException;
 
-public class MysqlToVoltdbMoverThread extends Thread {
-	final private HTenant mTenant;
+public class MysqlToVoltdbMoverThread extends MoverThread {
 	private int mVoltdbID;
-	private boolean mIsInMover;
-	private volatile boolean mIsShutdown = false;
 
 	public MysqlToVoltdbMoverThread(HTenant tenant, int voltdbID,
 			boolean isInMover) throws HException {
-		mTenant = tenant;
+		super(tenant, isInMover);
 		mVoltdbID = voltdbID;
-		mIsInMover = isInMover;
 		if (!mTenant.isInMysqlPure()) {
 			throw new HException(
 					"MysqlToVoltdbMover ERROR: already in voltdb or is being moving to mysql");
@@ -21,16 +19,19 @@ public class MysqlToVoltdbMoverThread extends Thread {
 
 	@Override
 	public void run() {
-		if (mIsShutdown) {
-			return;
+		synchronized (this) {
+			if (mIsFinished)
+				return;
+			mIsStarted = true;
 		}
 		// TODO start moving data
 		try {
 			Thread.sleep(8000);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			return;
 		}
-		synchronized (mTenant) {
+		synchronized (this) {
+			mIsFinished = true;
 			mTenant.finishMovingToVoltdb(mVoltdbID);
 			if (mIsInMover) {
 				mTenant.getServer().completeOneMoverThread();
@@ -39,13 +40,13 @@ public class MysqlToVoltdbMoverThread extends Thread {
 		}
 	}
 
-	public void shutdown() {
+	public void cancel() {
 		// TODO shutdown thread for moving data
-		mIsShutdown = true;
-		synchronized (mTenant) {
-			mTenant.cancelMoving();
-			mTenant.getServer().removeVoltdbIDForTenant(mTenant.getID());
-			if (isAlive()) {
+		synchronized (this) {
+			if (mIsFinished)
+				return;
+			mIsFinished = true;
+			if (mIsStarted) {
 				if (mIsInMover) {
 					mTenant.getServer().completeOneMoverThread();
 					mTenant.getServer().trigger();
@@ -53,5 +54,9 @@ public class MysqlToVoltdbMoverThread extends Thread {
 				interrupt();
 			}
 		}
+	}
+
+	public int getVoltdbID() {
+		return mVoltdbID;
 	}
 }

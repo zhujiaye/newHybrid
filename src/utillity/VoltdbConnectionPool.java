@@ -72,7 +72,6 @@ public class VoltdbConnectionPool {
 						tmp.drain();
 						tmp.close();
 					} catch (InterruptedException | NoConnectionsException e) {
-						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 				}

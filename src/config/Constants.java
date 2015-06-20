@@ -37,11 +37,11 @@ public class Constants {
 	 * For thrift
 	 */
 	final public static int SERVER_PORT = 12345;
-	final public static long CONNECT_TIMEOUT = 10 * S;
+	final public static long CONNECT_TIMEOUT = 30 * S;
 	final public static int MAX_CONNECT_TRY = 5;
 	final public static int SELECTOR_THREADS = 3;
 	final public static int QUEUE_SIZE_PER_SELECTOR = 3000;
-	final public static int SERVER_THREADS = 128;
+	final public static int SERVER_THREADS = 3000;
 
 	/*
 	 * For ServerOffloader
@@ -56,4 +56,11 @@ public class Constants {
 	 */
 	final public static String INITDB_MYSQL = "mysql";
 	final public static String INITDB_VOLTDB = "voltdb";
+
+	final public static long SPLIT_TIME = 10 * S;
+	final public static long NUMBEROF_AHEAD_SPLITS = 2;
+	
+	final public static String LOGGER_NAME_SERVER="SERVER_LOGGER";
+	final public static String LOGGER_NAME_CLIENT="CLIENT_LOGGER";
+	
 }

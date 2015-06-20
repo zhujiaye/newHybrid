@@ -1,27 +1,9 @@
 package dbInfo;
 
-import java.io.IOException;
-import java.net.UnknownHostException;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.SQLTimeoutException;
-import java.sql.Statement;
 import java.util.Random;
-
 import newhybrid.HException;
-
-import org.voltdb.VoltTable;
-import org.voltdb.client.Client;
-import org.voltdb.client.ClientFactory;
-import org.voltdb.client.ClientResponse;
-import org.voltdb.client.NoConnectionsException;
-import org.voltdb.client.ProcCallException;
-
 import client.HTenantClient;
 import config.Constants;
-import config.HConfig;
 import utillity.ValueGenerator;
 
 public class CustomerTable extends Table {
@@ -47,44 +29,6 @@ public class CustomerTable extends Table {
 		mPrimaryKeyColumnInVoltdb = new int[] { 0, 2, 1, n };
 	}
 
-	/*
-	 * private String getSelectSQLPreparedStmtString() { return "SELECT * FROM "
-	 * + tableNameInMySQL + " WHERE c_id = ? AND c_d_id = ? AND c_w_id = ?"; }
-	 * 
-	 * private String getUpdateSQLPreParedStmtString() { return "UPDATE " +
-	 * tableNameInMySQL +
-	 * " SET c_first = ?, c_middle = ?, c_last = ?, c_street_1 = ?, c_street_2 = ?,c_city = ?,"
-	 * +
-	 * "c_state = ?,c_zip = ?, c_phone = ?,c_since = ?, c_credit = ?, c_credit_lim = ?, c_discount = ?, c_balance = ?, c_ytd_payment = ?,c_payment_cnt = ?, c_delivery_cnt = ?, c_data = ? "
-	 * + "WHERE c_id = ? AND c_d_id = ? AND c_w_id = ?"; }
-	 * 
-	 * private static String getSaveAllSQL(int tenantid) { return
-	 * "select concat(c_id, ',', c_d_id, ',',c_w_id, ',', c_first, ',', c_middle, ',', c_last, ',', c_street_1, ',', c_street_2, ',',c_city, ',',c_state, ',',c_zip, ',', c_phone, ',',c_since, ',', c_credit, ',', c_credit_lim , ',', c_discount, ',', c_balance, ',', c_ytd_payment, ',',c_payment_cnt, ',', c_delivery_cnt, ',', c_data, ',','"
-	 * + tenantid + "', ',', '0', ',', '0')" + " from customer" + (tenantid - 1)
-	 * + " into outfile '" + mConf.getMysqlTempFolder() + "/customer" + tenantid
-	 * + ".csv'"; }
-	 * 
-	 * private static String getSavedFileName(int tenantid) { return "/customer"
-	 * + tenantid + ".csv"; }
-	 * 
-	 * private static String getProcedureName(int voltDB_id) { return
-	 * "OffloadCustomer_" + voltDB_id; }
-	 * 
-	 * public static synchronized void deleteVoltDBID(int voltDB_id) { Client
-	 * client = null; ClientResponse response = null; client =
-	 * ClientFactory.createClient(); try {
-	 * client.createConnection(mConf.getVoltdbServerAddress()); try { response =
-	 * client.callProcedure("@AdHoc", "delete from " + TABLENAME + voltDB_id +
-	 * ";"); } catch (ProcCallException e) { // TODO Auto-generated catch block
-	 * e.printStackTrace(); } if (response.getStatus() !=
-	 * ClientResponse.SUCCESS) {
-	 * System.out.println("Failed to delete customer table in " + voltDB_id +
-	 * "th slot"); } } catch (UnknownHostException e) { // TODO Auto-generated
-	 * catch block e.printStackTrace(); } catch (IOException e) { // TODO
-	 * Auto-generated catch block e.printStackTrace(); } finally { if (client !=
-	 * null) try { client.close(); } catch (InterruptedException e) { // TODO
-	 * Auto-generated catch block e.printStackTrace(); } } }
-	 */
 	@Override
 	public void generateAllColumns() throws HException {
 		if (mColumnValues == null)

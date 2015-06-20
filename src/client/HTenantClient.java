@@ -7,22 +7,12 @@ import java.util.Random;
 import newhybrid.HException;
 import newhybrid.HQueryResult;
 import newhybrid.HSQLTimeOutException;
-import newhybrid.HeartbeatThread;
-
-import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TFramedTransport;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransportException;
 import org.voltdb.client.Client;
 
 import server.ServerClient;
-import thrift.ServerService;
 import utillity.MysqlConnectionPool;
 import utillity.VoltdbConnectionPool;
 import config.Constants;
-import config.HConfig;
 import dbInfo.CustomerTable;
 import dbInfo.DistrictTable;
 import dbInfo.HistoryTable;

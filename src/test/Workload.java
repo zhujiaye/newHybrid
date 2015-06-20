@@ -28,11 +28,9 @@ public class Workload {
 				}
 				Thread.sleep(10000);
 			} catch (HSQLTimeOutException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				System.out.println("Out of time");
 			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}

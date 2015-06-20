@@ -7,9 +7,10 @@ import java.util.Random;
 import newhybrid.HException;
 import newhybrid.HQueryResult;
 import newhybrid.HSQLTimeOutException;
+
+import org.apache.log4j.Logger;
 import org.voltdb.client.Client;
 
-import server.ServerClient;
 import utillity.MysqlConnectionPool;
 import utillity.VoltdbConnectionPool;
 import config.Constants;
@@ -29,6 +30,8 @@ import dbInfo.WarehouseTable;
  * Every operation that a client need can be found here.
  */
 public class HTenantClient {
+	final static private Logger LOG = Logger
+			.getLogger(Constants.LOGGER_NAME_CLIENT);
 	private int mID;
 	private MysqlConnectionPool mMysqlPool = null;
 	private VoltdbConnectionPool mVoltdbPool = null;
@@ -84,11 +87,11 @@ public class HTenantClient {
 	}
 
 	public synchronized boolean isLoggedIn() throws HException {
-		return mServerClient.isLoggedIn(mID);
+		return mServerClient.tenantIsLoggedIn(mID);
 	}
 
 	public synchronized boolean isStarted() throws HException {
-		return mServerClient.isStarted(mID);
+		return mServerClient.tenantIsStarted(mID);
 	}
 
 	/**
@@ -98,35 +101,39 @@ public class HTenantClient {
 	 * @throws HException
 	 */
 	public synchronized boolean login() throws HException {
-		return mServerClient.login(mID);
+		return mServerClient.tenantLogin(mID);
 	}
 
 	public synchronized boolean logout() throws HException {
-		return mServerClient.logout(mID);
+		return mServerClient.tenantLogout(mID);
 	}
 
 	public synchronized boolean start() throws HException {
-		return mServerClient.start(mID);
+		return mServerClient.tenantStart(mID);
 	}
 
 	public synchronized boolean stop() throws HException {
-		return mServerClient.stop(mID);
+		return mServerClient.tenantStop(mID);
 	}
 
 	public synchronized int getIDInVoltdb() throws HException {
-		return mServerClient.getIDInVoltdb(mID);
+		return mServerClient.tenantGetIDInVoltdb(mID);
 	}
 
 	public synchronized int getDataSize() throws HException {
-		return mServerClient.getDataSize(mID);
+		return mServerClient.tenantGetDataSize(mID);
 	}
 
 	public synchronized int getDataSizeKind() throws HException {
-		return mServerClient.getDataSizeKind(mID);
+		return mServerClient.tenantGetDataSizeKind(mID);
 	}
 
 	public synchronized boolean isUseMysql() throws HException {
-		return mServerClient.isUseMysql(mID);
+		return mServerClient.tenantIsUseMysql(mID);
+	}
+
+	public synchronized boolean completeOneQuery() throws HException {
+		return mServerClient.tenantCompleteOneQuery(mID);
 	}
 
 	public synchronized Connection getMysqlConnection() throws HException {
@@ -142,11 +149,11 @@ public class HTenantClient {
 	public synchronized HQueryResult sqlRandomSelect() throws HException,
 			HSQLTimeOutException {
 		if (!isLoggedIn()) {
-			System.out.println("Tenant " + mID + " not logged in!");
+			LOG.error("Tenant " + mID + " not logged in!");
 			return null;
 		}
 		if (!isStarted()) {
-			System.out.println("Tenant " + mID + " not started!");
+			LOG.error("Tenant " + mID + " not started!");
 			return null;
 		}
 		Random random = new Random(System.currentTimeMillis());
@@ -160,11 +167,11 @@ public class HTenantClient {
 	public synchronized HQueryResult sqlRandomUpdate() throws HException,
 			HSQLTimeOutException {
 		if (!isLoggedIn()) {
-			System.out.println("Tenant " + mID + " not logged in!");
+			LOG.error("Tenant " + mID + " not logged in!");
 			return null;
 		}
 		if (!isStarted()) {
-			System.out.println("Tenant " + mID + " not started!");
+			LOG.error("Tenant " + mID + " not started!");
 			return null;
 		}
 		Random random = new Random(System.currentTimeMillis());

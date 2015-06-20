@@ -1,6 +1,5 @@
-package server;
+package client;
 
-import client.HTenantClient;
 import newhybrid.HeartbeatExecutor;
 
 public class ServerClientHeartbeatExecutor implements HeartbeatExecutor {

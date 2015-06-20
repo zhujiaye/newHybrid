@@ -74,4 +74,9 @@ public class ServerServiceHandler implements ServerService.Iface {
 		return mServer.tenantGetDataSizeKind(id);
 	}
 
+	@Override
+	public boolean tenant_completeOneQuery(int id) throws TException {
+		return mServer.tenantCompleteOneQuery(id);
+	}
+
 }

@@ -1,8 +1,9 @@
-package server;
+package client;
 
 import newhybrid.HException;
 import newhybrid.HeartbeatThread;
 
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -15,6 +16,8 @@ import config.Constants;
 import config.HConfig;
 
 public class ServerClient {
+	final private static Logger LOG = Logger
+			.getLogger(Constants.LOGGER_NAME_CLIENT);
 	final private HConfig mConf;
 	private boolean mIsConnected = false;
 	private boolean mIsShutdown = false;
@@ -29,7 +32,7 @@ public class ServerClient {
 
 	public synchronized void cleanConnect() {
 		if (mIsConnected) {
-			System.out.println("serverClient Disconnecting from server....");
+			LOG.debug("ServerClient Disconnecting from server....");
 			mIsConnected = false;
 		}
 		if (mProtocol != null) {
@@ -64,16 +67,15 @@ public class ServerClient {
 						Constants.CONNECT_TIMEOUT / 2);
 				mHeartbeatThread.start();
 			} catch (TTransportException e) {
-				System.out.println("Failed to connect (" + tries
-						+ ") to server:" + e.getMessage());
+				LOG.debug("Failed to connect (" + tries + ") to server:"
+						+ e.getMessage());
 				if (mHeartbeatThread != null) {
 					mHeartbeatThread.shutdown();
 				}
 				try {
 					Thread.sleep(Constants.S / 1000000);
 				} catch (InterruptedException e1) {
-					System.out
-							.println("Interrupted while waiting to connect to server");
+					LOG.error("Interrupted while waiting to connect to server");
 				}
 				continue;
 			}
@@ -98,7 +100,7 @@ public class ServerClient {
 		return mLastAccessTime;
 	}
 
-	public int getIDInVoltdb(int tenant_id) throws HException {
+	public int tenantGetIDInVoltdb(int tenant_id) throws HException {
 		while (!mIsShutdown) {
 			connect();
 			try {
@@ -110,7 +112,7 @@ public class ServerClient {
 		throw new HException("Client has shutdown");
 	}
 
-	public int getDataSize(int tenant_id) throws HException {
+	public int tenantGetDataSize(int tenant_id) throws HException {
 		while (!mIsShutdown) {
 			connect();
 			try {
@@ -122,7 +124,7 @@ public class ServerClient {
 		throw new HException("Client has shutdown");
 	}
 
-	public int getDataSizeKind(int tenant_id) throws HException {
+	public int tenantGetDataSizeKind(int tenant_id) throws HException {
 		while (!mIsShutdown) {
 			connect();
 			try {
@@ -134,7 +136,7 @@ public class ServerClient {
 		throw new HException("Client has shutdown");
 	}
 
-	public boolean isLoggedIn(int tenant_id) throws HException {
+	public boolean tenantIsLoggedIn(int tenant_id) throws HException {
 		while (!mIsShutdown) {
 			connect();
 			try {
@@ -146,7 +148,7 @@ public class ServerClient {
 		throw new HException("Client has shutdown");
 	}
 
-	public boolean isStarted(int tenant_id) throws HException {
+	public boolean tenantIsStarted(int tenant_id) throws HException {
 		while (!mIsShutdown) {
 			connect();
 			try {
@@ -158,7 +160,7 @@ public class ServerClient {
 		throw new HException("Client has shutdown");
 	}
 
-	public boolean isUseMysql(int tenant_id) throws HException {
+	public boolean tenantIsUseMysql(int tenant_id) throws HException {
 		while (!mIsShutdown) {
 			connect();
 			try {
@@ -170,7 +172,7 @@ public class ServerClient {
 		throw new HException("Client has shutdown");
 	}
 
-	public boolean login(int tenant_id) throws HException {
+	public boolean tenantLogin(int tenant_id) throws HException {
 		while (!mIsShutdown) {
 			connect();
 			try {
@@ -183,7 +185,7 @@ public class ServerClient {
 		throw new HException("Client has shutdown");
 	}
 
-	public boolean logout(int tenant_id) throws HException {
+	public boolean tenantLogout(int tenant_id) throws HException {
 		while (!mIsShutdown) {
 			connect();
 			try {
@@ -195,7 +197,7 @@ public class ServerClient {
 		throw new HException("Client has shutdown");
 	}
 
-	public boolean start(int tenant_id) throws HException {
+	public boolean tenantStart(int tenant_id) throws HException {
 		while (!mIsShutdown) {
 			connect();
 			try {
@@ -207,7 +209,7 @@ public class ServerClient {
 		throw new HException("Client has shutdown");
 	}
 
-	public boolean stop(int tenant_id) throws HException {
+	public boolean tenantStop(int tenant_id) throws HException {
 		while (!mIsShutdown) {
 			connect();
 			try {
@@ -219,4 +221,15 @@ public class ServerClient {
 		throw new HException("Client has shutdown");
 	}
 
+	public boolean tenantCompleteOneQuery(int tenant_id) throws HException {
+		while (!mIsShutdown) {
+			connect();
+			try {
+				return mClient.tenant_completeOneQuery(tenant_id);
+			} catch (TException e) {
+				throw new HException(e.getMessage());
+			}
+		}
+		throw new HException("Client has shutdown");
+	}
 }

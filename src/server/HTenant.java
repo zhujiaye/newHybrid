@@ -47,21 +47,22 @@ public class HTenant implements Comparable<HTenant> {
 		mBeingMovingToVoltdb = false;
 		mIsInMysql = true;
 
+		workloads = new int[] { 0 };
 		/*
 		 * TODO get workload information for the tenant the following is just
 		 * for test
 		 */
-		if (mID % 2 == 1) {
-			if (mID % 4 == 1)
-				workloads = new int[] { 5, 5, mID * 10, 5, 5, 5, 5, 5 };
-			else
-				workloads = new int[] { 5, 5, mID * 10, 5, 5, mID * 10, 5, 5 };
-		} else {
-			if (mID % 4 == 0)
-				workloads = new int[] { 5, 5, 5, 5, 5, mID * 10, 5, 5 };
-			else
-				workloads = new int[] { 5, 5, 5, 5, 5, 5, 5, 5 };
-		}
+		// if (mID % 2 == 1) {
+		// if (mID % 4 == 1)
+		// workloads = new int[] { 5, 5, mID * 10, 5, 5, 5, 5, 5 };
+		// else
+		// workloads = new int[] { 5, 5, mID * 10, 5, 5, mID * 10, 5, 5 };
+		// } else {
+		// if (mID % 4 == 0)
+		// workloads = new int[] { 5, 5, 5, 5, 5, mID * 10, 5, 5 };
+		// else
+		// workloads = new int[] { 5, 5, 5, 5, 5, 5, 5, 5 };
+		// }
 	}
 
 	public HServer getServer() {
@@ -101,7 +102,7 @@ public class HTenant implements Comparable<HTenant> {
 			mIsInMysql = true;
 		mLoggedIn = true;
 		mLogInTime = System.nanoTime();
-		LOG.info(String.format("Tenant %d logged in server %s:%d", mID,
+		LOG.debug(String.format("Tenant %d logged in server %s:%d", mID,
 				mServer.getAddress(), mServer.getPort()));
 	}
 
@@ -110,7 +111,7 @@ public class HTenant implements Comparable<HTenant> {
 			return;
 		stop();
 		mLoggedIn = false;
-		LOG.info(String.format("Tenant %d logged out server %s:%d", mID,
+		LOG.debug(String.format("Tenant %d logged out server %s:%d", mID,
 				mServer.getAddress(), mServer.getPort()));
 	}
 
@@ -119,7 +120,7 @@ public class HTenant implements Comparable<HTenant> {
 			return;
 		mStarted = true;
 		mStartTime = System.nanoTime();
-		LOG.info(String.format("Tenant %d start to query from server %s:%d",
+		LOG.debug(String.format("Tenant %d start to query from server %s:%d",
 				mID, mServer.getAddress(), mServer.getPort()));
 	}
 
@@ -127,7 +128,7 @@ public class HTenant implements Comparable<HTenant> {
 		if (!mLoggedIn || !mStarted)
 			return;
 		mStarted = false;
-		LOG.info(String.format("Tenant %d stop querying from server %s:%d",
+		LOG.debug(String.format("Tenant %d stop querying from server %s:%d",
 				mID, mServer.getAddress(), mServer.getPort()));
 	}
 

@@ -53,8 +53,11 @@ public class HServer {
 	private TNonblockingServerSocket mServerTNonblockingServerSocket;
 	private TServer mServerServiceServer;
 	private HeartbeatThread mServerOffloaderThread = null;
-
+	private HeartbeatThread mServerMonitorThread = null;
 	private Mover mMover;
+
+	private int mLastThroughput = -1;
+	private int mNowTroughput = 0;
 
 	public HServer() throws HException {
 		mConf = HConfig.getConf();
@@ -113,6 +116,9 @@ public class HServer {
 				new ServerOffloaderHeartbeatExecutor(this),
 				Constants.OFFLOADER_FIXED_INTERVAL_TIME);
 		mServerOffloaderThread.start();
+		mServerMonitorThread = new HeartbeatThread("Server_Monitor",
+				new ServerMonitorHeartbeatExecutor(this), Constants.SPLIT_TIME);
+		mServerMonitorThread.start();
 		mServerServiceServer.serve();
 	}
 
@@ -290,6 +296,25 @@ public class HServer {
 		return false;
 	}
 
+	public boolean tenantCompleteOneQuery(int id) {
+		HTenant tenant;
+		tenant = mTenants.get(id);
+		if (tenant != null) {
+			synchronized (tenant) {
+				if (!tenant.isStarted())
+					return false;
+				synchronized (this) {
+					mNowTroughput++;
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/*
+	 * TODO make this better
+	 */
 	public void offloadWorkloads() throws HException {
 		LOG.info("offloader checking...");
 		if (!mConf.isUseMysql() || !mConf.isUseVoltdb()) {
@@ -482,12 +507,19 @@ public class HServer {
 
 	private int getConcurrencyLimit(int freeWorkloadInMysqlNow) {
 		// TODO complete this method
-		return 9;
+		return 1;
 	}
 
-	private int getWorkloadLimitInMysql() {
-		// TODO complete this method
-		return 100;
+	public synchronized void updateWorkloadLimitInMysql() {
+		// if (mNowTroughput > mLastThroughput)
+		mLastThroughput = mNowTroughput;
+		mNowTroughput = 0;
+		LOG.info("Troughput now:" + mLastThroughput);
+	}
+
+	// TODO complete this method
+	private synchronized int getWorkloadLimitInMysql() {
+		return 1000000;
 	}
 
 	private int getWorkloadNow(HTenant[] tenants) {

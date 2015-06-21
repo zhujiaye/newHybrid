@@ -1,8 +1,13 @@
 package server;
 
+import org.apache.log4j.Logger;
+
+import config.Constants;
 import newhybrid.HException;
 
 public class VoltdbToMysqlMoverThread extends MoverThread {
+	final static private Logger LOG = Logger
+			.getLogger(Constants.LOGGER_NAME_SERVER);
 
 	public VoltdbToMysqlMoverThread(HTenant tenant, boolean isInMover)
 			throws HException {
@@ -20,12 +25,14 @@ public class VoltdbToMysqlMoverThread extends MoverThread {
 				return;
 			mIsStarted = true;
 		}
-		// TODO start moving data
 		try {
-			Thread.sleep(8000);
-		} catch (InterruptedException e) {
-			return;
+			new VoltdbToMysqlMover(mTenant.getID() - 1,
+					mTenant.getIDInVoltdb() - 1).move();
+		} catch (HException e) {
+			e.printStackTrace();
+			LOG.error(e.getMessage());
 		}
+
 		synchronized (this) {
 			mIsFinished = true;
 			mTenant.finishMovingToMysql();
@@ -38,7 +45,6 @@ public class VoltdbToMysqlMoverThread extends MoverThread {
 	}
 
 	public void cancel() {
-		// TODO shutdown thread for moving data
 		synchronized (this) {
 			if (mIsFinished)
 				return;

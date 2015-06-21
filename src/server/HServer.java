@@ -342,8 +342,17 @@ public class HServer {
 		freeWorkloadInMysqlAhead = workloadLimitInMysql - workloadInMysqlAhead;
 		freeWorkloadInMysqlNow = workloadLimitInMysql - workloadInMysqlNow;
 
-		LOG.info(String.format("MySQL:%d tenants  VoltDB:%d tenants",
-				tenantsInMysqlNow.length, tenantsInVoltdbNow.length));
+		int numberOfTenantsMovingToVoltdb = 0;
+		int numberOfTenantsMovingToMysql = 0;
+		for (int i = 0; i < tenantsInMysqlNow.length; i++)
+			if (tenantsInMysqlNow[i].isBeingMovingToVoltdb())
+				numberOfTenantsMovingToVoltdb++;
+		for (int i = 0; i < tenantsInVoltdbNow.length; i++)
+			if (tenantsInVoltdbNow[i].isBeingMovingToMysql())
+				numberOfTenantsMovingToMysql++;
+		LOG.info(String.format("MySQL:%d(%d) tenants  VoltDB:%d(%d) tenants",
+				tenantsInMysqlNow.length, numberOfTenantsMovingToVoltdb,
+				tenantsInVoltdbNow.length, numberOfTenantsMovingToMysql));
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(String.format("MySQL workload NOW:%d(%d)",
 					workloadInMysqlNow, workloadLimitInMysql));

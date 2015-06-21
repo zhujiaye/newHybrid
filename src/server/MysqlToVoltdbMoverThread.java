@@ -1,10 +1,18 @@
 package server;
 
-import org.omg.CORBA.OMGVMCID;
+import java.sql.Connection;
 
+import org.apache.log4j.Logger;
+import org.voltdb.client.Client;
+
+import utillity.MysqlConnectionPool;
+import utillity.VoltdbConnectionPool;
+import config.Constants;
 import newhybrid.HException;
 
 public class MysqlToVoltdbMoverThread extends MoverThread {
+	final static private Logger LOG = Logger
+			.getLogger(Constants.LOGGER_NAME_SERVER);
 	private int mVoltdbID;
 
 	public MysqlToVoltdbMoverThread(HTenant tenant, int voltdbID,
@@ -24,11 +32,18 @@ public class MysqlToVoltdbMoverThread extends MoverThread {
 				return;
 			mIsStarted = true;
 		}
-		// TODO start moving data
 		try {
-			Thread.sleep(8000);
-		} catch (InterruptedException e) {
-			return;
+			MysqlConnectionPool mysqlPool = new MysqlConnectionPool();
+			VoltdbConnectionPool voltdbPool = new VoltdbConnectionPool();
+			for (int i = 0; i < Constants.NUMBER_OF_TABLES; i++) {
+				Connection mysqlConnection = mysqlPool.getConnection();
+				Client voltdbConnection = voltdbPool.getConnection();
+				new MysqlToVoltdbMover(mTenant.getID() - 1, mVoltdbID - 1, i,
+						mysqlConnection, voltdbConnection).move();
+			}
+		} catch (HException e) {
+			e.printStackTrace();
+			LOG.error(e.getMessage());
 		}
 		synchronized (this) {
 			mIsFinished = true;
@@ -41,7 +56,6 @@ public class MysqlToVoltdbMoverThread extends MoverThread {
 	}
 
 	public void cancel() {
-		// TODO shutdown thread for moving data
 		synchronized (this) {
 			if (mIsFinished)
 				return;

@@ -29,15 +29,13 @@ public class Constants {
 	final public static int[] CUST_PER_DIST = { 30, 50, 50 };
 	final public static int[] DIST_PER_WARE = { 3, 5, 5 };
 	final public static int[] ORD_PER_DIST = { 30, 50, 50 };
-
 	final public static int MAX_NUM_ITEM = 15;
 	final public static int MAX_ITEM_LEN = 24;
 
 	/*
 	 * For thrift
 	 */
-	final public static int SERVER_PORT = 12345;
-	final public static long CONNECT_TIMEOUT = 30 * S;
+
 	final public static int MAX_CONNECT_TRY = 5;
 	final public static int SELECTOR_THREADS = 3;
 	final public static int QUEUE_SIZE_PER_SELECTOR = 3000;
@@ -47,6 +45,7 @@ public class Constants {
 	 * For ServerOffloader
 	 */
 	final public static long OFFLOADER_FIXED_INTERVAL_TIME = 5 * S;
+	final public static int OFFLOADER_BATCH = 200;
 	/*
 	 * Number of Voltdb ID, just for test
 	 */
@@ -59,8 +58,23 @@ public class Constants {
 
 	final public static long SPLIT_TIME = 10 * S;
 	final public static long NUMBEROF_AHEAD_SPLITS = 2;
-	
-	final public static String LOGGER_NAME_SERVER="SERVER_LOGGER";
-	final public static String LOGGER_NAME_CLIENT="CLIENT_LOGGER";
-	
+
+	final public static String LOGGER_NAME_SERVER = "SERVER_LOGGER";
+	final public static String LOGGER_NAME_CLIENT = "CLIENT_LOGGER";
+
+	/*
+	 * Configurable variable's default value in HConfig
+	 */
+	final public static long DEFAULT_SERVERCLIENT_CONNECT_TIMEOUT = 30 * S;
+	final public static int DEFAULT_SERVER_PORT = 12345;
+	final public static String DEFAULT_MYSQL_TMP_FOLDER = "/tmp";
+	final public static Boolean DEFAULT_USE_MYSQL = true;
+	final public static Boolean DEFAULT_USE_VOLTDB = true;
+	final public static String DEFAULT_INITDB = INITDB_MYSQL;
+	final public static Boolean DEFAULT_USE_MEMMONITOR = true;
+	final public static Boolean DEFAULT_MODEL_DETERMINISTIC = false;
+	final public static String DEFAULT_MYSQL_USERNAME = "remote";
+	final public static String DEFAULT_MYSQL_PASSWORD = "remote";
+	final public static int DEFAULT_MYSQL_POOL_INITSIZE = 40;
+	final public static int DEFAULT_VOLTDB_POOL_INITSIZE = 0;
 }

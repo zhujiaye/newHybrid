@@ -62,9 +62,9 @@ public class ServerClient {
 
 				mHeartbeatThread = new HeartbeatThread(
 						"ServerClient_heartbeatThread",
-						new ServerClientHeartbeatExecutor(this,
-								Constants.CONNECT_TIMEOUT),
-						Constants.CONNECT_TIMEOUT / 2);
+						new ServerClientHeartbeatExecutor(this, mConf
+								.getServerClientTimeout()),
+						mConf.getServerClientTimeout() / 2);
 				mHeartbeatThread.start();
 			} catch (TTransportException e) {
 				LOG.debug("Failed to connect (" + tries + ") to server:"

@@ -26,7 +26,13 @@ public class Test {
 				}
 				int cnt = 0;
 				HQueryResult result = null;
-				while (cnt < 200) {
+				try {
+					Thread.sleep(60000);
+				} catch (InterruptedException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				while (cnt < 0) {
 					try {
 						cnt++;
 						if (cnt < 0)
@@ -35,7 +41,7 @@ public class Test {
 							result = mClient.sqlRandomUpdate();
 
 						try {
-							Thread.sleep(250);
+							Thread.sleep(1000);
 						} catch (InterruptedException e) {
 							LOG.error("interrupted!");
 						}
@@ -58,7 +64,7 @@ public class Test {
 	}
 
 	public static void main(String[] args) throws HException {
-		for (int i = 0; i < 200; i++) {
+		for (int i = 0; i < 1; i++) {
 			new Test.ClientThread(i + 1).start();
 		}
 	}

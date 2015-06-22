@@ -89,7 +89,7 @@ public class ServerClient {
 				+ " after " + (tries - 1) + " attempts");
 	}
 
-	public void shutdown() throws HException {
+	public synchronized void shutdown() throws HException {
 		if (mIsShutdown)
 			return;
 		cleanConnect();

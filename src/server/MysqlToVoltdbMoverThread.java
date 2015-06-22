@@ -33,13 +33,15 @@ public class MysqlToVoltdbMoverThread extends MoverThread {
 			mIsStarted = true;
 		}
 		try {
-			MysqlConnectionPool mysqlPool = new MysqlConnectionPool();
-			VoltdbConnectionPool voltdbPool = new VoltdbConnectionPool();
+			MysqlConnectionPool mysqlPool = MysqlConnectionPool.getPool();
+			VoltdbConnectionPool voltdbPool = VoltdbConnectionPool.getPool();
 			for (int i = 0; i < Constants.NUMBER_OF_TABLES; i++) {
 				Connection mysqlConnection = mysqlPool.getConnection();
 				Client voltdbConnection = voltdbPool.getConnection();
 				new MysqlToVoltdbMover(mTenant.getID() - 1, mVoltdbID - 1, i,
 						mysqlConnection, voltdbConnection).move();
+				mysqlPool.putConnection(mysqlConnection);
+				voltdbPool.putConnection(voltdbConnection);
 			}
 		} catch (HException e) {
 			e.printStackTrace();

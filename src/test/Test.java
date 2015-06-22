@@ -2,6 +2,8 @@ package test;
 
 import org.apache.log4j.Logger;
 
+import utillity.MysqlConnectionPool;
+import utillity.VoltdbConnectionPool;
 import config.Constants;
 import newhybrid.HException;
 import newhybrid.HQueryResult;
@@ -22,20 +24,15 @@ public class Test {
 		public void run() {
 			try {
 				if (mClient.login()) {
+					LOG.info("Tenant " + mClient.getID() + " logged in");
 					mClient.start();
 				}
 				int cnt = 0;
 				HQueryResult result = null;
-				try {
-					Thread.sleep(60000);
-				} catch (InterruptedException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				while (cnt < 0) {
+				while (cnt < 60) {
 					try {
 						cnt++;
-						if (cnt < 0)
+						if (cnt > 0)
 							result = mClient.sqlRandomSelect();
 						else
 							result = mClient.sqlRandomUpdate();
@@ -53,8 +50,10 @@ public class Test {
 					if (result.isSuccess())
 						mClient.completeOneQuery();
 				}
-				System.out.println("Finish");
+				mClient.stop();
+				LOG.info("Tenant " + mClient.getID() + " finish querying");
 				mClient.logout();
+				LOG.info("Tenant " + mClient.getID() + " logged out");
 				mClient.shutdown();
 
 			} catch (HException e) {
@@ -64,7 +63,7 @@ public class Test {
 	}
 
 	public static void main(String[] args) throws HException {
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < 1000; i++) {
 			new Test.ClientThread(i + 1).start();
 		}
 	}

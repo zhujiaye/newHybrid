@@ -22,7 +22,6 @@ public class MysqlToVoltdbMover {
 	public int tableId;
 	public Connection conn;
 	public Client client;
-	public Statement stmt = null;
 
 	/**
 	 * 
@@ -169,6 +168,7 @@ public class MysqlToVoltdbMover {
 	 */
 	public void move() {
 		try {
+			Statement stmt = null;
 			stmt = conn.createStatement();
 			// System.out.println("clearing "+mConf.getMysqlTempFolder() + "/" +
 			// tables[tableId]
@@ -199,6 +199,14 @@ public class MysqlToVoltdbMover {
 						+ volumnId, tenantId, lines, count);
 			filereader.close();
 			reader.close();
+			conn.close();
+			try {
+				client.drain();
+				client.close();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+
 		} catch (SQLException | IOException | ProcCallException e) {
 			e.printStackTrace();
 		}

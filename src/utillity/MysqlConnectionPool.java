@@ -7,31 +7,52 @@ import java.sql.SQLTimeoutException;
 import java.util.HashSet;
 import java.util.Iterator;
 
+import org.apache.log4j.Logger;
+
 import newhybrid.HException;
 import newhybrid.NoMysqlConnectionException;
+import config.Constants;
 import config.HConfig;
 
 public class MysqlConnectionPool {
-	private final static int MAX_RETRY = 5;
+	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
+	final static private int MAX_RETRY = 5;
+	static private MysqlConnectionPool pool = null;
+
 	private HashSet<Connection> mPool;
 	private HConfig mConf;
 
-	public MysqlConnectionPool() throws HException {
+	public synchronized static MysqlConnectionPool getPool() throws HException {
+		if (pool == null) {
+			pool = new MysqlConnectionPool();
+		}
+		return pool;
+	}
+
+	private MysqlConnectionPool() throws HException {
 		this(0);
 	}
 
-	public MysqlConnectionPool(int num) throws HException {
+	private MysqlConnectionPool(int num) throws HException {
 		mPool = new HashSet<Connection>();
 		mConf = HConfig.getConf();
 		for (int i = 0; i < num; i++) {
 			try {
 				add();
 			} catch (NoMysqlConnectionException e) {
-				e.printStackTrace();
+				LOG.error("Can't get a new mysql connection:" + e.getMessage());
+				break;
 			}
 		}
 	}
 
+	/**
+	 * add a new MySQL connection to the pool
+	 * 
+	 * @throws NoMysqlConnectionException
+	 *             if a new mysql connection can't be got
+	 * @throws HException
+	 */
 	private void add() throws NoMysqlConnectionException, HException {
 		Connection newConnection = null;
 		int cnt = 0;
@@ -67,7 +88,9 @@ public class MysqlConnectionPool {
 					try {
 						tmp.close();
 					} catch (SQLException e) {
-						e.printStackTrace();
+						LOG.error("Access denied!");
+					} finally {
+						tmp = null;
 					}
 				}
 			}
@@ -82,18 +105,31 @@ public class MysqlConnectionPool {
 			try {
 				add();
 			} catch (NoMysqlConnectionException e) {
-				e.printStackTrace();
+				LOG.error("Can't get a new mysql connection" + e.getMessage());
 			}
 		}
 		iter = mPool.iterator();
-		if (iter != null && iter.hasNext()) {
+		while (iter != null && iter.hasNext()) {
 			res = iter.next();
 			mPool.remove(res);
+			try {
+				if (res == null || res.isClosed())
+					continue;
+			} catch (SQLException e) {
+				LOG.error("Access denied!");
+			}
+			break;
 		}
 		return res;
 	}
 
 	public synchronized void putConnection(Connection conn) {
+		try {
+			if (conn == null || conn.isClosed())
+				return;
+		} catch (SQLException e) {
+			LOG.error("Access denied!");
+		}
 		mPool.add(conn);
 	}
 }

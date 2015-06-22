@@ -173,17 +173,21 @@ public class HTenant implements Comparable<HTenant> {
 	public synchronized void finishMovingToMysql() {
 		mIsInMysql = true;
 		mBeingMovingToMysql = mBeingMovingToVoltdb = false;
+		mMovingToMysqlThread = null;
 	}
 
 	public synchronized void finishMovingToVoltdb(int voltdbID) {
 		mIDInVoltdb = voltdbID;
 		mIsInMysql = false;
 		mBeingMovingToMysql = mBeingMovingToVoltdb = false;
+		mMovingToVoltdbThread = null;
 	}
 
 	public synchronized void cancelMoving() {
 		mBeingMovingToMysql = false;
 		mBeingMovingToVoltdb = false;
+		mMovingToMysqlThread = null;
+		mMovingToVoltdbThread = null;
 	}
 
 	public synchronized void startMovingToVoltdb(MysqlToVoltdbMoverThread thread) {
@@ -196,11 +200,11 @@ public class HTenant implements Comparable<HTenant> {
 		mBeingMovingToMysql = true;
 	}
 
-	public MysqlToVoltdbMoverThread getMovingToVoltdbThread() {
+	public synchronized MysqlToVoltdbMoverThread getMovingToVoltdbThread() {
 		return mMovingToVoltdbThread;
 	}
 
-	public VoltdbToMysqlMoverThread getMovingToMysqlThread() {
+	public synchronized VoltdbToMysqlMoverThread getMovingToMysqlThread() {
 		return mMovingToMysqlThread;
 	}
 

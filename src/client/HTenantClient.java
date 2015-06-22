@@ -42,20 +42,9 @@ public class HTenantClient {
 	private ServerClient mServerClient = null;
 
 	public HTenantClient(int tenantId) throws HException {
-		this(tenantId, null, null);
-	}
-
-	public HTenantClient(int tenantId, MysqlConnectionPool mysqlPool,
-			VoltdbConnectionPool voltdbPool) throws HException {
 		mID = tenantId;
-		mMysqlPool = mysqlPool;
-		mVoltdbPool = voltdbPool;
-		if (mMysqlPool == null) {
-			mMysqlPool = new MysqlConnectionPool();
-		}
-		if (mVoltdbPool == null) {
-			mVoltdbPool = new VoltdbConnectionPool();
-		}
+		mMysqlPool = MysqlConnectionPool.getPool();
+		mVoltdbPool = VoltdbConnectionPool.getPool();
 		mTables = new Table[Constants.NUMBER_OF_TABLES];
 		mTables[0] = new CustomerTable(this);
 		mTables[1] = new DistrictTable(this);
@@ -80,10 +69,10 @@ public class HTenantClient {
 	public synchronized void shutdown() throws HException {
 		mServerClient.shutdown();
 		releaseConnection();
-		if (mMysqlPool != null)
-			mMysqlPool.clear();
-		if (mVoltdbPool != null)
-			mVoltdbPool.clear();
+		// if (mMysqlPool != null)
+		// mMysqlPool.clear();
+		// if (mVoltdbPool != null)
+		// mVoltdbPool.clear();
 	}
 
 	public synchronized boolean isLoggedIn() throws HException {

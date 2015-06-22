@@ -316,7 +316,8 @@ public class HServer {
 	 * TODO make this better
 	 */
 	public void offloadWorkloads() throws HException {
-		LOG.info("offloader checking...");
+		LOG.info("offloader checking...and gc");
+		System.gc();
 		if (!mConf.isUseMysql() || !mConf.isUseVoltdb()) {
 			return;
 		}
@@ -615,7 +616,7 @@ public class HServer {
 	}
 
 	private void clearVoltdb() throws HException {
-		VoltdbConnectionPool pool = new VoltdbConnectionPool();
+		VoltdbConnectionPool pool = VoltdbConnectionPool.getPool();
 		Client voltdbConnection = pool.getConnection();
 		ClientResponse response;
 		VoltTable[] tables;
@@ -652,6 +653,5 @@ public class HServer {
 		} else {
 			throw new HException("Can't connect to voltdb server");
 		}
-		pool.clear();
 	}
 }

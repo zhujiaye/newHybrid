@@ -7,29 +7,29 @@ import java.util.Scanner;
 import newhybrid.HException;
 
 public class HConfig {
-	final private static String ENV_FILEPATH = System.getProperty(
-			"newhybrid.envpath", "newhybrid-env");
+	final private String ENV_FILEPATH = System.getProperty("newhybrid.envpath",
+			"newhybrid-env");
 
 	private static HConfig conf = null;
-	private static boolean mUsemysql = Constants.DEFAULT_USE_MYSQL;
-	private static boolean mUsevoltdb = Constants.DEFAULT_USE_VOLTDB;
-	private static String mInitdb = Constants.DEFAULT_INITDB;
-	private static String mServerAddress;
-	private static int mServerPort = Constants.DEFAULT_SERVER_PORT;
-	private static boolean mSeverUseMemmonitor = Constants.DEFAULT_USE_MEMMONITOR;
-	private static boolean mServerModelDeterministic = Constants.DEFAULT_MODEL_DETERMINISTIC;
-	private static String mMysqlServerAddress;
-	private static String mMysqlDbname;
-	private static String mMysqlUsername = Constants.DEFAULT_MYSQL_USERNAME;
-	private static String mMysqlPassword = Constants.DEFAULT_MYSQL_PASSWORD;
-	private static String mVoltdbServerAddress;
-	private static int mVoltdbCapacity;
-	private static String mMysqlTempFolder = Constants.DEFAULT_MYSQL_TMP_FOLDER;
-	private static long mServerClientTimeout = Constants.DEFAULT_SERVERCLIENT_CONNECT_TIMEOUT;
+	private boolean mUsemysql = Constants.DEFAULT_USE_MYSQL;
+	private boolean mUsevoltdb = Constants.DEFAULT_USE_VOLTDB;
+	private String mInitdb = Constants.DEFAULT_INITDB;
+	private String mServerAddress;
+	private int mServerPort = Constants.DEFAULT_SERVER_PORT;
+	private boolean mSeverUseMemmonitor = Constants.DEFAULT_USE_MEMMONITOR;
+	private boolean mServerModelDeterministic = Constants.DEFAULT_MODEL_DETERMINISTIC;
+	private String mMysqlServerAddress;
+	private String mMysqlDbname;
+	private String mMysqlUsername = Constants.DEFAULT_MYSQL_USERNAME;
+	private String mMysqlPassword = Constants.DEFAULT_MYSQL_PASSWORD;
+	private String mVoltdbServerAddress;
+	private int mVoltdbCapacity;
+	private String mMysqlTempFolder = Constants.DEFAULT_MYSQL_TMP_FOLDER;
+	private long mServerClientTimeout = Constants.DEFAULT_SERVERCLIENT_CONNECT_TIMEOUT;
 	// For test only
-	private static int mMysqlPoolInitsize = Constants.DEFAULT_MYSQL_POOL_INITSIZE;
-	private static int mVoltdbPoolInitsize = Constants.DEFAULT_VOLTDB_POOL_INITSIZE;
-	private static String mWorkloadfilepath;
+	private int mMysqlPoolInitsize = Constants.DEFAULT_MYSQL_POOL_INITSIZE;
+	private int mVoltdbPoolInitsize = Constants.DEFAULT_VOLTDB_POOL_INITSIZE;
+	private String mWorkloadfilepath;
 
 	public synchronized static HConfig getConf() throws HException {
 		if (conf == null) {
@@ -184,7 +184,7 @@ public class HConfig {
 		return mServerClientTimeout;
 	}
 
-	public synchronized static void print() {
+	public synchronized void print() {
 		System.out.println("[NewHybrid]");
 		System.out.println("\tnewhybrid.usemysql " + mUsemysql);
 		System.out.println("\tnewhybrid.usevoltdb " + mUsevoltdb);

@@ -7,6 +7,7 @@ import java.util.Iterator;
 import newhybrid.HException;
 import newhybrid.NoVoltdbConnectionException;
 
+import org.apache.log4j.Logger;
 import org.voltdb.client.Client;
 import org.voltdb.client.ClientConfig;
 import org.voltdb.client.ClientFactory;
@@ -15,28 +16,48 @@ import org.voltdb.client.ClientStatusListenerExt;
 import org.voltdb.client.NoConnectionsException;
 import org.voltdb.client.ProcedureCallback;
 
+import config.Constants;
 import config.HConfig;
 
 public class VoltdbConnectionPool {
-	private final static int MAX_RETRY = 5;
+	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
+	final static private int MAX_RETRY = 5;
+	static private VoltdbConnectionPool pool = null;
+
 	private HashSet<Client> mPool;
 	private HConfig mConf;
 
-	public VoltdbConnectionPool() throws HException {
+	public static synchronized VoltdbConnectionPool getPool() throws HException {
+		if (pool == null) {
+			pool = new VoltdbConnectionPool();
+		}
+		return pool;
+	}
+
+	private VoltdbConnectionPool() throws HException {
 		this(0);
 	}
 
-	public VoltdbConnectionPool(int num) throws HException {
+	private VoltdbConnectionPool(int num) throws HException {
 		mPool = new HashSet<Client>();
 		mConf = HConfig.getConf();
 		for (int i = 0; i < num; i++) {
 			try {
 				add();
 			} catch (NoVoltdbConnectionException e) {
+				LOG.error("Can't get a new voltdb connection:" + e.getMessage());
+				break;
 			}
 		}
 	}
 
+	/**
+	 * add a new voltdb connection to the pool
+	 * 
+	 * @throws NoVoltdbConnectionException
+	 *             if a new voltdb connection can't be got
+	 * @throws HException
+	 */
 	private void add() throws NoVoltdbConnectionException, HException {
 		Client newConnection = null;
 		ClientConfig config = new ClientConfig();
@@ -60,7 +81,7 @@ public class VoltdbConnectionPool {
 
 	}
 
-	public void clear() {
+	public synchronized void clear() {
 		Client tmp;
 		Iterator<Client> iter = null;
 		iter = mPool.iterator();
@@ -72,7 +93,9 @@ public class VoltdbConnectionPool {
 						tmp.drain();
 						tmp.close();
 					} catch (InterruptedException | NoConnectionsException e) {
-						e.printStackTrace();
+						LOG.error(e.getMessage());
+					} finally {
+						tmp = null;
 					}
 				}
 			}
@@ -87,18 +110,23 @@ public class VoltdbConnectionPool {
 			try {
 				add();
 			} catch (NoVoltdbConnectionException e) {
-				e.printStackTrace();
+				LOG.error("Can't get a new voltdb connection:" + e.getMessage());
 			}
 		}
 		iter = mPool.iterator();
-		if (iter != null && iter.hasNext()) {
+		while (iter != null && iter.hasNext()) {
 			res = iter.next();
 			mPool.remove(res);
+			if (res == null || res.getConnectedHostList().isEmpty())
+				continue;
+			break;
 		}
 		return res;
 	}
 
 	public synchronized void putConnection(Client conn) {
+		if (conn == null || conn.getConnectedHostList().isEmpty())
+			return;
 		mPool.add(conn);
 	}
 }

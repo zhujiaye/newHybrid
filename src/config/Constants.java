@@ -59,6 +59,8 @@ public class Constants {
 	final public static long SPLIT_TIME = 10 * S;
 	final public static long NUMBEROF_AHEAD_SPLITS = 2;
 
+	final public static String LOGGER_NAME = System.getProperty(
+			"newhybrid.logger.name", "");
 	final public static String LOGGER_NAME_SERVER = "SERVER_LOGGER";
 	final public static String LOGGER_NAME_CLIENT = "CLIENT_LOGGER";
 

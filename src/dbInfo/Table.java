@@ -45,32 +45,18 @@ public abstract class Table {
 		mConf = HConfig.getConf();
 	}
 
-	/*
-	 * No use of PreparedStatement public void updatePreparedStatement() throws
-	 * HException { updateSelectPreparedStatement();
-	 * updateUpdatePreparedStatement();
-	 * 
-	 * }
-	 * 
-	 * public void updateSelectPreparedStatement() throws HException {
-	 * Connection mysqlConnection; mysqlConnection = HTC.getMysqlConnection();
-	 * try { if (mSelectStmt != null) { if (mSelectStmt.getConnection() ==
-	 * mysqlConnection) return; mSelectStmt.close(); } } catch (SQLException e)
-	 * { throw new HException(e.getMessage()); } if (mysqlConnection == null)
-	 * return; mysqlConnection.prepareStatement(sql); }
-	 */
-
-	public HQueryResult sqlRandomSelect() throws HException,
-			HSQLTimeOutException {
+	public HQueryResult sqlRandomSelect() throws HException {
 		generateAllColumns();
 		if (HTC.isUseMysql()) {
 			Connection mysqlConnection;
 			Statement stmt;
 			ResultSet result;
+			long time1 = 0, time2 = 0;
 			try {
 				mysqlConnection = HTC.getMysqlConnection();
 				if (mysqlConnection == null)
-					return new HQueryResult(null);
+					return new HQueryResult(QueryType.SELECT, true, false,
+							"no mysql connection!", time1, time2, null, null, 0);
 				generateNameInMysql();
 				generateAllColumnsInMysql();
 				stmt = mysqlConnection.createStatement();
@@ -83,16 +69,19 @@ public abstract class Table {
 					queryString.append(mColumnNamesInMysql[c] + "=" + "\""
 							+ mColumnValuesInMysql[c] + "\"");
 				}
-				long time1, time2;
 				time1 = System.nanoTime();
 				result = stmt.executeQuery(queryString.toString());
 				time2 = System.nanoTime();
-				return new HQueryResult(QueryType.SELECT, time1, time2, result,
-						null, 0);
+				return new HQueryResult(QueryType.SELECT, true, true,
+						"success!", time1, time2, result, null, 0);
 			} catch (SQLTimeoutException e) {
-				throw new HSQLTimeOutException(e.getMessage());
+				return new HQueryResult(QueryType.SELECT, true, false,
+						"time out! " + e.getMessage(), time1, time2, null,
+						null, 0);
 			} catch (SQLException e) {
-				throw new HException(e.getMessage());
+				return new HQueryResult(QueryType.SELECT, true, false,
+						"access denied! " + e.getMessage(), time1, time2, null,
+						null, 0);
 			}
 
 		} else {
@@ -100,8 +89,10 @@ public abstract class Table {
 			ClientResponse response;
 			VoltTable[] result;
 			voltdbConnection = HTC.getVoltdbConnection();
+			long time1 = 0, time2 = 0;
 			if (voltdbConnection == null)
-				return new HQueryResult(null);
+				return new HQueryResult(QueryType.SELECT, false, false,
+						"no voltdb connection", time1, time2, null, null, 0);
 			generateNameInVoltdb();
 			generateAllColumnsInVoltdb(0, 0);
 			Object[] para = new Object[mPrimaryKeyColumnInVoltdb.length];
@@ -110,31 +101,40 @@ public abstract class Table {
 				para[i] = mColumnValuesInVoltdb[c];
 			}
 			try {
-				long time1, time2;
+
 				time1 = System.nanoTime();
 				response = voltdbConnection.callProcedure(
 						mNameInVoltdb.toUpperCase() + ".select", para);
 				time2 = System.nanoTime();
 				if (response.getStatus() == ClientResponse.SUCCESS) {
 					result = response.getResults();
-					return new HQueryResult(QueryType.SELECT, time1, time2,
-							null, result, 0);
-				} else
-					return new HQueryResult(null);
+					return new HQueryResult(QueryType.SELECT, false, true,
+							"success", time1, time2, null, result, 0);
+				} else {
+					return new HQueryResult(QueryType.SELECT, false, false,
+							"not success:" + response.getStatus() + " "
+									+ response.getStatusString(), time1, time2,
+							null, null, 0);
+				}
 			} catch (NoConnectionsException e) {
-				throw new HException(e.getMessage());
+				return new HQueryResult(QueryType.SELECT, false, false,
+						"no connection! " + e.getMessage(), time1, time2, null,
+						null, 0);
 			} catch (IOException e) {
-				throw new HException(e.getMessage());
+				return new HQueryResult(QueryType.SELECT, false, false,
+						e.getMessage(), time1, time2, null, null, 0);
 			} catch (ProcCallException e) {
-				throw new HException(e.getMessage());
+				return new HQueryResult(QueryType.SELECT, false, false,
+						e.getMessage(), time1, time2, null, null, 0);
 			}
 
 		}
 	}
 
-	public HQueryResult sqlRandomUpdate() throws HException,
-			HSQLTimeOutException {
+	public HQueryResult sqlRandomUpdate() throws HException {
 		generateAllColumns();
+		long time1, time2;
+		time1 = time2 = 0;
 		if (HTC.isUseMysql()) {
 			Connection mysqlConnection;
 			Statement stmt;
@@ -142,7 +142,8 @@ public abstract class Table {
 			try {
 				mysqlConnection = HTC.getMysqlConnection();
 				if (mysqlConnection == null)
-					return new HQueryResult(null);
+					return new HQueryResult(QueryType.UPDATE, true, false,
+							"no mysql connection!", time1, time2, null, null, 0);
 				generateNameInMysql();
 				generateAllColumnsInMysql();
 				stmt = mysqlConnection.createStatement();
@@ -162,16 +163,20 @@ public abstract class Table {
 					queryString.append(mColumnNamesInMysql[c] + "=" + "\""
 							+ mColumnValuesInMysql[c] + "\"");
 				}
-				long time1, time2;
+
 				time1 = System.nanoTime();
 				result = stmt.executeUpdate(queryString.toString());
 				time2 = System.nanoTime();
-				return new HQueryResult(QueryType.UPDATE, time1, time2, null,
-						null, result);
+				return new HQueryResult(QueryType.UPDATE, true, true,
+						"success", time1, time2, null, null, result);
 			} catch (SQLTimeoutException e) {
-				throw new HSQLTimeOutException(e.getMessage());
+				return new HQueryResult(QueryType.UPDATE, true, false,
+						"time out! " + e.getMessage(), time1, time2, null,
+						null, 0);
 			} catch (SQLException e) {
-				throw new HException(e.getMessage());
+				return new HQueryResult(QueryType.UPDATE, true, false,
+						"access denied! " + e.getMessage(), time1, time2, null,
+						null, 0);
 			}
 
 		} else {
@@ -180,7 +185,8 @@ public abstract class Table {
 			VoltTable[] result;
 			voltdbConnection = HTC.getVoltdbConnection();
 			if (voltdbConnection == null)
-				return new HQueryResult(null);
+				return new HQueryResult(QueryType.UPDATE, false, false,
+						"no voltdb connection", time1, time2, null, null, 0);
 			generateNameInVoltdb();
 			generateAllColumnsInVoltdb(0, 1);
 			Object[] para = new Object[mColumnValuesInVoltdb.length
@@ -193,23 +199,30 @@ public abstract class Table {
 				para[mColumnValuesInVoltdb.length + i] = mColumnValuesInVoltdb[c];
 			}
 			try {
-				long time1, time2;
 				time1 = System.nanoTime();
 				response = voltdbConnection.callProcedure(
 						mNameInVoltdb.toUpperCase() + ".update", para);
 				time2 = System.nanoTime();
 				if (response.getStatus() == ClientResponse.SUCCESS) {
 					result = response.getResults();
-					return new HQueryResult(QueryType.UPDATE, time1, time2,
-							null, result, 0);
-				} else
-					return new HQueryResult(null);
+					return new HQueryResult(QueryType.UPDATE, false, true,
+							"success", time1, time2, null, result, 0);
+				} else {
+					return new HQueryResult(QueryType.UPDATE, false, false,
+							"not success:" + response.getStatus() + " "
+									+ response.getStatusString(), time1, time2,
+							null, null, 0);
+				}
 			} catch (NoConnectionsException e) {
-				throw new HException(e.getMessage());
+				return new HQueryResult(QueryType.UPDATE, false, false,
+						"no connection! " + e.getMessage(), time1, time2, null,
+						null, 0);
 			} catch (IOException e) {
-				throw new HException(e.getMessage());
+				return new HQueryResult(QueryType.UPDATE, false, false,
+						e.getMessage(), time1, time2, null, null, 0);
 			} catch (ProcCallException e) {
-				throw new HException(e.getMessage());
+				return new HQueryResult(QueryType.UPDATE, false, false,
+						e.getMessage(), time1, time2, null, null, 0);
 			}
 
 		}

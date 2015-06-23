@@ -19,9 +19,9 @@ public class ServerClient {
 	final private static Logger LOG = Logger
 			.getLogger(Constants.LOGGER_NAME_CLIENT);
 	final private HConfig mConf;
-	private boolean mIsConnected = false;
-	private boolean mIsShutdown = false;
-	private long mLastAccessTime;
+	private volatile boolean mIsConnected = false;
+	private volatile boolean mIsShutdown = false;
+	private volatile long mLastAccessTime;
 	private TProtocol mProtocol = null;
 	private HeartbeatThread mHeartbeatThread = null;
 	private ServerService.Client mClient;

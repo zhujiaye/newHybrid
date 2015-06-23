@@ -1,5 +1,7 @@
 package test;
 
+import java.util.Random;
+
 import org.apache.log4j.Logger;
 
 import utillity.MysqlConnectionPool;
@@ -29,26 +31,25 @@ public class Test {
 				}
 				int cnt = 0;
 				HQueryResult result = null;
-				while (cnt < 60) {
-					try {
-						cnt++;
-						if (cnt > 0)
-							result = mClient.sqlRandomSelect();
-						else
-							result = mClient.sqlRandomUpdate();
-
-						try {
-							Thread.sleep(1000);
-						} catch (InterruptedException e) {
-							LOG.error("interrupted!");
-						}
-
-					} catch (HSQLTimeOutException e) {
-						LOG.info("one query TIMEOUT");
-						continue;
-					}
+				Random ran = new Random(System.currentTimeMillis());
+				while (cnt < 960) {
+					// System.gc();
+					cnt++;
+					if (ran.nextInt(100) < 80)
+						result = mClient.sqlRandomSelect();
+					else
+						result = mClient.sqlRandomUpdate();
 					if (result.isSuccess())
 						mClient.completeOneQuery();
+					else
+						LOG.info(result.getMessage());
+					result.close();
+					try {
+						Thread.sleep(625);
+					} catch (InterruptedException e) {
+						LOG.error("interrupted!");
+					}
+
 				}
 				mClient.stop();
 				LOG.info("Tenant " + mClient.getID() + " finish querying");
@@ -63,6 +64,7 @@ public class Test {
 	}
 
 	public static void main(String[] args) throws HException {
+		LOG.info("start");
 		for (int i = 0; i < 1000; i++) {
 			new Test.ClientThread(i + 1).start();
 		}

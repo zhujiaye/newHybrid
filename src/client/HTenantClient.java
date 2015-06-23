@@ -135,8 +135,7 @@ public class HTenantClient {
 		return mVoltdbConnection;
 	}
 
-	public synchronized HQueryResult sqlRandomSelect() throws HException,
-			HSQLTimeOutException {
+	public synchronized HQueryResult sqlRandomSelect() throws HException {
 		if (!isLoggedIn()) {
 			LOG.error("Tenant " + mID + " not logged in!");
 			return null;
@@ -153,8 +152,7 @@ public class HTenantClient {
 		return result;
 	}
 
-	public synchronized HQueryResult sqlRandomUpdate() throws HException,
-			HSQLTimeOutException {
+	public synchronized HQueryResult sqlRandomUpdate() throws HException {
 		if (!isLoggedIn()) {
 			LOG.error("Tenant " + mID + " not logged in!");
 			return null;

@@ -64,12 +64,14 @@ public class CustomerRetriver {
 		ClientResponse response = null;
 		VoltTable result = null;
 		VoltTableRow row = null;
+		int counts = 0;
 		try {
 			response = voltdbConn.callProcedure("SelectCustomer_" + volumnId,
 					tenantId, 0, 1);
 			if (response.getStatus() == ClientResponse.SUCCESS
 					&& response.getResults()[0].getRowCount() != 0) {
 				result = response.getResults()[0];
+				counts += result.getRowCount();
 				for (int i = 0; i < result.getRowCount(); i++) {
 					row = result.fetchRow(i);
 					statements[0].setInt(1,
@@ -132,6 +134,7 @@ public class CustomerRetriver {
 			if (response.getStatus() == ClientResponse.SUCCESS
 					&& response.getResults()[0].getRowCount() != 0) {
 				result = response.getResults()[0];
+				counts += result.getRowCount();
 				for (int i = 0; i < result.getRowCount(); i++) {
 					row = result.fetchRow(i);
 					statements[1].setInt(1,
@@ -190,6 +193,7 @@ public class CustomerRetriver {
 			if (response.getStatus() == ClientResponse.SUCCESS
 					&& response.getResults()[0].getRowCount() != 0) {
 				result = response.getResults()[0];
+				counts += result.getRowCount();
 				for (int i = 0; i < result.getRowCount(); i++) {
 					row = result.fetchRow(i);
 					statements[1].setInt(1,
@@ -242,6 +246,8 @@ public class CustomerRetriver {
 				// statements[1].executeBatch();
 				// }
 			}
+			//System.out.println("Customer " + volumnId + " " + counts
+			//		+ " tuples back");
 			voltdbConn.callProcedure("@AdHoc", "DELETE FROM customer"
 					+ volumnId + " WHERE tenant_id = " + tenantId);
 		} catch (IOException | ProcCallException | SQLException e) {

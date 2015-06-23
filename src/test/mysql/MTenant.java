@@ -99,7 +99,7 @@ public class MTenant extends Thread {
 						this.readNumber(1);
 				}
 			}
-		} catch (HException | HSQLTimeOutException e) {
+		} catch (HException e) {
 			e.printStackTrace();
 		}
 	}

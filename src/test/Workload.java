@@ -27,9 +27,7 @@ public class Workload {
 					System.out.println("failed");
 				}
 				Thread.sleep(10000);
-			} catch (HSQLTimeOutException e) {
-				e.printStackTrace();
-				System.out.println("Out of time");
+
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

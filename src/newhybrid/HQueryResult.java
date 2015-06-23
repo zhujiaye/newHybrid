@@ -3,23 +3,33 @@ package newhybrid;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.apache.log4j.Logger;
 import org.voltdb.VoltTable;
 
+import config.Constants;
+
 public class HQueryResult {
-	private long mStartTime;
-	private long mEndTime;
-	private QueryType mType;
+	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
+	final private long mStartTime;
+	final private long mEndTime;
+	final private QueryType mType;
+	final private boolean mIsInMysql;
+	final private boolean mIsSuccess;
+	final private String mMessage;
 	private ResultSet mMysqlResult;
 	private VoltTable[] mVoltdbResult;
-	private int mUpdatedCount;
+	final private int mUpdatedCount;
 
-	public HQueryResult(QueryType queryType) {
-		mType = queryType;
-	}
-
-	public HQueryResult(QueryType queryType, long time1, long time2,
+	public HQueryResult(QueryType queryType, boolean isInMysql,
+			boolean isSuccess, String message, long time1, long time2,
 			ResultSet mysqlResult, VoltTable[] voltdbResult, int updatedCount) {
+		if (queryType == null) {
+			LOG.error("QueryType is null!");
+		}
 		mType = queryType;
+		mIsInMysql = isInMysql;
+		mIsSuccess = isSuccess;
+		mMessage = message;
 		mStartTime = time1;
 		mEndTime = time2;
 		mMysqlResult = mysqlResult;
@@ -28,33 +38,53 @@ public class HQueryResult {
 	}
 
 	public boolean isSuccess() {
-		if (mType == null)
-			return false;
-		return true;
+		return mIsSuccess;
+	}
+
+	public String getMessage() {
+		return mMessage;
 	}
 
 	public boolean isInMysql() {
-		if (mType == null)
-			return false;
-		if (mType.isRead()) {
-			if (mMysqlResult != null)
-				return true;
-			return false;
-		} else {
-			if (mVoltdbResult != null)
-				return false;
-			return true;
+		return mIsInMysql;
+		// if (mType == null)
+		// return false;
+		// if (mType.isRead()) {
+		// if (mMysqlResult != null)
+		// return true;
+		// return false;
+		// } else {
+		// if (mVoltdbResult != null)
+		// return false;
+		// return true;
+		// }
+	}
+
+	/**
+	 * Release result resources
+	 */
+	public void close() {
+		if (mMysqlResult != null) {
+			try {
+				mMysqlResult.close();
+			} catch (SQLException e) {
+				LOG.error("Access denied!");
+			}
+			mMysqlResult = null;
 		}
+		if (mVoltdbResult != null)
+			mVoltdbResult = null;
 	}
 
 	public void print() throws HException {
-		if (mType == null) {
-			System.out.println("failed query");
-		}
 		if (mType.isRead()) {
-			if (isInMysql()) {
+			if (mIsInMysql) {
 				int n;
 				try {
+					if (mMysqlResult == null || mMysqlResult.isClosed()) {
+						LOG.warn("MySQL result is not accessible!");
+						return;
+					}
 					n = mMysqlResult.getMetaData().getColumnCount();
 					System.out.format("%10s%10s", mMysqlResult.getMetaData()
 							.getTableName(1), mType.name());
@@ -74,6 +104,10 @@ public class HQueryResult {
 					throw new HException(e.getMessage());
 				}
 			} else {
+				if (mVoltdbResult == null) {
+					LOG.warn("VoltDB result is not accessible!");
+					return;
+				}
 				if (mVoltdbResult.length > 0) {
 					VoltTable table = mVoltdbResult[0];
 					int n = table.getColumnCount();
@@ -89,7 +123,7 @@ public class HQueryResult {
 				}
 			}
 		} else {
-			if (isInMysql()) {
+			if (mIsInMysql) {
 				System.out
 						.format("%10s write query:%d tuples inserted/updated/deleted%n",
 								mType.name(), mUpdatedCount);

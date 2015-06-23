@@ -44,7 +44,7 @@ public class HServer {
 	final private int mPort;
 	final private int mVoltdbSpaceTotal;
 
-	private boolean isStarted;
+	private volatile boolean isStarted;
 	private Map<Integer, HTenant> mTenants;
 	// private Map<Integer, Integer> mTenantsVoltdbID;
 	private Map<Integer, List<Integer>> mVoltdbIDList;
@@ -316,8 +316,7 @@ public class HServer {
 	 * TODO make this better
 	 */
 	public void offloadWorkloads() throws HException {
-		LOG.info("offloader checking...and gc");
-		System.gc();
+		LOG.info("offloader checking...");
 		if (!mConf.isUseMysql() || !mConf.isUseVoltdb()) {
 			return;
 		}

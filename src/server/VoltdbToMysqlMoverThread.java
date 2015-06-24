@@ -1,5 +1,7 @@
 package server;
 
+import java.io.InterruptedIOException;
+
 import org.apache.log4j.Logger;
 
 import config.Constants;
@@ -31,6 +33,10 @@ public class VoltdbToMysqlMoverThread extends MoverThread {
 		} catch (HException e) {
 			e.printStackTrace();
 			LOG.error(e.getMessage());
+		} catch (InterruptedException e) {
+			return;
+		} catch (InterruptedIOException e) {
+			return;
 		}
 
 		synchronized (this) {

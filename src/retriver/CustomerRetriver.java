@@ -1,11 +1,13 @@
 package retriver;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+
 import org.voltdb.VoltTable;
 import org.voltdb.VoltTableRow;
 import org.voltdb.VoltType;
@@ -38,7 +40,7 @@ public class CustomerRetriver {
 		this.voltdbConn = voltdbConn;
 	}
 
-	public void move() {
+	public void move() throws InterruptedException, InterruptedIOException {
 		try {
 			stmt = conn.createStatement();
 			conn.setAutoCommit(false);
@@ -246,23 +248,21 @@ public class CustomerRetriver {
 				// statements[1].executeBatch();
 				// }
 			}
-			//System.out.println("Customer " + volumnId + " " + counts
-			//		+ " tuples back");
+			// System.out.println("Customer " + volumnId + " " + counts
+			// + " tuples back");
 			voltdbConn.callProcedure("@AdHoc", "DELETE FROM customer"
 					+ volumnId + " WHERE tenant_id = " + tenantId);
+			conn.close();
+			voltdbConn.close();
 		} catch (IOException | ProcCallException | SQLException e) {
+			if (e instanceof InterruptedIOException)
+				throw (InterruptedIOException) e;
 			e.printStackTrace();
 			// System.out.println("************"+row.get("c_d_id",
 			// VoltType.TINYINT)+"************");
 		}
 		// System.out.println("\n customer: " + tenantId + " truncated...");
 		// ******************************************************************************//
-		try {
-			conn.close();
-			voltdbConn.close();
-		} catch (SQLException | InterruptedException e) {
-			e.printStackTrace();
-		}
 
 	}
 

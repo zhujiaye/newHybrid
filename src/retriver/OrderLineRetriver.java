@@ -1,11 +1,13 @@
 package retriver;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+
 import org.voltdb.VoltTable;
 import org.voltdb.VoltTableRow;
 import org.voltdb.VoltType;
@@ -32,7 +34,7 @@ public class OrderLineRetriver {
 		this.voltdbConn = voltdbConn;
 	}
 
-	public void move() {
+	public void move() throws InterruptedException, InterruptedIOException {
 		try {
 			stmt = conn.createStatement();
 			conn.setAutoCommit(false);
@@ -181,6 +183,8 @@ public class OrderLineRetriver {
 			voltdbConn.callProcedure("@AdHoc", "DELETE FROM order_line"
 					+ volumnId + " WHERE tenant_id = " + tenantId);
 		} catch (IOException | ProcCallException | SQLException e) {
+			if (e instanceof InterruptedIOException)
+				throw (InterruptedIOException) e;
 			e.printStackTrace();
 		}
 		// System.out.println("\n order_line: "+tenantId+" truncated...");
@@ -188,7 +192,7 @@ public class OrderLineRetriver {
 		try {
 			conn.close();
 			voltdbConn.close();
-		} catch (SQLException | InterruptedException e) {
+		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 

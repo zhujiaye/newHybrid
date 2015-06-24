@@ -1,6 +1,7 @@
 package retriver;
 
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -33,7 +34,7 @@ public class DistrictRetriver {
 		this.voltdbConn = voltdbConn;
 	}
 
-	public void move() {
+	public void move() throws InterruptedException, InterruptedIOException {
 		try {
 			stmt = conn.createStatement();
 			conn.setAutoCommit(false);
@@ -175,6 +176,8 @@ public class DistrictRetriver {
 			voltdbConn.callProcedure("@AdHoc", "DELETE FROM district"
 					+ volumnId + " WHERE tenant_id = " + tenantId);
 		} catch (IOException | ProcCallException | SQLException e) {
+			if (e instanceof InterruptedIOException)
+				throw (InterruptedIOException) e;
 			e.printStackTrace();
 		}
 		// System.out.println("\n district: "+tenantId+" truncated...");
@@ -182,7 +185,7 @@ public class DistrictRetriver {
 		try {
 			conn.close();
 			voltdbConn.close();
-		} catch (SQLException | InterruptedException e) {
+		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 

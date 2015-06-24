@@ -56,14 +56,15 @@ public class Constants {
 	final public static String INITDB_MYSQL = "mysql";
 	final public static String INITDB_VOLTDB = "voltdb";
 
-	final public static long SPLIT_TIME = 10 * S;
-	final public static long NUMBEROF_AHEAD_SPLITS = 2;
+	final public static long SPLIT_TIME = 60 * S;
+	final public static long NUMBEROF_AHEAD_SPLITS = 10;
 
 	final public static String LOGGER_NAME = System.getProperty(
 			"newhybrid.logger.name", "");
 	final public static String LOGGER_NAME_SERVER = "SERVER_LOGGER";
 	final public static String LOGGER_NAME_CLIENT = "CLIENT_LOGGER";
-
+	final public static String WORKLOAD_FILE_PATH = System.getProperty(
+			"newhybrid.workloadfile", "load.txt");
 	/*
 	 * Configurable variable's default value in HConfig
 	 */

@@ -1,7 +1,9 @@
 package server;
 
 import org.apache.log4j.Logger;
+
 import newhybrid.HException;
+import newhybrid.TenantWorkload;
 import config.Constants;
 import config.HConfig;
 
@@ -25,9 +27,14 @@ public class HTenant implements Comparable<HTenant> {
 	private boolean mIsInMysql;
 	private int mIDInVoltdb = -1;
 
-	private int[] workloads;
+	private TenantWorkload mWorkload;
 
 	public HTenant(HServer server, int tenant_id) throws HException {
+		this(server, tenant_id, null);
+	}
+
+	public HTenant(HServer server, int tenant_id, TenantWorkload workload)
+			throws HException {
 		mConf = HConfig.getConf();
 		mServer = server;
 		mID = tenant_id;
@@ -47,7 +54,7 @@ public class HTenant implements Comparable<HTenant> {
 		mBeingMovingToVoltdb = false;
 		mIsInMysql = true;
 
-		workloads = new int[] { 0 };
+		mWorkload = workload;
 		/*
 		 * TODO get workload information for the tenant the following is just
 		 * for test
@@ -216,15 +223,14 @@ public class HTenant implements Comparable<HTenant> {
 	 *
 	 */
 	public int getWorkloadAhead() {
+		if (mWorkload == null)
+			return 0;
 		long elapsedTime = (System.nanoTime() - mStartTime);
 		long split = elapsedTime / Constants.SPLIT_TIME;
 		int max = 0;
 		for (int i = 1; i <= Constants.NUMBEROF_AHEAD_SPLITS; i++) {
 			int tmp;
-			if (split + i >= workloads.length)
-				tmp = 0;
-			else
-				tmp = workloads[(int) split + i];
+			tmp = mWorkload.getActualWorkloadAtSplit((int) split + i);
 			if (tmp > max)
 				max = tmp;
 		}
@@ -232,12 +238,11 @@ public class HTenant implements Comparable<HTenant> {
 	}
 
 	public int getWorkloadNow() {
+		if (mWorkload == null)
+			return 0;
 		long elapsedTime = (System.nanoTime() - mStartTime);
 		long split = elapsedTime / Constants.SPLIT_TIME;
-		if (split >= workloads.length)
-			return 0;
-		else
-			return workloads[(int) split];
+		return mWorkload.getActualWorkloadAtSplit((int) split);
 	}
 
 	@Override

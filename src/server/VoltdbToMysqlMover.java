@@ -1,5 +1,6 @@
 package server;
 
+import java.io.InterruptedIOException;
 import java.sql.Connection;
 
 import newhybrid.HException;
@@ -38,8 +39,10 @@ public class VoltdbToMysqlMover {
 	 * move data from voltdb to msyql
 	 * 
 	 * @throws HException
+	 * @throws InterruptedException 
+	 * @throws InterruptedIOException 
 	 */
-	public void move() throws HException {
+	public void move() throws HException, InterruptedException, InterruptedIOException {
 		MysqlConnectionPool mysql_pool = MysqlConnectionPool.getPool();
 		VoltdbConnectionPool voltdb_pool = VoltdbConnectionPool.getPool();
 		Connection conn = mysql_pool.getConnection();

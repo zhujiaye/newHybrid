@@ -4,5 +4,6 @@ OPTS="
 -Dlog4j.configuration=file:$FRUGALDB_HOME/conf/log4j.properties
 -Dnewhybrid.logdir=$FRUGALDB_HOME/logs
 -Dnewhybrid.logger.name=SERVER_LOGGER
+-Dnewhybrid.workloadfile=$FRUGALDB_HOME/workloads/load.txt
 "
 java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS server.HServer

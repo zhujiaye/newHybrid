@@ -3,6 +3,7 @@ package server;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InterruptedIOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -59,12 +60,12 @@ public class MysqlToVoltdbMover {
 	public static final String[] Tables = { "Customer", "District", "History",
 			"Item", "NewOrders", "OrderLine", "Orders", "Stock", "Warehouse" };
 
-	private void clearCSVfile(String filename) {
+	private void clearCSVfile(String filename) throws InterruptedException {
 		String[] cmd = { "/bin/sh", "-c", "rm -r " + filename };
 		try {
 			Process process = Runtime.getRuntime().exec(cmd);
 			process.waitFor();
-		} catch (IOException | InterruptedException e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 	}
@@ -165,8 +166,11 @@ public class MysqlToVoltdbMover {
 
 	/**
 	 * move data from mysql to voltdb
+	 * 
+	 * @throws InterruptedException
+	 * @throws InterruptedIOException 
 	 */
-	public void move() {
+	public void move() throws InterruptedException, InterruptedIOException {
 		try {
 			Statement stmt = null;
 			stmt = conn.createStatement();
@@ -200,14 +204,11 @@ public class MysqlToVoltdbMover {
 			filereader.close();
 			reader.close();
 			conn.close();
-			try {
-				client.drain();
-				client.close();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-
+			client.drain();
+			client.close();
 		} catch (SQLException | IOException | ProcCallException e) {
+			if (e instanceof InterruptedIOException)
+				throw (InterruptedIOException) e;
 			e.printStackTrace();
 		}
 	}

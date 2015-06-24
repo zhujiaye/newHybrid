@@ -28,6 +28,7 @@ import org.voltdb.client.ProcCallException;
 
 import thrift.ServerService;
 import utillity.VoltdbConnectionPool;
+import utillity.WorkloadLoader;
 import newhybrid.HException;
 import newhybrid.HeartbeatThread;
 import config.Constants;
@@ -88,9 +89,16 @@ public class HServer {
 		}
 		LOG.info("tenants information cleared......40%");
 		LOG.info("getting all registered tenants....");
-		// TODO For test : get workloads for all tenants
+		WorkloadLoader workloadLoader = new WorkloadLoader(
+				Constants.WORKLOAD_FILE_PATH);
+		if (!workloadLoader.load()) {
+			LOG.warn("no workload file");
+		}
 		for (int i = 1; i <= Constants.NUMBER_OF_TENANTS; i++) {
-			HTenant tenant = new HTenant(this, i);
+			HTenant tenant = new HTenant(this, i,
+					workloadLoader.getWorkloadForTenant(i));
+			tenant.login();
+			tenant.start();
 			mTenants.put(i, tenant);
 		}
 		LOG.info("all registered tenants got.......60%");
@@ -111,7 +119,6 @@ public class HServer {
 						.workerThreads(Constants.SERVER_THREADS));
 		isStarted = true;
 		LOG.info("server service start to work......80%");
-		LOG.info("Server@" + mAddress + ":" + mPort + " started!......100%");
 		mServerOffloaderThread = new HeartbeatThread("Server_Offloader",
 				new ServerOffloaderHeartbeatExecutor(this),
 				Constants.OFFLOADER_FIXED_INTERVAL_TIME);
@@ -119,6 +126,7 @@ public class HServer {
 		mServerMonitorThread = new HeartbeatThread("Server_Monitor",
 				new ServerMonitorHeartbeatExecutor(this), Constants.SPLIT_TIME);
 		mServerMonitorThread.start();
+		LOG.info("Server@" + mAddress + ":" + mPort + " started!......100%");
 		mServerServiceServer.serve();
 	}
 
@@ -353,15 +361,15 @@ public class HServer {
 		LOG.info(String.format("MySQL:%d(%d) tenants  VoltDB:%d(%d) tenants",
 				tenantsInMysqlNow.length, numberOfTenantsMovingToVoltdb,
 				tenantsInVoltdbNow.length, numberOfTenantsMovingToMysql));
+		LOG.info(String.format("MySQL workload NOW:%d(%d)", workloadInMysqlNow,
+				workloadLimitInMysql));
+		LOG.info(String.format("MySQL workload AHEAD:%d(%d)",
+				workloadInMysqlAhead, workloadLimitInMysql));
+		LOG.info(String.format("VoltDB memory NOW:%d(%d)",
+				availableSpaceInVoltdbNow, mVoltdbSpaceTotal));
+		LOG.info(String.format("VoltDB memory AHEAD:%d(%d)",
+				availableSpaceInVoltdbAhead, mVoltdbSpaceTotal));
 		if (LOG.isDebugEnabled()) {
-			LOG.debug(String.format("MySQL workload NOW:%d(%d)",
-					workloadInMysqlNow, workloadLimitInMysql));
-			LOG.debug(String.format("MySQL workload AHEAD:%d(%d)",
-					workloadInMysqlAhead, workloadLimitInMysql));
-			LOG.debug(String.format("VoltDB memory NOW:%d(%d)",
-					availableSpaceInVoltdbNow, mVoltdbSpaceTotal));
-			LOG.debug(String.format("VoltDB memory AHEAD:%d(%d)",
-					availableSpaceInVoltdbAhead, mVoltdbSpaceTotal));
 			LOG.debug(String.format("%20s%10s%20s", "MySQL", "", "VoltDB"));
 			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
 				HTenant tenant = tenantEntry.getValue();
@@ -516,7 +524,7 @@ public class HServer {
 
 	private int getConcurrencyLimit(int freeWorkloadInMysqlNow) {
 		// TODO complete this method
-		return 1;
+		return 9;
 	}
 
 	public synchronized void updateWorkloadLimitInMysql() {
@@ -528,7 +536,7 @@ public class HServer {
 
 	// TODO complete this method
 	private synchronized int getWorkloadLimitInMysql() {
-		return 1000000;
+		return 30000;
 	}
 
 	private int getWorkloadNow(HTenant[] tenants) {

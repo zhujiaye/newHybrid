@@ -29,8 +29,7 @@ public class HConfig {
 	// For test only
 	private int mMysqlPoolInitsize = Constants.DEFAULT_MYSQL_POOL_INITSIZE;
 	private int mVoltdbPoolInitsize = Constants.DEFAULT_VOLTDB_POOL_INITSIZE;
-	private String mWorkloadfilepath;
-
+	
 	public synchronized static HConfig getConf() throws HException {
 		if (conf == null) {
 			conf = new HConfig();
@@ -93,9 +92,6 @@ public class HConfig {
 				}
 				if (strs[0].equals("newhybrid.voltdb.pool.initsize")) {
 					mVoltdbPoolInitsize = Integer.valueOf(strs[1]);
-				}
-				if (strs[0].equals("newhybrid.test.workloadfile.path")) {
-					mWorkloadfilepath = strs[1];
 				}
 				if (strs[0].equals("newhybrid.server.model.isdeterministic")) {
 					mServerModelDeterministic = Boolean.valueOf(strs[1]);
@@ -217,8 +213,6 @@ public class HConfig {
 		System.out.println("\tnewhybrid.voltdb.pool.initsize "
 				+ mVoltdbPoolInitsize);
 		System.out.println("[For test]");
-		System.out.println("\tnewhybrid.test.workloadfile.path "
-				+ mWorkloadfilepath);
 
 	}
 }

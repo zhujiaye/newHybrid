@@ -17,14 +17,20 @@ public class TestMain {
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 
 	public static void main(String[] args) throws HException {
-		WorkloadLoader workloadLoader = new WorkloadLoader(
-				Constants.WORKLOAD_FILE_PATH);
+
 		if (args.length < 2) {
 			LOG.error("not enough arguments!");
 			return;
 		}
+		WorkloadLoader workloadLoader;
+		if (args.length < 3) {
+			workloadLoader = new WorkloadLoader(Constants.WORKLOAD_FILE_PATH);
+		} else {
+			workloadLoader = new WorkloadLoader(Constants.WORKLOAD_DIR + "/"
+					 +args[2]);
+		}
 		if (!workloadLoader.load()) {
-			LOG.error("not workload file!");
+			LOG.error("no workload file!");
 			return;
 		} else {
 			int start = Integer.valueOf(args[0]);
@@ -38,10 +44,12 @@ public class TestMain {
 				clientThreads[i - start] = new ClientThread(i, workloadLoader
 						.getWorkloadForTenant(i).getWH(), obj);
 			}
-			LOG.info("Test Starts!");
+			LOG.info(String.format("Test from tenant %d to %d starts", start,
+					end));
 			int totThreads = clientThreads.length;
 			int splits = workloadLoader.getNumberOfSplits();
-			// TODO do login here to try to make sure all clients start querying at
+			// TODO do login here to try to make sure all clients start querying
+			// at
 			// the same time
 			for (int i = 0; i < totThreads; i++) {
 				clientThreads[i].start();
@@ -73,7 +81,8 @@ public class TestMain {
 			}
 			for (int i = 0; i < totThreads; i++)
 				clientThreads[i].printResults();
-			LOG.info("Test finished!");
+			LOG.info(String
+					.format("Test from tenant %d to %d ends", start, end));
 		}
 	}
 }

@@ -65,6 +65,8 @@ public class Constants {
 	final public static String LOGGER_NAME_CLIENT = "CLIENT_LOGGER";
 	final public static String WORKLOAD_FILE_PATH = System.getProperty(
 			"newhybrid.workloadfile", "load.txt");
+	final public static String WORKLOAD_DIR = System.getProperty(
+			"newhybrid.workloaddir", "");
 	/*
 	 * Configurable variable's default value in HConfig
 	 */

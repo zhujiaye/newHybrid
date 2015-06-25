@@ -97,8 +97,8 @@ public class HServer {
 		for (int i = 1; i <= Constants.NUMBER_OF_TENANTS; i++) {
 			HTenant tenant = new HTenant(this, i,
 					workloadLoader.getWorkloadForTenant(i));
-			tenant.login();
-			tenant.start();
+			// tenant.login();
+			// tenant.start();
 			mTenants.put(i, tenant);
 		}
 		LOG.info("all registered tenants got.......60%");
@@ -154,6 +154,22 @@ public class HServer {
 		}
 		isStarted = false;
 		LOG.info("Server@" + mAddress + ":" + mPort + " stopped!");
+	}
+
+	public boolean reloadWorkloadFile(String fileName) {
+		WorkloadLoader workloadLoader = new WorkloadLoader(
+				Constants.WORKLOAD_DIR + "/" + fileName);
+		if (!workloadLoader.load()) {
+			LOG.warn("no workload file");
+			return false;
+		}
+		for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+			HTenant tenant = tenantEntry.getValue();
+			tenant.setWorkload(workloadLoader.getWorkloadForTenant(tenant
+					.getID()));
+		}
+		LOG.info("reload workload from " + fileName);
+		return true;
 	}
 
 	public String getAddress() {
@@ -318,6 +334,15 @@ public class HServer {
 			}
 		}
 		return false;
+	}
+
+	public boolean tenantAllLoggedIn() {
+		for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+			HTenant tenant = tenantEntry.getValue();
+			if (!tenant.isLoggedIn())
+				return false;
+		}
+		return true;
 	}
 
 	/*

@@ -15,16 +15,16 @@ public class HTenant implements Comparable<HTenant> {
 	final private int mDataSize;
 	final private HServer mServer;
 
-	private boolean mLoggedIn;
-	private boolean mStarted;
-	private boolean mBeingMovingToVoltdb;
-	private boolean mBeingMovingToMysql;
+	private volatile boolean mLoggedIn;
+	private volatile boolean mStarted;
+	private volatile boolean mBeingMovingToVoltdb;
+	private volatile boolean mBeingMovingToMysql;
 	private MysqlToVoltdbMoverThread mMovingToVoltdbThread = null;
 	private VoltdbToMysqlMoverThread mMovingToMysqlThread = null;
 	private long mLogInTime;
 	private long mStartTime;
 
-	private boolean mIsInMysql;
+	private volatile boolean mIsInMysql;
 	private int mIDInVoltdb = -1;
 
 	private TenantWorkload mWorkload;
@@ -222,7 +222,7 @@ public class HTenant implements Comparable<HTenant> {
 	 * @return the workload in the future
 	 *
 	 */
-	public int getWorkloadAhead() {
+	public synchronized int getWorkloadAhead() {
 		if (mWorkload == null)
 			return 0;
 		long elapsedTime = (System.nanoTime() - mStartTime);
@@ -237,12 +237,16 @@ public class HTenant implements Comparable<HTenant> {
 		return max;
 	}
 
-	public int getWorkloadNow() {
+	public synchronized int getWorkloadNow() {
 		if (mWorkload == null)
 			return 0;
 		long elapsedTime = (System.nanoTime() - mStartTime);
 		long split = elapsedTime / Constants.SPLIT_TIME;
 		return mWorkload.getActualWorkloadAtSplit((int) split);
+	}
+
+	public synchronized void setWorkload(TenantWorkload workload) {
+		mWorkload = workload;
 	}
 
 	@Override

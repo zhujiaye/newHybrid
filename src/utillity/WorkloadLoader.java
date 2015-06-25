@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 
+import org.apache.log4j.Logger;
+
 import config.Constants;
 import newhybrid.TenantWorkload;
 
 public class WorkloadLoader {
+	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 	final private String mPath;
 
 	private int mSplits;
@@ -24,6 +27,7 @@ public class WorkloadLoader {
 	 */
 	public boolean load() {
 		File file = new File(mPath);
+		LOG.info("Reading workload file " + file.getAbsolutePath());
 		if (!file.exists() || !file.canRead())
 			return false;
 		Scanner in = null;
@@ -65,6 +69,11 @@ public class WorkloadLoader {
 		}
 		for (int i = 0; i < splits; i++) {
 			int split = in.nextInt();
+			if (split != i + 1) {
+				LOG.error("Wrong format!");
+				in.close();
+				return false;
+			}
 			for (int j = 0; j < Constants.NUMBER_OF_TENANTS; j++) {
 				int workload = in.nextInt();
 				mTenantWorkloads[j].setWorkloadAtSplit(split - 1, workload);

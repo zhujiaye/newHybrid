@@ -2,12 +2,14 @@ package server;
 
 import newhybrid.HException;
 
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 
+import config.Constants;
 import thrift.ServerService;
 
 public class ServerServiceHandler implements ServerService.Iface {
-
+	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 	private HServer mServer;
 
 	public ServerServiceHandler(HServer server) {
@@ -29,7 +31,7 @@ public class ServerServiceHandler implements ServerService.Iface {
 		try {
 			return mServer.tenantLogin(id);
 		} catch (HException e) {
-			System.out.println(e.getMessage());
+			LOG.error(e.getMessage());
 			return false;
 		}
 	}
@@ -77,6 +79,26 @@ public class ServerServiceHandler implements ServerService.Iface {
 	@Override
 	public boolean tenant_completeOneQuery(int id) throws TException {
 		return mServer.tenantCompleteOneQuery(id);
+	}
+
+	@Override
+	public boolean tenant_isAllLoggedIn() throws TException {
+		return mServer.tenantAllLoggedIn();
+	}
+
+	@Override
+	public boolean server_reloadWorkloadFile(String workloadFileName)
+			throws TException {
+		return mServer.reloadWorkloadFile(workloadFileName);
+	}
+
+	@Override
+	public void server_stop() throws TException {
+		try {
+			mServer.stop();
+		} catch (HException e) {
+			LOG.error(e.getMessage());
+		}
 	}
 
 }

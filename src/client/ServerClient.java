@@ -232,4 +232,40 @@ public class ServerClient {
 		}
 		throw new HException("Client has shutdown");
 	}
+
+	public boolean tenantAllLoggedIn() throws HException {
+		while (!mIsShutdown) {
+			connect();
+			try {
+				return mClient.tenant_isAllLoggedIn();
+			} catch (TException e) {
+				throw new HException(e.getMessage());
+			}
+		}
+		throw new HException("Client has shutdown");
+	}
+
+	public void serverStop() throws HException {
+		while (!mIsShutdown) {
+			connect();
+			try {
+				mClient.server_stop();
+			} catch (TException e) {
+				throw new HException(e.getMessage());
+			}
+		}
+		throw new HException("Client has shutdown");
+	}
+
+	public boolean serverReloadWorkloadFile(String fileName) throws HException {
+		while (!mIsShutdown) {
+			connect();
+			try {
+				return mClient.server_reloadWorkloadFile(fileName);
+			} catch (TException e) {
+				throw new HException(e.getMessage());
+			}
+		}
+		throw new HException("Client has shutdown");
+	}
 }

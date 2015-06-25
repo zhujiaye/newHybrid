@@ -12,4 +12,7 @@ service ServerService{
 	bool tenant_isLoggedIn(1: i32 id);
 	bool tenant_isStarted(1: i32 id);
 	bool tenant_completeOneQuery(1: i32 id);
+	bool tenant_isAllLoggedIn();
+	bool server_reloadWorkloadFile(1: string workloadFileName);
+	void server_stop();
 }

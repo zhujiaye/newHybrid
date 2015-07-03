@@ -1,9 +1,14 @@
 package server;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringBufferInputStream;
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -27,6 +32,9 @@ import org.voltdb.client.ClientResponse;
 import org.voltdb.client.ProcCallException;
 
 import thrift.ServerService;
+import thrift.SplitResult;
+import thrift.SuccessQueryResult;
+import thrift.TenantResult;
 import utillity.VoltdbConnectionPool;
 import utillity.WorkloadLoader;
 import newhybrid.HException;
@@ -43,7 +51,8 @@ public class HServer {
 	final private HConfig mConf;
 	final private String mAddress;
 	final private int mPort;
-	final private int mVoltdbSpaceTotal;
+	private boolean mNeedOffloadChecking;
+	private int mVoltdbSpaceTotal;
 
 	private volatile boolean isStarted;
 	private Map<Integer, HTenant> mTenants;
@@ -65,6 +74,7 @@ public class HServer {
 		mAddress = mConf.getServerAddress();
 		mPort = mConf.getServerPort();
 		mVoltdbSpaceTotal = mConf.getVoltdbCapacity();
+		mNeedOffloadChecking = mConf.isUseMysql() && mConf.isUseVoltdb();
 		mTenants = new HashMap<>();
 		mMover = new Mover(this);
 		// mTenantsVoltdbID = new HashMap<>();
@@ -345,14 +355,108 @@ public class HServer {
 		return true;
 	}
 
+	public void reconfigure(boolean isMysqlOnly, int voltdbCapacity) throws HException {
+		if (mConf.isUseVoltdb())
+			clearVoltdb();
+		mNeedOffloadChecking = !isMysqlOnly;
+		mVoltdbSpaceTotal = voltdbCapacity;
+		LOG.info("reconfigure " + isMysqlOnly + " " + voltdbCapacity);
+	}
+
+	public void reportResult(TenantResult tenantResult, String outputFileName) {
+		if (tenantResult == null) {
+			LOG.warn("no tenant results to be written");
+			return;
+		}
+		File file = new File(Constants.WORKLOAD_DIR, outputFileName);
+		synchronized (this) {
+			if (!file.exists()) {
+				LOG.info("result file " + outputFileName
+						+ " does't exists, must be created");
+				try {
+					file.createNewFile();
+				} catch (IOException e) {
+					LOG.error(e.getMessage() + ":" + file.getAbsoluteFile());
+					return;
+				}
+			} else if (!file.canWrite()) {
+				LOG.error("no permission to write results to file "
+						+ outputFileName);
+				return;
+			}
+		}
+		PrintWriter writer;
+		boolean violated = false;
+		try {
+			synchronized (this) {
+				writer = new PrintWriter(new FileWriter(file, true));
+				// Tenant information
+				writer.format("@>Tenant %d%n", tenantResult.mID);
+				writer.format(
+						"***********************************************************Tenant %d information start***********************************************************%n",
+						tenantResult.mID);
+				writer.format("%20s%20s%20s%20s%n", "id", "SLO", "dataSize",
+						"writeHeavy");
+				writer.format("%20d%20d%20d%20d%n", tenantResult.mID,
+						tenantResult.mSLO, tenantResult.mDataSize,
+						tenantResult.mWH);
+				writer.format(
+						"***********************************************************Tenant %d information end***********************************************************%n",
+						tenantResult.mID);
+				// Split information
+				writer.format("***********************************************************Split information start***********************************************************%n");
+				writer.format("%20s%20s%20s%20s%20s%20s%n", "id",
+						"remainQueriesBefore", "workload",
+						"remainQueriesAfter", "sentQueries", "successQueries");
+				List<SplitResult> splitResultsList = tenantResult.mSplitResults;
+				for (int i = 0; i < splitResultsList.size(); i++) {
+					SplitResult tmp = splitResultsList.get(i);
+					writer.format("%20d%20d%20d%20d%20d%20d%n",
+							tmp.mSplitID + 1, tmp.mRemainQueriesBefore,
+							tmp.mWorkload, tmp.mRemainQueriesAfter,
+							tmp.mSentQueries, tmp.mSuccessQueries);
+					if (tmp.mSuccessQueries < tmp.mWorkload)
+						violated = true;
+				}
+				writer.format("***********************************************************Split information end***********************************************************%n");
+				// Query information
+				writer.format("***********************************************************Query information start***********************************************************%n");
+				writer.format("%20s%20s%20s%20s%20s%20s%n", "id", "whatDB",
+						"whatAccess", "startTime", "endTime", "latency");
+				List<SuccessQueryResult> successQueryResultsList = tenantResult.mQueryResults;
+				for (int i = 0; i < successQueryResultsList.size(); i++) {
+					SuccessQueryResult tmp = successQueryResultsList.get(i);
+					long t1, t2, t3;
+					t1 = ((long) tmp.mStartTime);
+					t2 = ((long) tmp.mEndTime);
+					t3 = ((long) tmp.mLatency);
+					writer.format("%20d%20s%20s%20d%20d%20d%n", tmp.mID,
+							tmp.mIsInMysql ? "MySQL" : "VoltDB",
+							tmp.mIsRead ? "Read" : "Write", t1 / 1000000,
+							t2 / 1000000, t3 / 1000000);
+				}
+				writer.format("***********************************************************Query information end***********************************************************%n");
+				writer.format("@<Tenant %s%n", violated ? "violated!" : "");
+				writer.flush();
+				writer.close();
+			}
+		} catch (FileNotFoundException e) {
+			LOG.error("result file " + outputFileName + " not found");
+			return;
+		} catch (IOException e) {
+			LOG.error(e.getMessage());
+			return;
+		}
+	}
+
 	/*
 	 * TODO make this better
 	 */
 	public void offloadWorkloads() throws HException {
-		LOG.info("offloader checking...");
-		if (!mConf.isUseMysql() || !mConf.isUseVoltdb()) {
+		if (!mNeedOffloadChecking) {
 			return;
 		}
+		LOG.info("offloader checking...");
 		HTenant[] tenantsInMysqlAhead;
 		HTenant[] tenantsInMysqlNow;
 		HTenant[] tenantsInVoltdbAhead;

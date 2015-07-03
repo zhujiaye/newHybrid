@@ -7,6 +7,7 @@ import org.apache.thrift.TException;
 
 import config.Constants;
 import thrift.ServerService;
+import thrift.TenantResult;
 
 public class ServerServiceHandler implements ServerService.Iface {
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
@@ -96,6 +97,22 @@ public class ServerServiceHandler implements ServerService.Iface {
 	public void server_stop() throws TException {
 		try {
 			mServer.stop();
+		} catch (HException e) {
+			LOG.error(e.getMessage());
+		}
+	}
+
+	@Override
+	public void server_reportResult(TenantResult tenantResult,
+			String outputFileName) throws TException {
+		mServer.reportResult(tenantResult, outputFileName);
+	}
+
+	@Override
+	public void server_reconfigure(boolean isMysqlOnly, int voltdbCapacity)
+			throws TException {
+		try {
+			mServer.reconfigure(isMysqlOnly, voltdbCapacity);
 		} catch (HException e) {
 			LOG.error(e.getMessage());
 		}

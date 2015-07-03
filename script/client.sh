@@ -6,6 +6,19 @@ OPTS="
 -Dnewhybrid.logger.name=CLIENT_LOGGER
 -Dnewhybrid.workloaddir=$FRUGALDB_HOME/workloads
 "
-java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestReloadWorkload load1.txt
-java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestReloadWorkload load2.txt
-
+Usage="Usage: client.sh WORKLOAD_FILE RESULT_FILE
+WORKLOAD_FILE is the path of the workload file. 
+RESULT_FILE is the path of the result file.
+"
+declare -a processIDs
+for ((i=0;i<15;i++))
+do
+	((start=i*200+1))	
+	((end=(i+1)*200))
+	(nohup java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestMain $start $end $1 $2)&
+	processIDs[i]=$!
+done
+for ((i=0;i<15;i++))
+do
+	wait ${processIDs[i]}
+done

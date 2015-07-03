@@ -1,64 +1,115 @@
 package test;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import newhybrid.HException;
 import newhybrid.HQueryResult;
+import newhybrid.HeartbeatExecutor;
+import newhybrid.HeartbeatThread;
 import newhybrid.TenantWorkload;
 
 import org.apache.log4j.Logger;
 
 import client.HTenantClient;
+import client.ServerClient;
 import config.Constants;
+import thrift.SplitResult;
+import thrift.SuccessQueryResult;
+import thrift.TenantResult;
 import utillity.WorkloadLoader;
 
 public class TestMain {
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 
-	public static void main(String[] args) throws HException {
-
-		if (args.length < 2) {
+	public static void main(String[] args) throws HException,
+			InterruptedException {
+		String usage = "TestMain firstTenantID lastTenantID inputWorkloadFileName outputResultFileName";
+		if (args.length < 4) {
 			LOG.error("not enough arguments!");
+			LOG.info(usage);
 			return;
 		}
 		WorkloadLoader workloadLoader;
-		if (args.length < 3) {
-			workloadLoader = new WorkloadLoader(Constants.WORKLOAD_FILE_PATH);
-		} else {
-			workloadLoader = new WorkloadLoader(Constants.WORKLOAD_DIR + "/"
-					 +args[2]);
-		}
+		String outputFileName;
+		workloadLoader = new WorkloadLoader(Constants.WORKLOAD_DIR + "/"
+				+ args[2]);
+		outputFileName = args[3];
+
 		if (!workloadLoader.load()) {
 			LOG.error("no workload file!");
 			return;
 		} else {
-			int start = Integer.valueOf(args[0]);
-			int end = Integer.valueOf(args[1]);
+			int start = 0;
+			int end = 0;
+			try {
+				start = Integer.valueOf(args[0]);
+				end = Integer.valueOf(args[1]);
+			} catch (NumberFormatException e) {
+				LOG.error("wrong number format!");
+				LOG.info(usage);
+				return;
+			}
 			if (start > end) {
-				LOG.error("invalid arguments!");
+				LOG.error("firstTenantID bigger than lastTenantID");
+				LOG.info(usage);
+				return;
 			}
 			ClientThread[] clientThreads = new ClientThread[end - start + 1];
-			Object obj = new Object();
+			HeartbeatThread[] clientWorkloadAdderThreads = new HeartbeatThread[end
+					- start + 1];
+			TenantWorkload[] clientWorkloads = new TenantWorkload[end - start
+					+ 1];
 			for (int i = start; i <= end; i++) {
 				clientThreads[i - start] = new ClientThread(i, workloadLoader
-						.getWorkloadForTenant(i).getWH(), obj);
+						.getWorkloadForTenant(i).getWH());
+				clientWorkloadAdderThreads[i - start] = null;
+				clientWorkloads[i - start] = workloadLoader
+						.getWorkloadForTenant(i);
 			}
-			LOG.info(String.format("Test from tenant %d to %d starts", start,
-					end));
+			LOG.info(String.format("Test from tenant %d to %d starts(login)",
+					start, end));
 			int totThreads = clientThreads.length;
 			int splits = workloadLoader.getNumberOfSplits();
-			// TODO do login here to try to make sure all clients start querying
-			// at
-			// the same time
+			
 			for (int i = 0; i < totThreads; i++) {
 				clientThreads[i].start();
 			}
+			ServerClient serverClient = new ServerClient();
+			while (!serverClient.tenantAllLoggedIn())
+				;
+			serverClient.shutdown();
+			for (int i = 0; i < totThreads; i++)
+				clientThreads[i].startQuery();
+			LOG.info(String.format("Test from tenant %d to %d starts(start)",
+					start, end));
+			int violatedCount = 0;
 			for (int i = 0; i < splits; i++) {
+				violatedCount = 0;
 				for (int j = 0; j < totThreads; j++) {
-					clientThreads[j].updateSplit();
-					// TODO add workloads for every clients
+					if (!clientThreads[j].updateSplit())
+						violatedCount++;
+					if (clientWorkloadAdderThreads[j] != null)
+						clientWorkloadAdderThreads[j].shutdown();
+					int totCount = clientWorkloads[j]
+							.getActualWorkloadAtSplit(i);
+					if (totCount > 0) {
+						long tickTime = (Constants.SPLIT_TIME - Constants.S * 1)
+								/ totCount;
+						LOG.debug("In split " + i + " tenant " + (j + start)
+								+ " must be add " + totCount
+								+ " workloads speed" + (double) tickTime
+								/ 1000000000.0);
+						clientWorkloadAdderThreads[j] = new HeartbeatThread(
+								"client" + (j + start) + "_workloadAdderThread",
+								new ClientWorkloadAdderHeartbeatExecutor(
+										clientThreads[j], totCount), tickTime);
+						clientWorkloadAdderThreads[j].start();
+					}
 				}
+				if (i - 1 >= 0)
+					LOG.info("Split " + i + ":violated number " + violatedCount);
 				try {
 					Thread.sleep(Constants.SPLIT_TIME / 1000000);
 				} catch (InterruptedException e) {
@@ -67,10 +118,19 @@ public class TestMain {
 					return;
 				}
 			}
+			violatedCount = 0;
 			for (int i = 0; i < totThreads; i++) {
-				clientThreads[i].updateSplit();
-				clientThreads[i].shutdown();
+				if (clientWorkloadAdderThreads[i] != null)
+					clientWorkloadAdderThreads[i].shutdown();
+				if (!clientThreads[i].updateSplit())
+					violatedCount++;
+				clientThreads[i].finishQuery();
+				synchronized (clientThreads[i]) {
+					clientThreads[i].notify();
+				}
 			}
+			LOG.info("Split " + (splits - 1) + ":violated number "
+					+ violatedCount);
 			try {
 				for (int i = 0; i < totThreads; i++)
 					clientThreads[i].join();
@@ -79,12 +139,45 @@ public class TestMain {
 						+ e.getMessage());
 				return;
 			}
-			for (int i = 0; i < totThreads; i++)
-				clientThreads[i].printResults();
+			serverClient = new ServerClient();
+			for (int i = 0; i < totThreads; i++) {
+				LOG.debug("report result for tenant " + (i + start));
+				TenantWorkload workload = workloadLoader.getWorkloadForTenant(i
+						+ start);
+				TenantResult result = new TenantResult(workload.getID(),
+						workload.getSLO(), workload.getDataSize(),
+						workload.getWH(), clientThreads[i].getSplitResults(),
+						clientThreads[i].getSuccessQueryResults());
+				serverClient.serverReportResult(result, outputFileName);
+			}
+			serverClient.shutdown();
 			LOG.info(String
 					.format("Test from tenant %d to %d ends", start, end));
 		}
 	}
+}
+
+class ClientWorkloadAdderHeartbeatExecutor implements HeartbeatExecutor {
+	final private ClientThread mClientThread;
+	private int mCount;
+
+	public ClientWorkloadAdderHeartbeatExecutor(ClientThread clientThread,
+			int totCount) {
+		mClientThread = clientThread;
+		mCount = totCount;
+	}
+
+	@Override
+	public void heartbeat() throws HException {
+		if (mCount > 0) {
+			mCount--;
+			mClientThread.addWorkload(1);
+			synchronized (mClientThread) {
+				mClientThread.notify();
+			}
+		}
+	}
+
 }
 
 class ClientThread extends Thread {
@@ -92,26 +185,29 @@ class ClientThread extends Thread {
 	final private HTenantClient HTC;
 	final private int mWH;
 
-	private Object mObj;
+	private int mTotSuccessQueries;
 	private int mRemainQueries;
 	private int mLastRemainQueries;
 	private int mSentQueriesInSplit;
 	private int mSuccessQueriesInSplit;
 	private int mWorkloadInSplit;
 	private int mSplit;
-	private volatile boolean mIsShutDown = false;
-	private ArrayList<SplitResult> res = null;
+	private volatile boolean mIsFinished = false;
+	private volatile boolean mIsStarted = false;
+	private ArrayList<SplitResult> mSplitResults = null;
+	private ArrayList<SuccessQueryResult> mSuccessQueryResults = null;
 
-	public ClientThread(int ID, int WH, Object obj) throws HException {
+	public ClientThread(int ID, int WH) throws HException {
 		HTC = new HTenantClient(ID);
 		mWH = WH;
-		mObj = obj;
+		mTotSuccessQueries = 0;
 		mRemainQueries = 0;
 		mSentQueriesInSplit = 0;
 		mSuccessQueriesInSplit = 0;
 		mWorkloadInSplit = 0;
 		mSplit = -1;
-		res = new ArrayList<>();
+		mSplitResults = new ArrayList<>();
+		mSuccessQueryResults = new ArrayList<>();
 	}
 
 	@Override
@@ -119,34 +215,49 @@ class ClientThread extends Thread {
 		Random random = new Random(System.currentTimeMillis());
 		HQueryResult result = null;
 		try {
-			while (!mIsShutDown) {
-				synchronized (this) {
-					if (mRemainQueries == 0) {
-						synchronized (mObj) {
-							mObj.wait();
-						}
-					} else {
-						// if (random.nextInt(100) < 80)
-						// result = HTC.sqlRandomSelect();
-						// else
-						// result = HTC.sqlRandomUpdate();
-						synchronized (this) {
-							mSentQueriesInSplit++;
-							mRemainQueries--;
-							// if (result.isSuccess())
+			HTC.login();
+			while (!mIsStarted)
+				;
+			HTC.start();
+			while (!mIsFinished) {
+				if (mRemainQueries == 0) {
+					synchronized (this) {
+						//HTC.cleanConnect();
+						this.wait();
+					}
+				} else {
+					if (random.nextInt(100) < 80)
+						result = HTC.sqlRandomSelect();
+					else
+						result = HTC.sqlRandomUpdate();
+					synchronized (this) {
+						mSentQueriesInSplit++;
+						mRemainQueries--;
+						if (result.isSuccess()) {
 							mSuccessQueriesInSplit++;
+							mTotSuccessQueries++;
+							HTC.completeOneQuery();
+							SuccessQueryResult queryResult = new SuccessQueryResult(
+									mTotSuccessQueries, result.isInMysql(),
+									result.isRead(), result.getStartTime(),
+									result.getEndTime(), result.getLatency());
+							mSuccessQueryResults.add(queryResult);
 						}
 					}
 				}
 			}
-			// } catch (HException e) {
-			// LOG.error(e.getMessage());
-			// mIsShutDown = true;
+			HTC.stop();
+			HTC.logout();
+			HTC.shutdown();
+		} catch (HException e) {
+			LOG.error(e.getMessage());
+			mIsFinished = true;
 		} catch (InterruptedException e) {
-			if (!mIsShutDown) {
+			if (!mIsFinished) {
 				LOG.error("Interrupted while waiting!:" + e.getMessage());
-				mIsShutDown = true;
+				mIsFinished = true;
 			}
+			return;
 		}
 	}
 
@@ -155,69 +266,44 @@ class ClientThread extends Thread {
 		mRemainQueries += num;
 	}
 
-	public synchronized void updateSplit() {
+	/**
+	 * 
+	 * @return true if the tenant is not violated
+	 */
+	public synchronized boolean updateSplit() {
+		boolean ok = true;
 		if (mSplit != -1) {
 			SplitResult splitResult = new SplitResult(mSplit,
 					mLastRemainQueries, mWorkloadInSplit, mRemainQueries,
 					mSentQueriesInSplit, mSuccessQueriesInSplit);
-			res.add(splitResult);
+			mSplitResults.add(splitResult);
+			if (mSuccessQueriesInSplit < mWorkloadInSplit)
+				ok = false;
+			LOG.debug(String.format("%6d%3d%10d%10d%10d%10d%10d", HTC.getID(),
+					mSplit, mLastRemainQueries, mWorkloadInSplit,
+					mRemainQueries, mSentQueriesInSplit, mSuccessQueriesInSplit));
 		}
 		mSplit++;
 		mWorkloadInSplit = 0;
 		mLastRemainQueries = mRemainQueries;
 		mSentQueriesInSplit = 0;
 		mSuccessQueriesInSplit = 0;
+		return ok;
 	}
 
-	public void shutdown() {
-		mIsShutDown = true;
-		this.interrupt();
+	public void startQuery() {
+		mIsStarted = true;
 	}
 
-	public void printResults() {
-		// TODO
-	}
-}
-
-class SplitResult {
-	final private int mSplitID;
-	final private int mRemainQueriesBefore;
-	final private int mWorkload;
-	final private int mRemainQueriesAfter;
-	final private int mSentQueries;
-	final private int mSuccessQueries;
-
-	public SplitResult(int splitID, int remainQueriesBefore, int workload,
-			int remainQueriesAfter, int sentQueries, int successQueries) {
-		mSplitID = splitID;
-		mRemainQueriesBefore = remainQueriesBefore;
-		mRemainQueriesAfter = remainQueriesAfter;
-		mWorkload = workload;
-		mSentQueries = sentQueries;
-		mSuccessQueries = successQueries;
+	public void finishQuery() {
+		mIsFinished = true;
 	}
 
-	public int getID() {
-		return mSplitID;
+	public List<SplitResult> getSplitResults() {
+		return mSplitResults;
 	}
 
-	public int getRemainQueriesBefore() {
-		return mRemainQueriesBefore;
-	}
-
-	public int getWorkload() {
-		return mWorkload;
-	}
-
-	public int getRemainQueriesAfter() {
-		return mRemainQueriesAfter;
-	}
-
-	public int getSentQueries() {
-		return mSentQueries;
-	}
-
-	public int getSuccessQueries() {
-		return mSuccessQueries;
+	public List<SuccessQueryResult> getSuccessQueryResults() {
+		return mSuccessQueryResults;
 	}
 }

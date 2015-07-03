@@ -13,6 +13,7 @@ public class HQueryResult {
 	final private long mStartTime;
 	final private long mEndTime;
 	final private QueryType mType;
+	final private boolean mIsRead;
 	final private boolean mIsInMysql;
 	final private boolean mIsSuccess;
 	final private String mMessage;
@@ -28,6 +29,7 @@ public class HQueryResult {
 		}
 		mType = queryType;
 		mIsInMysql = isInMysql;
+		mIsRead = queryType.isRead();
 		mIsSuccess = isSuccess;
 		mMessage = message;
 		mStartTime = time1;
@@ -45,19 +47,24 @@ public class HQueryResult {
 		return mMessage;
 	}
 
+	public boolean isRead() {
+		return mIsRead;
+	}
+
 	public boolean isInMysql() {
 		return mIsInMysql;
-		// if (mType == null)
-		// return false;
-		// if (mType.isRead()) {
-		// if (mMysqlResult != null)
-		// return true;
-		// return false;
-		// } else {
-		// if (mVoltdbResult != null)
-		// return false;
-		// return true;
-		// }
+	}
+
+	public long getStartTime() {
+		return mStartTime;
+	}
+
+	public long getEndTime() {
+		return mEndTime;
+	}
+
+	public long getLatency() {
+		return mEndTime - mStartTime;
 	}
 
 	/**

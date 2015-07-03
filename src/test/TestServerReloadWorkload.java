@@ -14,13 +14,22 @@ public class TestServerReloadWorkload {
 			LOG.error("invalid arguments");
 			return;
 		}
+		ServerClient serverClient = null;
 		try {
-			if (new ServerClient().serverReloadWorkloadFile(args[0]))
+			serverClient = new ServerClient();
+			if (serverClient.serverReloadWorkloadFile(args[0]))
 				LOG.info("server successfully reload workload from " + args[0]);
 			else
 				LOG.error("server failed to reload workload from " + args[0]);
+			serverClient.shutdown();
 		} catch (HException e) {
 			LOG.error(e.getMessage());
+			if (serverClient != null)
+				try {
+					serverClient.shutdown();
+				} catch (HException e1) {
+					LOG.error(e1.getMessage());
+				}
 			return;
 		}
 	}

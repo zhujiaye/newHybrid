@@ -12,6 +12,7 @@ import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransportException;
 
 import thrift.ServerService;
+import thrift.TenantResult;
 import config.Constants;
 import config.HConfig;
 
@@ -23,7 +24,7 @@ public class ServerClient {
 	private volatile boolean mIsShutdown = false;
 	private volatile long mLastAccessTime;
 	private TProtocol mProtocol = null;
-	private HeartbeatThread mHeartbeatThread = null;
+	//private HeartbeatThread mHeartbeatThread = null;
 	private ServerService.Client mClient;
 
 	public ServerClient() throws HException {
@@ -38,9 +39,9 @@ public class ServerClient {
 		if (mProtocol != null) {
 			mProtocol.getTransport().close();
 		}
-		if (mHeartbeatThread != null) {
-			mHeartbeatThread.shutdown();
-		}
+		// if (mHeartbeatThread != null) {
+		// mHeartbeatThread.shutdown();
+		// }
 	}
 
 	public synchronized void connect() throws HException {
@@ -60,18 +61,18 @@ public class ServerClient {
 			try {
 				mProtocol.getTransport().open();
 
-				mHeartbeatThread = new HeartbeatThread(
-						"ServerClient_heartbeatThread",
-						new ServerClientHeartbeatExecutor(this, mConf
-								.getServerClientTimeout()),
-						mConf.getServerClientTimeout() / 2);
-				mHeartbeatThread.start();
+				// mHeartbeatThread = new HeartbeatThread(
+				// "ServerClient_heartbeatThread",
+				// new ServerClientHeartbeatExecutor(this, mConf
+				// .getServerClientTimeout()),
+				// mConf.getServerClientTimeout() / 2);
+				// mHeartbeatThread.start();
 			} catch (TTransportException e) {
 				LOG.debug("Failed to connect (" + tries + ") to server:"
 						+ e.getMessage());
-				if (mHeartbeatThread != null) {
-					mHeartbeatThread.shutdown();
-				}
+				// if (mHeartbeatThread != null) {
+				// mHeartbeatThread.shutdown();
+				// }
 				try {
 					Thread.sleep(Constants.S / 1000000);
 				} catch (InterruptedException e1) {
@@ -250,6 +251,7 @@ public class ServerClient {
 			connect();
 			try {
 				mClient.server_stop();
+				return;
 			} catch (TException e) {
 				throw new HException(e.getMessage());
 			}
@@ -262,6 +264,34 @@ public class ServerClient {
 			connect();
 			try {
 				return mClient.server_reloadWorkloadFile(fileName);
+			} catch (TException e) {
+				throw new HException(e.getMessage());
+			}
+		}
+		throw new HException("Client has shutdown");
+	}
+
+	public void serverReportResult(TenantResult tenantResult,
+			String outputFileName) throws HException {
+		while (!mIsShutdown) {
+			connect();
+			try {
+				mClient.server_reportResult(tenantResult, outputFileName);
+				return;
+			} catch (TException e) {
+				throw new HException(e.getMessage());
+			}
+		}
+		throw new HException("Client has shutdown");
+	}
+
+	public void serverReconfigure(boolean isMysqlOnly, int voltdbCapacity)
+			throws HException {
+		while (!mIsShutdown) {
+			connect();
+			try {
+				mClient.server_reconfigure(isMysqlOnly, voltdbCapacity);
+				return;
 			} catch (TException e) {
 				throw new HException(e.getMessage());
 			}

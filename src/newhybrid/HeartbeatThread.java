@@ -1,6 +1,11 @@
 package newhybrid;
 
+import org.apache.log4j.Logger;
+
+import config.Constants;
+
 public class HeartbeatThread extends Thread {
+	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 	private final String THREAD_NAME;
 	private final HeartbeatExecutor EXECUTOR;
 	private final long FIXED_EXECUTION_INTERVAL_TIME;
@@ -19,7 +24,7 @@ public class HeartbeatThread extends Thread {
 		EXECUTOR = Executor;
 		FIXED_EXECUTION_INTERVAL_TIME = fixedExecutionIntervalTime;
 		mIsShutdown = false;
-		setDaemon(true);
+		// setDaemon(true);
 	}
 
 	@Override
@@ -30,7 +35,7 @@ public class HeartbeatThread extends Thread {
 				EXECUTOR.heartbeat();
 				long executionTime = System.nanoTime() - lastTime;
 				if (executionTime > FIXED_EXECUTION_INTERVAL_TIME) {
-					throw new HException(THREAD_NAME + " last execution took "
+					LOG.warn(THREAD_NAME + " last execution took "
 							+ executionTime + " ns. Longer than "
 							+ " the FIXED_EXECUTION_INTERVAL_TIME "
 							+ FIXED_EXECUTION_INTERVAL_TIME);
@@ -40,12 +45,10 @@ public class HeartbeatThread extends Thread {
 			}
 		} catch (InterruptedException e) {
 			if (!mIsShutdown) {
-				System.out
-						.println("Heartbeat Thread was interrupted ungracefully, shutting down...");
+				LOG.error("Heartbeat Thread was interrupted ungracefully, shutting down...");
 			}
 		} catch (Exception e) {
-			System.out
-					.println("Uncaught exception in heartbeat executor, Heartbeat Thread shutting down");
+			LOG.error("Uncaught exception in heartbeat executor, Heartbeat Thread shutting down");
 			e.printStackTrace();
 		}
 	}

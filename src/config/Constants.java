@@ -38,8 +38,8 @@ public class Constants {
 
 	final public static int MAX_CONNECT_TRY = 5;
 	final public static int SELECTOR_THREADS = 3;
-	final public static int QUEUE_SIZE_PER_SELECTOR = 3000;
-	final public static int SERVER_THREADS = 3000;
+	final public static int QUEUE_SIZE_PER_SELECTOR = 4000;
+	final public static int SERVER_THREADS = 4000;
 
 	/*
 	 * For ServerOffloader

@@ -66,6 +66,9 @@ public class HTenantClient {
 		mServerClient.connect();
 	}
 
+	public synchronized void cleanConnect(){
+		mServerClient.cleanConnect();
+	}
 	public synchronized void shutdown() throws HException {
 		mServerClient.shutdown();
 		releaseConnection();

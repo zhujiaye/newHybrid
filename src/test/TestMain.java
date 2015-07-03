@@ -129,7 +129,7 @@ public class TestMain {
 					clientThreads[i].notify();
 				}
 			}
-			LOG.info("Split " + (splits - 1) + ":violated number "
+			LOG.info("Split " + splits + ":violated number "
 					+ violatedCount);
 			try {
 				for (int i = 0; i < totThreads; i++)

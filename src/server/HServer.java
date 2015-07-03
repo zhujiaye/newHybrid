@@ -355,7 +355,8 @@ public class HServer {
 		return true;
 	}
 
-	public void reconfigure(boolean isMysqlOnly, int voltdbCapacity) throws HException {
+	public void reconfigure(boolean isMysqlOnly, int voltdbCapacity)
+			throws HException {
 		if (mConf.isUseVoltdb())
 			clearVoltdb();
 		mNeedOffloadChecking = !isMysqlOnly;
@@ -651,21 +652,23 @@ public class HServer {
 		}
 	}
 
+	// TODO make this better
 	private int getConcurrencyLimit(int freeWorkloadInMysqlNow) {
-		// TODO complete this method
-		return 9;
+		if (freeWorkloadInMysqlNow < 0)
+			return 0;
+		else
+			return 9;
 	}
 
 	public synchronized void updateWorkloadLimitInMysql() {
-		// if (mNowTroughput > mLastThroughput)
 		mLastThroughput = mNowTroughput;
 		mNowTroughput = 0;
 		LOG.info("Troughput now:" + mLastThroughput);
 	}
 
-	// TODO complete this method
+	// TODO make this better
 	private synchronized int getWorkloadLimitInMysql() {
-		return 30000;
+		return 25000;
 	}
 
 	private int getWorkloadNow(HTenant[] tenants) {

@@ -7,11 +7,15 @@ OPTS="
 -Dnewhybrid.workloaddir=$FRUGALDB_HOME/workloads
 "
 #TODO for every workload file 
-echo "start testing for workload load1.txt..."
-java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload load1.txt 
-java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure mysql 2000 
-$FRUGALDB_HOME/script/client.sh load1.txt load1_mysql.results 
-java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 2000 
-$FRUGALDB_HOME/script/client.sh load1.txt load1_hybrid_2000M.results
-echo "load1.txt testing finished."
+workloadlist=`ls $FRUGALDB_HOME/workloads | grep txt`
+for workloadfile in $workloadlist
+do
+	echo "start testing for workload ${workloadfile}..."
+	java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
+	java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure mysql 2000 
+	$FRUGALDB_HOME/script/client.sh $workloadfile ${workloadfile}_mysql.results 
+	java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 2000 
+	$FRUGALDB_HOME/script/client.sh $workloadfile ${workloadfile}_hybrid_2000M.results
+	echo "${workloadfile} testing finished."
+done
 

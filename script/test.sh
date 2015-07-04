@@ -7,7 +7,7 @@ OPTS="
 -Dnewhybrid.workloaddir=$FRUGALDB_HOME/workloads
 "
 #TODO for every workload file 
-workloadlist=`ls $FRUGALDB_HOME/workloads | grep txt`
+workloadlist=`ls $FRUGALDB_HOME/workloads | grep .txt$`
 for workloadfile in $workloadlist
 do
 	echo "start testing for workload ${workloadfile}..."

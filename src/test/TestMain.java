@@ -62,7 +62,9 @@ public class TestMain {
 			TenantWorkload[] clientWorkloads = new TenantWorkload[end - start
 					+ 1];
 			for (int i = start; i <= end; i++) {
-				clientThreads[i - start] = new ClientThread(i, workloadLoader
+				HTenantClient htc = new HTenantClient(i);
+				htc.connect();
+				clientThreads[i - start] = new ClientThread(htc, workloadLoader
 						.getWorkloadForTenant(i).getWH());
 				clientWorkloadAdderThreads[i - start] = null;
 				clientWorkloads[i - start] = workloadLoader
@@ -72,7 +74,7 @@ public class TestMain {
 					start, end));
 			int totThreads = clientThreads.length;
 			int splits = workloadLoader.getNumberOfSplits();
-			
+
 			for (int i = 0; i < totThreads; i++) {
 				clientThreads[i].start();
 			}
@@ -129,8 +131,10 @@ public class TestMain {
 					clientThreads[i].notify();
 				}
 			}
-			LOG.info("Split " + splits + ":violated number "
-					+ violatedCount);
+			LOG.info("Split " + splits + ":violated number " + violatedCount);
+			LOG.info(String
+					.format("Test from tenant %d to %d ends(stop querying)",
+							start, end));
 			try {
 				for (int i = 0; i < totThreads; i++)
 					clientThreads[i].join();
@@ -151,8 +155,8 @@ public class TestMain {
 				serverClient.serverReportResult(result, outputFileName);
 			}
 			serverClient.shutdown();
-			LOG.info(String
-					.format("Test from tenant %d to %d ends", start, end));
+			LOG.info(String.format(
+					"Test from tenant %d to %d ends(logged out)", start, end));
 		}
 	}
 }
@@ -197,8 +201,8 @@ class ClientThread extends Thread {
 	private ArrayList<SplitResult> mSplitResults = null;
 	private ArrayList<SuccessQueryResult> mSuccessQueryResults = null;
 
-	public ClientThread(int ID, int WH) throws HException {
-		HTC = new HTenantClient(ID);
+	public ClientThread(HTenantClient htc, int WH) throws HException {
+		HTC = htc;
 		mWH = WH;
 		mTotSuccessQueries = 0;
 		mRemainQueries = 0;
@@ -222,7 +226,7 @@ class ClientThread extends Thread {
 			while (!mIsFinished) {
 				if (mRemainQueries == 0) {
 					synchronized (this) {
-						//HTC.cleanConnect();
+						// HTC.cleanConnect();
 						this.wait();
 					}
 				} else {

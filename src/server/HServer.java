@@ -655,7 +655,7 @@ public class HServer {
 	// TODO make this better
 	private int getConcurrencyLimit(int freeWorkloadInMysqlNow) {
 		if (freeWorkloadInMysqlNow < 0)
-			return 0;
+			return 1;
 		else
 			return 9;
 	}
@@ -668,7 +668,7 @@ public class HServer {
 
 	// TODO make this better
 	private synchronized int getWorkloadLimitInMysql() {
-		return 25000;
+		return 28000;
 	}
 
 	private int getWorkloadNow(HTenant[] tenants) {

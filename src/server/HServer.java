@@ -654,10 +654,28 @@ public class HServer {
 
 	// TODO make this better
 	private int getConcurrencyLimit(int freeWorkloadInMysqlNow) {
+		int tot=getWorkloadLimitInMysql();
 		if (freeWorkloadInMysqlNow < 0)
-			return 1;
-		else
+			return 0;
+		else{
+			int occ=tot-freeWorkloadInMysqlNow;
+			double radio=(double)occ/tot;
+			if (radio>0.9)
+				return 0;
+			if (radio>0.85)
+				return 1;
+			if (radio>0.8)
+				return 2;
+			if (radio>0.75)
+				return 3;
+			if (radio>0.7)
+				return 4;
+			if (radio>0.65)
+				return 5;
+			if (radio>0.6)
+				return 6;
 			return 9;
+		}
 	}
 
 	public synchronized void updateWorkloadLimitInMysql() {
@@ -788,6 +806,9 @@ public class HServer {
 				}
 			} catch (IOException | ProcCallException e) {
 				throw new HException(e.getMessage());
+			}
+			finally{
+				pool.putConnection(voltdbConnection);
 			}
 		} else {
 			throw new HException("Can't connect to voltdb server");

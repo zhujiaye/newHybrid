@@ -44,12 +44,12 @@ public class MysqlToVoltdbMoverThread extends MoverThread {
 				mysqlPool.putConnection(mysqlConnection);
 				voltdbPool.putConnection(voltdbConnection);
 			}
-		} catch (HException e) {
-			e.printStackTrace();
-			LOG.error(e.getMessage());
 		} catch (InterruptedException e) {
 			return;
 		} catch (InterruptedIOException e) {
+			return;
+		} catch (HException e) {
+			LOG.error(e.getMessage());
 			return;
 		}
 		synchronized (this) {

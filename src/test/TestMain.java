@@ -74,16 +74,17 @@ public class TestMain {
 					start, end));
 			int totThreads = clientThreads.length;
 			int splits = workloadLoader.getNumberOfSplits();
-
 			for (int i = 0; i < totThreads; i++) {
 				clientThreads[i].start();
 			}
 			ServerClient serverClient = new ServerClient();
-			while (!serverClient.tenantAllLoggedIn())
-				;
+			while (!serverClient.tenantAllLoggedIn()) {
+				Thread.sleep(1000);
+			}
 			serverClient.shutdown();
-			for (int i = 0; i < totThreads; i++)
+			for (int i = 0; i < totThreads; i++) {
 				clientThreads[i].startQuery();
+			}
 			LOG.info(String.format("Test from tenant %d to %d starts(start)",
 					start, end));
 			int violatedCount = 0;
@@ -220,8 +221,9 @@ class ClientThread extends Thread {
 		HQueryResult result = null;
 		try {
 			HTC.login();
-			while (!mIsStarted)
-				;
+			while (!mIsStarted){
+				Thread.sleep(1000);
+			}
 			HTC.start();
 			while (!mIsFinished) {
 				if (mRemainQueries == 0) {
@@ -295,12 +297,12 @@ class ClientThread extends Thread {
 		return ok;
 	}
 
-	public void startQuery() {
-		mIsStarted = true;
-	}
-
 	public void finishQuery() {
 		mIsFinished = true;
+	}
+	
+	public void startQuery(){
+		mIsStarted = true;
 	}
 
 	public List<SplitResult> getSplitResults() {

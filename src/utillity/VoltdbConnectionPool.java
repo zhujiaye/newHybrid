@@ -56,9 +56,10 @@ public class VoltdbConnectionPool {
 	 * 
 	 * @throws NoVoltdbConnectionException
 	 *             if a new voltdb connection can't be got
+	 * @throws InterruptedException 
 	 * @throws HException
 	 */
-	private void add() throws NoVoltdbConnectionException, HException {
+	private void add() throws NoVoltdbConnectionException,HException {
 		Client newConnection = null;
 		ClientConfig config = new ClientConfig();
 		config.setConnectionResponseTimeout(0);
@@ -76,7 +77,8 @@ public class VoltdbConnectionPool {
 			}
 			mPool.add(newConnection);
 		} catch (IOException e) {
-			throw new HException(e.getMessage());
+			LOG.warn("java network or connection problem:" + e.getMessage());
+			throw new HException("WTF!");
 		}
 
 	}

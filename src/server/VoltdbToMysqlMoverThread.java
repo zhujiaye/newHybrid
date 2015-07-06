@@ -33,6 +33,7 @@ public class VoltdbToMysqlMoverThread extends MoverThread {
 		} catch (HException e) {
 			e.printStackTrace();
 			LOG.error(e.getMessage());
+			return;
 		} catch (InterruptedException e) {
 			return;
 		} catch (InterruptedIOException e) {

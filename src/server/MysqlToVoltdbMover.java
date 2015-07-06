@@ -210,6 +210,9 @@ public class MysqlToVoltdbMover {
 			if (e instanceof InterruptedIOException)
 				throw (InterruptedIOException) e;
 			e.printStackTrace();
+		}finally{
+			clearCSVfile(mConf.getMysqlTempFolder() + "/" + tables[tableId]
+					+ tenantId + ".csv");
 		}
 	}
 

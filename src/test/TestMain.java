@@ -221,7 +221,7 @@ class ClientThread extends Thread {
 		HQueryResult result = null;
 		try {
 			HTC.login();
-			while (!mIsStarted){
+			while (!mIsStarted) {
 				Thread.sleep(1000);
 			}
 			HTC.start();
@@ -291,6 +291,8 @@ class ClientThread extends Thread {
 		}
 		mSplit++;
 		mWorkloadInSplit = 0;
+		// set to 0 means every split is not responsible for others' workload
+		mRemainQueries = 0;
 		mLastRemainQueries = mRemainQueries;
 		mSentQueriesInSplit = 0;
 		mSuccessQueriesInSplit = 0;
@@ -300,8 +302,8 @@ class ClientThread extends Thread {
 	public void finishQuery() {
 		mIsFinished = true;
 	}
-	
-	public void startQuery(){
+
+	public void startQuery() {
 		mIsStarted = true;
 	}
 

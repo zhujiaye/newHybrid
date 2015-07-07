@@ -15,6 +15,7 @@ struct SuccessQueryResult{
 	4: i64 	mStartTime;
 	5: i64  mEndTime;
 	6: i64  mLatency;
+	7: i32 mSplit;
 }
 struct TenantResult{
 	1: i32 mID;

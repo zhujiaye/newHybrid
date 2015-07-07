@@ -422,8 +422,9 @@ public class HServer {
 				writer.format("***********************************************************Split information end***********************************************************%n");
 				// Query information
 				writer.format("***********************************************************Query information start***********************************************************%n");
-				writer.format("%20s%20s%20s%20s%20s%20s%n", "id", "whatDB",
-						"whatAccess", "startTime", "endTime", "latency");
+				writer.format("%20s%20s%20s%20s%20s%20s%20s%n", "id", "whatDB",
+						"whatAccess", "startTime", "endTime", "latency",
+						"split");
 				List<SuccessQueryResult> successQueryResultsList = tenantResult.mQueryResults;
 				for (int i = 0; i < successQueryResultsList.size(); i++) {
 					SuccessQueryResult tmp = successQueryResultsList.get(i);
@@ -431,10 +432,10 @@ public class HServer {
 					t1 = ((long) tmp.mStartTime);
 					t2 = ((long) tmp.mEndTime);
 					t3 = ((long) tmp.mLatency);
-					writer.format("%20d%20s%20s%20d%20d%20d%n", tmp.mID,
+					writer.format("%20d%20s%20s%20d%20d%20d%20d%n", tmp.mID,
 							tmp.mIsInMysql ? "MySQL" : "VoltDB",
 							tmp.mIsRead ? "Read" : "Write", t1 / 1000000,
-							t2 / 1000000, t3 / 1000000);
+							t2 / 1000000, t3 / 1000000, tmp.mSplit);
 				}
 				writer.format("***********************************************************Query information end***********************************************************%n");
 				writer.format("@<Tenant %s%n", violated ? "violated!" : "");
@@ -654,25 +655,25 @@ public class HServer {
 
 	// TODO make this better
 	private int getConcurrencyLimit(int freeWorkloadInMysqlNow) {
-		int tot=getWorkloadLimitInMysql();
+		int tot = getWorkloadLimitInMysql();
 		if (freeWorkloadInMysqlNow < 0)
 			return 0;
-		else{
-			int occ=tot-freeWorkloadInMysqlNow;
-			double radio=(double)occ/tot;
-			if (radio>0.9)
+		else {
+			int occ = tot - freeWorkloadInMysqlNow;
+			double radio = (double) occ / tot;
+			if (radio > 0.9)
 				return 0;
-			if (radio>0.85)
+			if (radio > 0.85)
 				return 1;
-			if (radio>0.8)
+			if (radio > 0.8)
 				return 2;
-			if (radio>0.75)
+			if (radio > 0.75)
 				return 3;
-			if (radio>0.7)
+			if (radio > 0.7)
 				return 4;
-			if (radio>0.65)
+			if (radio > 0.65)
 				return 5;
-			if (radio>0.6)
+			if (radio > 0.6)
 				return 6;
 			return 9;
 		}
@@ -806,8 +807,7 @@ public class HServer {
 				}
 			} catch (IOException | ProcCallException e) {
 				throw new HException(e.getMessage());
-			}
-			finally{
+			} finally {
 				pool.putConnection(voltdbConnection);
 			}
 		} else {

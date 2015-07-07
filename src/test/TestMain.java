@@ -246,7 +246,8 @@ class ClientThread extends Thread {
 							SuccessQueryResult queryResult = new SuccessQueryResult(
 									mTotSuccessQueries, result.isInMysql(),
 									result.isRead(), result.getStartTime(),
-									result.getEndTime(), result.getLatency());
+									result.getEndTime(), result.getLatency(),
+									mSplit);
 							mSuccessQueryResults.add(queryResult);
 						}
 					}

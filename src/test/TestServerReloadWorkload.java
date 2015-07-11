@@ -25,6 +25,7 @@ public class TestServerReloadWorkload {
 					LOG.error("server failed to reload workload from "
 							+ args[0]);
 				serverClient.shutdown();
+				break;
 			} catch (ClientShutdownException e) {
 				LOG.warn("server client is already shut down, try to get a new one");
 				serverClient.shutdown();

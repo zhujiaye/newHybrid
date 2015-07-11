@@ -35,19 +35,31 @@ public class MysqlToVoltdbMoverThread extends MoverThread {
 			MysqlConnectionPool mysqlPool = MysqlConnectionPool.getPool();
 			VoltdbConnectionPool voltdbPool = VoltdbConnectionPool.getPool();
 			for (int i = 0; i < Constants.NUMBER_OF_TABLES; i++) {
-				Connection mysqlConnection = mysqlPool.getConnection();
-				Client voltdbConnection = voltdbPool.getConnection();
+				if (mIsFinished)
+					return;
+				Connection mysqlConnection = null;
+				Client voltdbConnection = null;
+				mysqlConnection = mysqlPool.getConnection();
+				voltdbConnection = voltdbPool.getConnection();
+				if (mysqlConnection == null || voltdbConnection == null) {
+					LOG.error("No mysql or voltdb connections!");
+					return;
+				}
 				new MysqlToVoltdbMover(mTenant.getID() - 1, mVoltdbID - 1, i,
 						mysqlConnection, voltdbConnection).move();
 				mysqlPool.putConnection(mysqlConnection);
 				voltdbPool.putConnection(voltdbConnection);
 			}
 		} catch (InterruptedException e) {
+			LOG.error(e.getMessage());
 			return;
 		} catch (InterruptedIOException e) {
+			LOG.error(e.getMessage());
 			return;
 		}
 		synchronized (this) {
+			if (mIsFinished)
+				return;
 			mIsFinished = true;
 			mTenant.finishMovingToVoltdb(mVoltdbID);
 			if (mIsInMover) {
@@ -67,7 +79,7 @@ public class MysqlToVoltdbMoverThread extends MoverThread {
 					mTenant.getServer().completeOneMoverThread();
 					mTenant.getServer().trigger();
 				}
-				interrupt();
+				//interrupt();
 			}
 		}
 	}

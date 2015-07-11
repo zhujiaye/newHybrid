@@ -531,8 +531,8 @@ public class HServer {
 			}
 		}
 		if (freeWorkloadInMysqlAhead < 0) {
-			Arrays.sort(tenantsInMysqlAhead);
-			Arrays.sort(tenantsInVoltdbAhead);
+			sort(tenantsInMysqlAhead);
+			sort(tenantsInVoltdbAhead);
 			int workloadNeedToOffload = -freeWorkloadInMysqlAhead;
 			int j = tenantsInVoltdbAhead.length - 1;
 			for (int i = 0; i < tenantsInMysqlAhead.length
@@ -597,6 +597,22 @@ public class HServer {
 		mMover.trigger();
 		LOG.debug("Number of running moverthreads:"
 				+ mMover.getNumberOfRunningThreads());
+	}
+
+	private void sort(HTenant[] tenants) {
+		if (tenants == null)
+			return;
+		int n = tenants.length;
+		SortableTenant[] sortedTenants = new SortableTenant[n];
+		for (int i = 0; i < n; i++)
+			sortedTenants[i] = new SortableTenant(i, tenants[i].getDataSize(),
+					tenants[i].getWorkloadAhead());
+		Arrays.sort(sortedTenants);
+		HTenant[] res = new HTenant[n];
+		for (int i = 0; i < n; i++)
+			res[i] = tenants[sortedTenants[i].getID()];
+		for (int i = 0; i < n; i++)
+			tenants[i] = res[i];
 	}
 
 	public static void main(String[] args) throws TTransportException {

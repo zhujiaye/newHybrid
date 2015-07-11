@@ -61,6 +61,7 @@ public class HTenantClient {
 		while (true) {
 			try {
 				mServerClient.connect();
+				break;
 			} catch (ClientShutdownException | NoServerConnectionException e) {
 				LOG.warn("server client is not useful any more, try to get a new one");
 				mServerClient.shutdown();

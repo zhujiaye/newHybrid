@@ -56,9 +56,7 @@ public class TenantWorkload {
 		return mWorkloads[split];
 	}
 
-	/*
-	 * TODO This method is wrong
-	 */
+	// TODO This method is wrong
 	private int getEstimatedWorkloadAtSplit(int split) {
 		if (split < 0 || split >= mSplits) {
 			return 0;

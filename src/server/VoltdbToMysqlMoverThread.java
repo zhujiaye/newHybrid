@@ -10,6 +10,8 @@ public class VoltdbToMysqlMoverThread extends MoverThread {
 	final static private Logger LOG = Logger
 			.getLogger(Constants.LOGGER_NAME_SERVER);
 
+	private VoltdbToMysqlMover mMover;
+
 	public VoltdbToMysqlMoverThread(HTenant tenant, boolean isInMover) {
 		super(tenant, isInMover);
 		if (!mTenant.isInVoltdbPure()) {
@@ -25,15 +27,20 @@ public class VoltdbToMysqlMoverThread extends MoverThread {
 			mIsStarted = true;
 		}
 		try {
-			new VoltdbToMysqlMover(mTenant.getID() - 1,
-					mTenant.getIDInVoltdb() - 1).move();
+			mMover=new VoltdbToMysqlMover(mTenant.getID() - 1,
+					mTenant.getIDInVoltdb() - 1);
+			mMover.move();
 		} catch (InterruptedException e) {
+			LOG.error(e.getMessage());
 			return;
 		} catch (InterruptedIOException e) {
+			LOG.error(e.getMessage());
 			return;
 		}
 
 		synchronized (this) {
+			if (mIsFinished)
+				return;
 			mIsFinished = true;
 			mTenant.finishMovingToMysql();
 			mTenant.getServer().removeVoltdbIDForTenant(mTenant.getID());
@@ -49,12 +56,13 @@ public class VoltdbToMysqlMoverThread extends MoverThread {
 			if (mIsFinished)
 				return;
 			mIsFinished = true;
+			mMover.cancel();
 			if (mIsStarted) {
 				if (mIsInMover) {
 					mTenant.getServer().completeOneMoverThread();
 					mTenant.getServer().trigger();
 				}
-				interrupt();
+				//interrupt();
 			}
 		}
 	}

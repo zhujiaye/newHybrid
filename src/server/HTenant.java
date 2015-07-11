@@ -6,7 +6,7 @@ import newhybrid.TenantWorkload;
 import config.Constants;
 import config.HConfig;
 
-public class HTenant implements Comparable<HTenant> {
+public class HTenant {
 	final static private Logger LOG = Logger
 			.getLogger(Constants.LOGGER_NAME_SERVER);
 	final private HConfig mConf;
@@ -254,13 +254,4 @@ public class HTenant implements Comparable<HTenant> {
 		return mWorkload;
 	}
 
-	@Override
-	public int compareTo(HTenant o) {
-		int x1 = this.getWorkloadAhead();
-		int y1 = this.getDataSize();
-		int x2 = o.getWorkloadAhead();
-		int y2 = o.getDataSize();
-
-		return x2 * y1 - x1 * y2;
-	}
 }

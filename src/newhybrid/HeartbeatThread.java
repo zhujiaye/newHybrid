@@ -45,11 +45,12 @@ public class HeartbeatThread extends Thread {
 			}
 		} catch (InterruptedException e) {
 			if (!mIsShutdown) {
-				LOG.error("Heartbeat Thread was interrupted ungracefully, shutting down...");
+				LOG.error("Heartbeat Thread was interrupted ungracefully, shutting down..."
+						+ e.getMessage());
 			}
 		} catch (Exception e) {
-			LOG.error("Uncaught exception in heartbeat executor, Heartbeat Thread shutting down");
-			e.printStackTrace();
+			LOG.error("Uncaught exception in heartbeat executor, Heartbeat Thread shutting down:"
+					+ e.getMessage());
 		}
 	}
 

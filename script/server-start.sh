@@ -7,3 +7,4 @@ OPTS="
 -Dnewhybrid.workloaddir=$FRUGALDB_HOME/workloads
 "
 java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS server.HServer
+

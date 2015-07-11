@@ -17,6 +17,7 @@ import config.HConfig;
 
 public class MysqlToVoltdbMover {
 	final private HConfig mConf;
+
 	public int tenantId;
 	public int volumnId;
 	public int tableId;
@@ -33,7 +34,6 @@ public class MysqlToVoltdbMover {
 	 *            this variable is 0-index based
 	 * @param conn
 	 * @param client
-	 * @throws HException
 	 */
 	public MysqlToVoltdbMover(int tenantId, int volumnId, int tableId,
 			Connection conn, Client client) {

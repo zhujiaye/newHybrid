@@ -13,6 +13,7 @@ public class MoverThread extends Thread {
 
 	public synchronized void startMovingData() {
 		mIsStarted = true;
+		start();
 	}
 
 	public synchronized boolean isFinished() {

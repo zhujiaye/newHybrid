@@ -267,7 +267,6 @@ class ClientThread extends Thread {
 			while (!mIsFinished) {
 				if (mRemainQueries == 0) {
 					synchronized (this) {
-						// HTC.cleanConnect();
 						this.wait();
 					}
 				} else {
@@ -275,22 +274,25 @@ class ClientThread extends Thread {
 						result = HTC.sqlRandomSelect();
 					else
 						result = HTC.sqlRandomUpdate();
+					HTC.completeOneQuery();
 					synchronized (this) {
-						mSentQueriesInSplit++;
-						mRemainQueries--;
-						if (result.isSuccess()) {
-							mSuccessQueriesInSplit++;
-							mTotSuccessQueries++;
-							HTC.completeOneQuery();
-							SuccessQueryResult queryResult = new SuccessQueryResult(
-									mTotSuccessQueries, result.isInMysql(),
-									result.isRead(), result.getStartTime(),
-									result.getEndTime(), result.getLatency(),
-									mSplit);
-							mSuccessQueryResults.add(queryResult);
+						if (mRemainQueries > 0) {
+							mSentQueriesInSplit++;
+							mRemainQueries--;
+							if (result.isSuccess()) {
+								mSuccessQueriesInSplit++;
+								mTotSuccessQueries++;
+								SuccessQueryResult queryResult = new SuccessQueryResult(
+										mTotSuccessQueries, result.isInMysql(),
+										result.isRead(), result.getStartTime(),
+										result.getEndTime(),
+										result.getLatency(), mSplit);
+								mSuccessQueryResults.add(queryResult);
+							}
 						}
 					}
 				}
+
 			}
 			HTC.stop();
 			HTC.logout();

@@ -74,7 +74,7 @@ public class VoltdbConnectionPool {
 			}
 			mPool.add(newConnection);
 		} catch (IOException e) {
-			LOG.warn("java network or connection problem:" + e.getMessage());
+			LOG.error("java network or connection problem:" + e.getMessage());
 		}
 
 	}

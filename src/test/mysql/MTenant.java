@@ -12,7 +12,7 @@ public class MTenant extends Thread {
 	public static MysqlConnectionPool mPool;
 	public static VoltdbConnectionPool vPool;
 
-	public static void resetPool() {
+	public static void resetPool() throws InterruptedException {
 		mPool = MysqlConnectionPool.getPool();
 		vPool = VoltdbConnectionPool.getPool();
 	}

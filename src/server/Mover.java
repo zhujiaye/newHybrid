@@ -37,7 +37,6 @@ public class Mover {
 					continue;
 				thread.startMovingData();
 				mConcurrency++;
-				thread.start();
 			}
 		}
 	}

@@ -27,7 +27,7 @@ public class WorkloadLoader {
 
 	/**
 	 * 
-	 * @return false if the workload file name is invalid
+	 * @return false if the workload file not exist or in wrong format
 	 */
 	public boolean load() {
 		File file = new File(mPath);
@@ -101,6 +101,11 @@ public class WorkloadLoader {
 		return mSplits;
 	}
 
+	/**
+	 * 
+	 * @param id
+	 * @return null if the tenant doesn't have a workload information
+	 */
 	public TenantWorkload getWorkloadForTenant(int id) {
 		if (!mPosition.containsKey(id))
 			return null;

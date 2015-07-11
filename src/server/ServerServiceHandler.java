@@ -1,7 +1,5 @@
 package server;
 
-import newhybrid.HException;
-
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 
@@ -29,22 +27,12 @@ public class ServerServiceHandler implements ServerService.Iface {
 
 	@Override
 	public boolean tenant_login(int id) throws TException {
-		try {
-			return mServer.tenantLogin(id);
-		} catch (HException e) {
-			LOG.error(e.getMessage());
-			return false;
-		}
+		return mServer.tenantLogin(id);
 	}
 
 	@Override
 	public boolean tenant_logout(int id) throws TException {
-		try {
-			return mServer.tenantLogout(id);
-		} catch (HException e) {
-			System.out.println(e.getMessage());
-			return false;
-		}
+		return mServer.tenantLogout(id);
 	}
 
 	@Override
@@ -95,11 +83,7 @@ public class ServerServiceHandler implements ServerService.Iface {
 
 	@Override
 	public void server_stop() throws TException {
-		try {
-			mServer.stop();
-		} catch (HException e) {
-			LOG.error(e.getMessage());
-		}
+		mServer.stop();
 	}
 
 	@Override
@@ -111,11 +95,7 @@ public class ServerServiceHandler implements ServerService.Iface {
 	@Override
 	public void server_reconfigure(boolean isMysqlOnly, int voltdbCapacity)
 			throws TException {
-		try {
-			mServer.reconfigure(isMysqlOnly, voltdbCapacity);
-		} catch (HException e) {
-			LOG.error(e.getMessage());
-		}
+		mServer.reconfigure(isMysqlOnly, voltdbCapacity);
 	}
 
 }

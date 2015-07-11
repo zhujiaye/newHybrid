@@ -1,12 +1,11 @@
 package dbInfo;
 
-import newhybrid.HException;
 import client.HTenantClient;
 import utillity.ValueGenerator;
 import config.Constants;
 
 public class HistoryTable extends Table {
-	public HistoryTable(HTenantClient htc) throws HException {
+	public HistoryTable(HTenantClient htc) {
 		super(htc);
 		mName = "history";
 		mColumnNames = new String[] { "h_c_id", "h_c_d_id", "h_c_w_id",
@@ -26,7 +25,7 @@ public class HistoryTable extends Table {
 	}
 
 	@Override
-	public void generateAllColumns() throws HException {
+	public void generateAllColumns() {
 		if (mColumnValues == null)
 			mColumnValues = new String[mColumnNames.length];
 		int dataSizeKind = HTC.getDataSizeKind();

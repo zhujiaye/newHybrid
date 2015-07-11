@@ -2,7 +2,6 @@ package server;
 
 import org.apache.log4j.Logger;
 
-import newhybrid.HException;
 import newhybrid.TenantWorkload;
 import config.Constants;
 import config.HConfig;
@@ -29,12 +28,12 @@ public class HTenant implements Comparable<HTenant> {
 
 	private TenantWorkload mWorkload;
 
-	public HTenant(HServer server, int tenant_id) throws HException {
+	public HTenant(HServer server, int tenant_id) {
 		this(server, tenant_id, null);
 	}
 
 	public HTenant(HServer server, int tenant_id, TenantWorkload workload)
-			throws HException {
+			 {
 		mConf = HConfig.getConf();
 		mServer = server;
 		mID = tenant_id;
@@ -113,7 +112,7 @@ public class HTenant implements Comparable<HTenant> {
 				mServer.getAddress(), mServer.getPort()));
 	}
 
-	public synchronized void logout() throws HException {
+	public synchronized void logout() {
 		if (!mLoggedIn)
 			return;
 		stop();

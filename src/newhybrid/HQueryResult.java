@@ -83,7 +83,7 @@ public class HQueryResult {
 			mVoltdbResult = null;
 	}
 
-	public void print() throws HException {
+	public void print() {
 		if (mType.isRead()) {
 			if (mIsInMysql) {
 				int n;
@@ -108,7 +108,7 @@ public class HQueryResult {
 						System.out.println();
 					}
 				} catch (SQLException e) {
-					throw new HException(e.getMessage());
+					LOG.error(e.getMessage());
 				}
 			} else {
 				if (mVoltdbResult == null) {

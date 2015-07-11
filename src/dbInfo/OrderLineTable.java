@@ -1,12 +1,11 @@
 package dbInfo;
 
-import newhybrid.HException;
 import client.HTenantClient;
 import utillity.ValueGenerator;
 import config.Constants;
 
 public class OrderLineTable extends Table {
-	public OrderLineTable(HTenantClient htc) throws HException {
+	public OrderLineTable(HTenantClient htc) {
 		super(htc);
 		mName = "order_line";
 		mColumnNames = new String[] { "ol_o_id", "ol_d_id", "ol_w_id",
@@ -26,7 +25,7 @@ public class OrderLineTable extends Table {
 	}
 
 	@Override
-	public void generateAllColumns() throws HException {
+	public void generateAllColumns() {
 		if (mColumnValues == null)
 			mColumnValues = new String[mColumnNames.length];
 		int dataSizeKind = HTC.getDataSizeKind();

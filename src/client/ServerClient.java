@@ -1,7 +1,7 @@
 package client;
 
-import newhybrid.HException;
-import newhybrid.HeartbeatThread;
+import newhybrid.ClientShutdownException;
+import newhybrid.NoServerConnectionException;
 
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
@@ -24,13 +24,17 @@ public class ServerClient {
 	private volatile boolean mIsShutdown = false;
 	private volatile long mLastAccessTime;
 	private TProtocol mProtocol = null;
-	//private HeartbeatThread mHeartbeatThread = null;
+	// private HeartbeatThread mHeartbeatThread = null;
 	private ServerService.Client mClient;
 
-	public ServerClient() throws HException {
+	public ServerClient() {
 		mConf = HConfig.getConf();
 	}
 
+	/**
+	 * clean connection between client and server, including the socket
+	 * connection
+	 */
 	public synchronized void cleanConnect() {
 		if (mIsConnected) {
 			LOG.debug("ServerClient Disconnecting from server....");
@@ -44,10 +48,12 @@ public class ServerClient {
 		// }
 	}
 
-	public synchronized void connect() throws HException {
+	public synchronized void connect() throws ClientShutdownException,
+			NoServerConnectionException {
 		mLastAccessTime = System.nanoTime();
 		if (mIsShutdown) {
-			throw new HException("Client has shut down!");
+			throw new ClientShutdownException(
+					"server client is already shut down!");
 		}
 		if (mIsConnected)
 			return;
@@ -76,7 +82,8 @@ public class ServerClient {
 				try {
 					Thread.sleep(Constants.S / 1000000);
 				} catch (InterruptedException e1) {
-					LOG.error("Interrupted while waiting to connect to server");
+					LOG.error("Interrupted while waiting to connect to server:"
+							+ e1.getMessage());
 				}
 				continue;
 			}
@@ -85,12 +92,12 @@ public class ServerClient {
 		}
 
 		// Reaching here indicates that we did not successfully connect.
-		throw new HException("Failed to connect to server "
+		throw new NoServerConnectionException("Failed to connect to server "
 				+ mConf.getServerAddress() + ":" + mConf.getServerPort()
 				+ " after " + (tries - 1) + " attempts");
 	}
 
-	public synchronized void shutdown() throws HException {
+	public synchronized void shutdown() {
 		if (mIsShutdown)
 			return;
 		cleanConnect();
@@ -101,201 +108,238 @@ public class ServerClient {
 		return mLastAccessTime;
 	}
 
-	public int tenantGetIDInVoltdb(int tenant_id) throws HException {
+	public int tenantGetIDInVoltdb(int tenant_id)
+			throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_getIDInVoltdb(tenant_id);
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public int tenantGetDataSize(int tenant_id) throws HException {
+	public int tenantGetDataSize(int tenant_id) throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_getDataSize(tenant_id);
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public int tenantGetDataSizeKind(int tenant_id) throws HException {
+	public int tenantGetDataSizeKind(int tenant_id)
+			throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_getDataSizeKind(tenant_id);
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean tenantIsLoggedIn(int tenant_id) throws HException {
+	public boolean tenantIsLoggedIn(int tenant_id)
+			throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_isLoggedIn(tenant_id);
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean tenantIsStarted(int tenant_id) throws HException {
+	public boolean tenantIsStarted(int tenant_id)
+			throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_isStarted(tenant_id);
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean tenantIsUseMysql(int tenant_id) throws HException {
+	public boolean tenantIsUseMysql(int tenant_id)
+			throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_isUseMysql(tenant_id);
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean tenantLogin(int tenant_id) throws HException {
+	public boolean tenantLogin(int tenant_id) throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_login(tenant_id);
-			} catch (TException e) {
-				e.printStackTrace();
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean tenantLogout(int tenant_id) throws HException {
+	public boolean tenantLogout(int tenant_id) throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_logout(tenant_id);
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean tenantStart(int tenant_id) throws HException {
+	public boolean tenantStart(int tenant_id) throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_start(tenant_id);
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean tenantStop(int tenant_id) throws HException {
+	public boolean tenantStop(int tenant_id) throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_stop(tenant_id);
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean tenantCompleteOneQuery(int tenant_id) throws HException {
+	public boolean tenantCompleteOneQuery(int tenant_id)
+			throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_completeOneQuery(tenant_id);
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean tenantAllLoggedIn() throws HException {
+	public boolean tenantAllLoggedIn() throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.tenant_isAllLoggedIn();
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public void serverStop() throws HException {
+	public void serverStop() throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				mClient.server_stop();
 				return;
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean serverReloadWorkloadFile(String fileName) throws HException {
+	public boolean serverReloadWorkloadFile(String fileName)
+			throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				return mClient.server_reloadWorkloadFile(fileName);
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
 	public void serverReportResult(TenantResult tenantResult,
-			String outputFileName) throws HException {
+			String outputFileName) throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				mClient.server_reportResult(tenantResult, outputFileName);
 				return;
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public void serverReconfigure(boolean isMysqlOnly, int voltdbCapacity)
-			throws HException {
+	public void serverReconfigure(boolean isMysqlOnly, int voltdbCapacity) throws ClientShutdownException {
 		while (!mIsShutdown) {
-			connect();
 			try {
+				connect();
 				mClient.server_reconfigure(isMysqlOnly, voltdbCapacity);
 				return;
-			} catch (TException e) {
-				throw new HException(e.getMessage());
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new HException("Client has shutdown");
+		throw new ClientShutdownException("server client is already shut down");
 	}
 }

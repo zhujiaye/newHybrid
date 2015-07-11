@@ -1,12 +1,11 @@
 package dbInfo;
 
-import newhybrid.HException;
 import client.HTenantClient;
 import utillity.ValueGenerator;
 import config.Constants;
 
 public class WarehouseTable extends Table {
-	public WarehouseTable(HTenantClient htc) throws HException {
+	public WarehouseTable(HTenantClient htc) {
 		super(htc);
 		mName = "warehouse";
 		mColumnNames = new String[] { "w_id", "w_name", "w_street_1",

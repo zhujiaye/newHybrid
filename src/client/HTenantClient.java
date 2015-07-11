@@ -4,9 +4,10 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Random;
 
-import newhybrid.HException;
+import newhybrid.ClientShutdownException;
 import newhybrid.HQueryResult;
 import newhybrid.HSQLTimeOutException;
+import newhybrid.NoServerConnectionException;
 
 import org.apache.log4j.Logger;
 import org.voltdb.client.Client;
@@ -33,18 +34,12 @@ public class HTenantClient {
 	final static private Logger LOG = Logger
 			.getLogger(Constants.LOGGER_NAME_CLIENT);
 	private int mID;
-	private MysqlConnectionPool mMysqlPool = null;
-	private VoltdbConnectionPool mVoltdbPool = null;
-	private Connection mMysqlConnection = null;
-	private Client mVoltdbConnection = null;
 	private Table[] mTables = null;
 
 	private ServerClient mServerClient = null;
 
-	public HTenantClient(int tenantId) throws HException {
+	public HTenantClient(int tenantId) {
 		mID = tenantId;
-		mMysqlPool = MysqlConnectionPool.getPool();
-		mVoltdbPool = VoltdbConnectionPool.getPool();
 		mTables = new Table[Constants.NUMBER_OF_TABLES];
 		mTables[0] = new CustomerTable(this);
 		mTables[1] = new DistrictTable(this);
@@ -62,83 +57,165 @@ public class HTenantClient {
 		return mID;
 	}
 
-	public synchronized void connect() throws HException {
-		mServerClient.connect();
+	public synchronized void connect() {
+		while (true) {
+			try {
+				mServerClient.connect();
+			} catch (ClientShutdownException | NoServerConnectionException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
-	public synchronized void cleanConnect(){
+	public synchronized void cleanConnect() {
 		mServerClient.cleanConnect();
 	}
-	public synchronized void shutdown() throws HException {
+
+	public synchronized void shutdown() {
 		mServerClient.shutdown();
-		releaseConnection();
-		// if (mMysqlPool != null)
-		// mMysqlPool.clear();
-		// if (mVoltdbPool != null)
-		// mVoltdbPool.clear();
 	}
 
-	public synchronized boolean isLoggedIn() throws HException {
-		return mServerClient.tenantIsLoggedIn(mID);
+	public synchronized boolean isLoggedIn() {
+		while (true) {
+			try {
+				return mServerClient.tenantIsLoggedIn(mID);
+			} catch (ClientShutdownException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
-	public synchronized boolean isStarted() throws HException {
-		return mServerClient.tenantIsStarted(mID);
+	public synchronized boolean isStarted() {
+		while (true) {
+			try {
+				return mServerClient.tenantIsStarted(mID);
+			} catch (ClientShutdownException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
 	/**
 	 * If the tenant is not registered yet this method will return false
 	 * 
 	 * @return whether this tenant logged in successfully
-	 * @throws HException
+	 * @throws ClientShutdownException
 	 */
-	public synchronized boolean login() throws HException {
-		return mServerClient.tenantLogin(mID);
+	public synchronized boolean login() {
+		while (true) {
+			try {
+				return mServerClient.tenantLogin(mID);
+			} catch (ClientShutdownException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
-	public synchronized boolean logout() throws HException {
-		return mServerClient.tenantLogout(mID);
+	public synchronized boolean logout() {
+		while (true) {
+			try {
+				return mServerClient.tenantLogout(mID);
+			} catch (ClientShutdownException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
-	public synchronized boolean start() throws HException {
-		return mServerClient.tenantStart(mID);
+	public synchronized boolean start() {
+		while (true) {
+			try {
+				return mServerClient.tenantStart(mID);
+			} catch (ClientShutdownException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
-	public synchronized boolean stop() throws HException {
-		return mServerClient.tenantStop(mID);
+	public synchronized boolean stop() {
+		while (true) {
+			try {
+				return mServerClient.tenantStop(mID);
+			} catch (ClientShutdownException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
-	public synchronized int getIDInVoltdb() throws HException {
-		return mServerClient.tenantGetIDInVoltdb(mID);
+	public synchronized int getIDInVoltdb() {
+		while (true) {
+			try {
+				return mServerClient.tenantGetIDInVoltdb(mID);
+			} catch (ClientShutdownException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
-	public synchronized int getDataSize() throws HException {
-		return mServerClient.tenantGetDataSize(mID);
+	public synchronized int getDataSize() {
+		while (true) {
+			try {
+				return mServerClient.tenantGetDataSize(mID);
+			} catch (ClientShutdownException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
-	public synchronized int getDataSizeKind() throws HException {
-		return mServerClient.tenantGetDataSizeKind(mID);
+	public synchronized int getDataSizeKind() {
+		while (true) {
+			try {
+				return mServerClient.tenantGetDataSizeKind(mID);
+			} catch (ClientShutdownException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
-	public synchronized boolean isUseMysql() throws HException {
-		return mServerClient.tenantIsUseMysql(mID);
+	public synchronized boolean isUseMysql() {
+		while (true) {
+			try {
+				return mServerClient.tenantIsUseMysql(mID);
+			} catch (ClientShutdownException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
-	public synchronized boolean completeOneQuery() throws HException {
-		return mServerClient.tenantCompleteOneQuery(mID);
+	public synchronized boolean completeOneQuery() {
+		while (true) {
+			try {
+				return mServerClient.tenantCompleteOneQuery(mID);
+			} catch (ClientShutdownException e) {
+				LOG.warn("server client is not useful any more, try to get a new one");
+				mServerClient.shutdown();
+				mServerClient = new ServerClient();
+			}
+		}
 	}
 
-	public synchronized Connection getMysqlConnection() throws HException {
-		openMysqlConnection();
-		return mMysqlConnection;
-	}
-
-	public synchronized Client getVoltdbConnection() throws HException {
-		openVoltDBConnection();
-		return mVoltdbConnection;
-	}
-
-	public synchronized HQueryResult sqlRandomSelect() throws HException {
+	public synchronized HQueryResult sqlRandomSelect() {
 		if (!isLoggedIn()) {
 			LOG.error("Tenant " + mID + " not logged in!");
 			return null;
@@ -155,7 +232,7 @@ public class HTenantClient {
 		return result;
 	}
 
-	public synchronized HQueryResult sqlRandomUpdate() throws HException {
+	public synchronized HQueryResult sqlRandomUpdate() {
 		if (!isLoggedIn()) {
 			LOG.error("Tenant " + mID + " not logged in!");
 			return null;
@@ -170,58 +247,5 @@ public class HTenantClient {
 		HQueryResult result;
 		result = mTables[tableIndex].sqlRandomUpdate();
 		return result;
-	}
-
-	private void releaseConnection() throws HException {
-		closeMysqlConnection();
-		closeVoltDBConnection();
-	}
-
-	private void openMysqlConnection() throws HException {
-		try {
-			if (mMysqlConnection != null && !mMysqlConnection.isClosed()) {
-				return;
-			}
-		} catch (SQLException e) {
-			throw new HException("Database access error!");
-		}
-		if (mMysqlPool != null) {
-			mMysqlConnection = mMysqlPool.getConnection();
-		}
-		if (mMysqlConnection == null) {
-			throw new HException("Can't connect to mysql!");
-		}
-	}
-
-	private void closeMysqlConnection() throws HException {
-		try {
-			if (mMysqlConnection == null || mMysqlConnection.isClosed())
-				return;
-		} catch (SQLException e) {
-			throw new HException("Database access error!");
-		}
-		if (mMysqlPool != null) {
-			mMysqlPool.putConnection(mMysqlConnection);
-		}
-
-		mMysqlConnection = null;
-	}
-
-	private void openVoltDBConnection() throws HException {
-		if (mVoltdbConnection != null
-				&& !mVoltdbConnection.getConnectedHostList().isEmpty())
-			return;
-		if (mVoltdbPool != null) {
-			mVoltdbConnection = mVoltdbPool.getConnection();
-		}
-	}
-
-	private void closeVoltDBConnection() {
-		if (mVoltdbConnection == null)
-			return;
-		if (mVoltdbPool != null) {
-			mVoltdbPool.putConnection(mVoltdbConnection);
-		}
-		mVoltdbConnection = null;
 	}
 }

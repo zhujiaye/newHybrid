@@ -1,10 +1,10 @@
 package utillity;
 
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.util.HashSet;
 import java.util.Iterator;
 
-import newhybrid.HException;
 import newhybrid.NoVoltdbConnectionException;
 
 import org.apache.log4j.Logger;
@@ -27,18 +27,18 @@ public class VoltdbConnectionPool {
 	private HashSet<Client> mPool;
 	private HConfig mConf;
 
-	public static synchronized VoltdbConnectionPool getPool() throws HException {
+	public static synchronized VoltdbConnectionPool getPool() {
 		if (pool == null) {
 			pool = new VoltdbConnectionPool();
 		}
 		return pool;
 	}
 
-	private VoltdbConnectionPool() throws HException {
+	private VoltdbConnectionPool() {
 		this(0);
 	}
 
-	private VoltdbConnectionPool(int num) throws HException {
+	private VoltdbConnectionPool(int num) {
 		mPool = new HashSet<Client>();
 		mConf = HConfig.getConf();
 		for (int i = 0; i < num; i++) {
@@ -46,7 +46,6 @@ public class VoltdbConnectionPool {
 				add();
 			} catch (NoVoltdbConnectionException e) {
 				LOG.error("Can't get a new voltdb connection:" + e.getMessage());
-				break;
 			}
 		}
 	}
@@ -56,10 +55,8 @@ public class VoltdbConnectionPool {
 	 * 
 	 * @throws NoVoltdbConnectionException
 	 *             if a new voltdb connection can't be got
-	 * @throws InterruptedException 
-	 * @throws HException
 	 */
-	private void add() throws NoVoltdbConnectionException,HException {
+	private void add() throws NoVoltdbConnectionException {
 		Client newConnection = null;
 		ClientConfig config = new ClientConfig();
 		config.setConnectionResponseTimeout(0);
@@ -78,7 +75,6 @@ public class VoltdbConnectionPool {
 			mPool.add(newConnection);
 		} catch (IOException e) {
 			LOG.warn("java network or connection problem:" + e.getMessage());
-			throw new HException("WTF!");
 		}
 
 	}
@@ -105,7 +101,11 @@ public class VoltdbConnectionPool {
 		mPool.clear();
 	}
 
-	public synchronized Client getConnection() throws HException {
+	/**
+	 * 
+	 * @return null if there is no useful voltdb connection
+	 */
+	public synchronized Client getConnection() {
 		Client res = null;
 		Iterator<Client> iter = null;
 		if (mPool.size() == 0) {

@@ -37,7 +37,6 @@ import thrift.SuccessQueryResult;
 import thrift.TenantResult;
 import utillity.VoltdbConnectionPool;
 import utillity.WorkloadLoader;
-import newhybrid.HException;
 import newhybrid.HeartbeatThread;
 import config.Constants;
 import config.HConfig;
@@ -69,7 +68,7 @@ public class HServer {
 	private int mLastThroughput = -1;
 	private int mNowTroughput = 0;
 
-	public HServer() throws HException {
+	public HServer() {
 		mConf = HConfig.getConf();
 		mAddress = mConf.getServerAddress();
 		mPort = mConf.getServerPort();
@@ -81,7 +80,7 @@ public class HServer {
 		isStarted = false;
 	}
 
-	public void start() throws HException, TTransportException {
+	public void start() throws TTransportException {
 		if (isStarted)
 			return;
 		LOG.info("Server starting....");
@@ -137,7 +136,7 @@ public class HServer {
 		mServerServiceServer.serve();
 	}
 
-	public void stop() throws HException {
+	public void stop() {
 		if (!isStarted)
 			return;
 		LOG.info("Server stopping......");
@@ -187,7 +186,7 @@ public class HServer {
 		return mPort;
 	}
 
-	public boolean tenantLogin(int id) throws HException {
+	public boolean tenantLogin(int id) {
 		HTenant tenant;
 		tenant = mTenants.get(id);
 		if (tenant != null) {
@@ -206,8 +205,7 @@ public class HServer {
 				try {
 					thread.join();
 				} catch (InterruptedException e) {
-					throw new HException(
-							"ERROR when moving data to voltdb: interrupted!");
+					LOG.error("ERROR when moving data to voltdb: interrupted!");
 				}
 			}
 			tenant.login();
@@ -216,7 +214,7 @@ public class HServer {
 		return false;
 	}
 
-	public boolean tenantLogout(int id) throws HException {
+	public boolean tenantLogout(int id) {
 		HTenant tenant;
 		tenant = mTenants.get(id);
 		if (tenant != null) {
@@ -244,8 +242,7 @@ public class HServer {
 				try {
 					thread.join();
 				} catch (InterruptedException e) {
-					throw new HException(
-							"ERROR when moving data back to mysql: interrupted!");
+					LOG.error("ERROR when moving data back to mysql: interrupted!");
 				}
 			}
 			return true;
@@ -354,8 +351,7 @@ public class HServer {
 		return true;
 	}
 
-	public void reconfigure(boolean isMysqlOnly, int voltdbCapacity)
-			throws HException {
+	public void reconfigure(boolean isMysqlOnly, int voltdbCapacity) {
 		if (mConf.isUseVoltdb())
 			clearVoltdb();
 		mNeedOffloadChecking = !isMysqlOnly;
@@ -453,7 +449,7 @@ public class HServer {
 	/*
 	 * TODO make this better
 	 */
-	public void offloadWorkloads() throws HException {
+	public void offloadWorkloads() {
 		if (!mNeedOffloadChecking) {
 			return;
 		}
@@ -603,8 +599,7 @@ public class HServer {
 				+ mMover.getNumberOfRunningThreads());
 	}
 
-	public static void main(String[] args) throws HException,
-			TTransportException {
+	public static void main(String[] args) throws TTransportException {
 		HServer server = new HServer();
 		server.start();
 	}
@@ -772,7 +767,7 @@ public class HServer {
 		return res;
 	}
 
-	private void clearVoltdb() throws HException {
+	private void clearVoltdb() {
 		VoltdbConnectionPool pool = VoltdbConnectionPool.getPool();
 		Client voltdbConnection = pool.getConnection();
 		ClientResponse response;
@@ -793,8 +788,7 @@ public class HServer {
 							response = voltdbConnection.callProcedure("@AdHoc",
 									"delete from " + tableName + ";");
 							if (response.getStatus() != ClientResponse.SUCCESS) {
-								throw new HException("Can not delete table "
-										+ tableName);
+								LOG.error("Can not delete table " + tableName);
 							} else {
 								LOG.debug("voltdb table " + tableName
 										+ " cleared");
@@ -802,15 +796,15 @@ public class HServer {
 						}
 					}
 				} else {
-					throw new HException("Failed response");
+					LOG.error("Failed response");
 				}
 			} catch (IOException | ProcCallException e) {
-				throw new HException(e.getMessage());
+				LOG.error(e.getMessage());
 			} finally {
 				pool.putConnection(voltdbConnection);
 			}
 		} else {
-			throw new HException("Can't connect to voltdb server");
+			LOG.error("Can't connect to voltdb server");
 		}
 	}
 }

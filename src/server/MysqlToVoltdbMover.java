@@ -8,7 +8,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import newhybrid.HException;
 
 import org.voltdb.client.Client;
 import org.voltdb.client.ProcCallException;
@@ -37,7 +36,7 @@ public class MysqlToVoltdbMover {
 	 * @throws HException
 	 */
 	public MysqlToVoltdbMover(int tenantId, int volumnId, int tableId,
-			Connection conn, Client client) throws HException {
+			Connection conn, Client client) {
 		mConf = HConfig.getConf();
 		this.tenantId = tenantId;
 		this.volumnId = volumnId;

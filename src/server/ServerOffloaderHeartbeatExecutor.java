@@ -1,6 +1,5 @@
 package server;
 
-import newhybrid.HException;
 import newhybrid.HeartbeatExecutor;
 
 public class ServerOffloaderHeartbeatExecutor implements HeartbeatExecutor {
@@ -11,7 +10,7 @@ public class ServerOffloaderHeartbeatExecutor implements HeartbeatExecutor {
 	}
 
 	@Override
-	public void heartbeat() throws HException {
+	public void heartbeat() {
 		mServer.offloadWorkloads();
 	}
 

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import newhybrid.HException;
+import newhybrid.ClientShutdownException;
 import newhybrid.HQueryResult;
 import newhybrid.HeartbeatExecutor;
 import newhybrid.HeartbeatThread;
@@ -23,8 +23,7 @@ import utillity.WorkloadLoader;
 public class TestMain {
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 
-	public static void main(String[] args) throws HException,
-			InterruptedException {
+	public static void main(String[] args) {
 		String usage = "TestMain firstTenantID lastTenantID inputWorkloadFileName outputResultFileName";
 		if (args.length < 4) {
 			LOG.error("not enough arguments!");
@@ -85,9 +84,22 @@ public class TestMain {
 				clientThreads[i].start();
 			}
 			ServerClient serverClient = new ServerClient();
-			while (!serverClient.tenantAllLoggedIn()) {
-				Thread.sleep(1000);
+			while (true) {
+				try {
+					while (!serverClient.tenantAllLoggedIn()) {
+						Thread.sleep(1000);
+					}
+					break;
+				} catch (ClientShutdownException e) {
+					LOG.warn("server client is shut down, try to get a new one");
+					serverClient.shutdown();
+					serverClient = new ServerClient();
+				} catch (InterruptedException e) {
+					LOG.warn("interrupted while waiting for all tenants' logging:"
+							+ e.getMessage());
+				}
 			}
+
 			serverClient.shutdown();
 			for (int i = 0; i < totThreads; i++) {
 				if (!good[i])
@@ -171,7 +183,16 @@ public class TestMain {
 						workload.getSLO(), workload.getDataSize(),
 						workload.getWH(), clientThreads[i].getSplitResults(),
 						clientThreads[i].getSuccessQueryResults());
-				serverClient.serverReportResult(result, outputFileName);
+				while (true) {
+					try {
+						serverClient.serverReportResult(result, outputFileName);
+						break;
+					} catch (ClientShutdownException e) {
+						LOG.warn("server client is shut down, try to get a new one");
+						serverClient.shutdown();
+						serverClient = new ServerClient();
+					}
+				}
 			}
 			serverClient.shutdown();
 			LOG.info(String.format(
@@ -191,7 +212,7 @@ class ClientWorkloadAdderHeartbeatExecutor implements HeartbeatExecutor {
 	}
 
 	@Override
-	public void heartbeat() throws HException {
+	public void heartbeat() {
 		if (mCount > 0) {
 			mCount--;
 			mClientThread.addWorkload(1);
@@ -220,7 +241,7 @@ class ClientThread extends Thread {
 	private ArrayList<SplitResult> mSplitResults = null;
 	private ArrayList<SuccessQueryResult> mSuccessQueryResults = null;
 
-	public ClientThread(HTenantClient htc, int WH) throws HException {
+	public ClientThread(HTenantClient htc, int WH) {
 		HTC = htc;
 		mWH = WH;
 		mTotSuccessQueries = 0;
@@ -274,9 +295,6 @@ class ClientThread extends Thread {
 			HTC.stop();
 			HTC.logout();
 			HTC.shutdown();
-		} catch (HException e) {
-			LOG.error(e.getMessage());
-			mIsFinished = true;
 		} catch (InterruptedException e) {
 			if (!mIsFinished) {
 				LOG.error("Interrupted while waiting!:" + e.getMessage());

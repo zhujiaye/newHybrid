@@ -1,13 +1,12 @@
 package dbInfo;
 
 import java.util.Random;
-import newhybrid.HException;
 import client.HTenantClient;
 import utillity.ValueGenerator;
 import config.Constants;
 
 public class DistrictTable extends Table {
-	public DistrictTable(HTenantClient htc) throws HException {
+	public DistrictTable(HTenantClient htc) {
 		super(htc);
 		mName = "district";
 		mColumnNames = new String[] { "d_id", "d_w_id", "d_name", "d_street_1",
@@ -27,7 +26,7 @@ public class DistrictTable extends Table {
 	}
 
 	@Override
-	public void generateAllColumns() throws HException {
+	public void generateAllColumns() {
 		if (mColumnValues == null)
 			mColumnValues = new String[mColumnNames.length];
 		Random ran = new Random(System.currentTimeMillis());

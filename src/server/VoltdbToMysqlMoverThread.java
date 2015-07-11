@@ -5,18 +5,15 @@ import java.io.InterruptedIOException;
 import org.apache.log4j.Logger;
 
 import config.Constants;
-import newhybrid.HException;
 
 public class VoltdbToMysqlMoverThread extends MoverThread {
 	final static private Logger LOG = Logger
 			.getLogger(Constants.LOGGER_NAME_SERVER);
 
-	public VoltdbToMysqlMoverThread(HTenant tenant, boolean isInMover)
-			throws HException {
+	public VoltdbToMysqlMoverThread(HTenant tenant, boolean isInMover) {
 		super(tenant, isInMover);
 		if (!mTenant.isInVoltdbPure()) {
-			throw new HException(
-					"VoltdbToMysqlMover ERROR: already in mysql or is being moving to voltdb");
+			LOG.error("VoltdbToMysqlMover ERROR: already in mysql or is being moving to voltdb");
 		}
 	}
 
@@ -30,10 +27,6 @@ public class VoltdbToMysqlMoverThread extends MoverThread {
 		try {
 			new VoltdbToMysqlMover(mTenant.getID() - 1,
 					mTenant.getIDInVoltdb() - 1).move();
-		} catch (HException e) {
-			e.printStackTrace();
-			LOG.error(e.getMessage());
-			return;
 		} catch (InterruptedException e) {
 			return;
 		} catch (InterruptedIOException e) {

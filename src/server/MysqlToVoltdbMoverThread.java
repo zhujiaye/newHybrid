@@ -9,7 +9,6 @@ import org.voltdb.client.Client;
 import utillity.MysqlConnectionPool;
 import utillity.VoltdbConnectionPool;
 import config.Constants;
-import newhybrid.HException;
 
 public class MysqlToVoltdbMoverThread extends MoverThread {
 	final static private Logger LOG = Logger
@@ -17,12 +16,11 @@ public class MysqlToVoltdbMoverThread extends MoverThread {
 	private int mVoltdbID;
 
 	public MysqlToVoltdbMoverThread(HTenant tenant, int voltdbID,
-			boolean isInMover) throws HException {
+			boolean isInMover) {
 		super(tenant, isInMover);
 		mVoltdbID = voltdbID;
 		if (!mTenant.isInMysqlPure()) {
-			throw new HException(
-					"MysqlToVoltdbMover ERROR: already in voltdb or is being moving to mysql");
+			LOG.error("MysqlToVoltdbMover ERROR: already in voltdb or is being moving to mysql");
 		}
 	}
 
@@ -47,9 +45,6 @@ public class MysqlToVoltdbMoverThread extends MoverThread {
 		} catch (InterruptedException e) {
 			return;
 		} catch (InterruptedIOException e) {
-			return;
-		} catch (HException e) {
-			LOG.error(e.getMessage());
 			return;
 		}
 		synchronized (this) {

@@ -4,12 +4,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Scanner;
 
-import newhybrid.HException;
+import org.apache.log4j.Logger;
+
 
 public class HConfig {
 	final private String ENV_FILEPATH = System.getProperty("newhybrid.envpath",
 			"newhybrid-env");
-
+	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 	private static HConfig conf = null;
 	private boolean mUsemysql = Constants.DEFAULT_USE_MYSQL;
 	private boolean mUsevoltdb = Constants.DEFAULT_USE_VOLTDB;
@@ -29,15 +30,15 @@ public class HConfig {
 	// For test only
 	private int mMysqlPoolInitsize = Constants.DEFAULT_MYSQL_POOL_INITSIZE;
 	private int mVoltdbPoolInitsize = Constants.DEFAULT_VOLTDB_POOL_INITSIZE;
-	
-	public synchronized static HConfig getConf() throws HException {
+
+	public synchronized static HConfig getConf() {
 		if (conf == null) {
 			conf = new HConfig();
 		}
 		return conf;
 	}
 
-	private HConfig() throws HException {
+	private HConfig() {
 		Scanner in = null;
 		try {
 			in = new Scanner(new File(ENV_FILEPATH));
@@ -101,7 +102,8 @@ public class HConfig {
 				}
 			}
 		} catch (FileNotFoundException e) {
-			throw new HException("Can not find environment file!");
+			LOG.error("Can not find environment file!");
+			System.exit(1);
 		} finally {
 			if (in != null)
 				in.close();

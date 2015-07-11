@@ -4,7 +4,6 @@ import java.util.Random;
 
 import utillity.MysqlConnectionPool;
 import utillity.VoltdbConnectionPool;
-import newhybrid.HException;
 import newhybrid.HQueryResult;
 import newhybrid.HSQLTimeOutException;
 import client.HTenantClient;
@@ -13,7 +12,7 @@ public class MTenant extends Thread {
 	public static MysqlConnectionPool mPool;
 	public static VoltdbConnectionPool vPool;
 
-	public static void resetPool() throws HException {
+	public static void resetPool() {
 		mPool = MysqlConnectionPool.getPool();
 		vPool = VoltdbConnectionPool.getPool();
 	}
@@ -58,19 +57,19 @@ public class MTenant extends Thread {
 		this.id = id;
 	}
 
-	public void init() throws HException {
+	public void init() {
 		htc = new HTenantClient(id);
 		htc.login();
 		htc.start();
 	}
 
-	public void init_pool() throws HException {
+	public void init_pool() {
 		htc = new HTenantClient(id);
 		htc.login();
 		htc.start();
 	}
 
-	public void clean() throws HException {
+	public void clean() {
 		htc.stop();
 		htc.logout();
 		htc.shutdown();
@@ -79,39 +78,36 @@ public class MTenant extends Thread {
 	public HTenantClient htc;
 
 	public void run() {
-		try {
-			Random rand = new Random(System.nanoTime());
-			HQueryResult result;
-			boolean isWrite;
-			while (MTestMain.checkIsActive()) {
-				if (rand.nextDouble() < this.writePercent) {
-					isWrite = true;
-					result = htc.sqlRandomUpdate();
-				} else {
-					isWrite = false;
-					result = htc.sqlRandomSelect();
-				}
-				if (result != null && result.isSuccess()) {
-					this.queryNumber(1);
-					if (isWrite)
-						this.writeNumber(1);
-					else
-						this.readNumber(1);
-				}
+
+		Random rand = new Random(System.nanoTime());
+		HQueryResult result;
+		boolean isWrite;
+		while (MTestMain.checkIsActive()) {
+			if (rand.nextDouble() < this.writePercent) {
+				isWrite = true;
+				result = htc.sqlRandomUpdate();
+			} else {
+				isWrite = false;
+				result = htc.sqlRandomSelect();
 			}
-		} catch (HException e) {
-			e.printStackTrace();
+			if (result != null && result.isSuccess()) {
+				this.queryNumber(1);
+				if (isWrite)
+					this.writeNumber(1);
+				else
+					this.readNumber(1);
+			}
 		}
+
 	}
 
 	/**
 	 * used by MVirtualTenant
 	 * 
 	 * @return
-	 * @throws HException
 	 * @throws HSQLTimeOutException
 	 */
-	public boolean doSelect() throws HException, HSQLTimeOutException {
+	public boolean doSelect() throws HSQLTimeOutException {
 		HQueryResult result = htc.sqlRandomSelect();
 		if (result != null && result.isSuccess())
 			return true;
@@ -122,10 +118,9 @@ public class MTenant extends Thread {
 	 * used by MVirtualTenant
 	 * 
 	 * @return
-	 * @throws HException
 	 * @throws HSQLTimeOutException
 	 */
-	public boolean doUpdate() throws HException, HSQLTimeOutException {
+	public boolean doUpdate() throws HSQLTimeOutException {
 		HQueryResult result = htc.sqlRandomUpdate();
 		if (result != null && result.isSuccess())
 			return true;

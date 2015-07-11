@@ -2,26 +2,25 @@ package test.mysql;
 
 import java.util.Random;
 
-import newhybrid.HException;
 import newhybrid.HSQLTimeOutException;
 
 public class MVirtualTenant extends MTenant {
 	private int id;
 	private MTenant[] tenant;
 
-	public MVirtualTenant(int id) throws HException {
+	public MVirtualTenant(int id)  {
 		this.id = id;
 		tenant = new MTenant[MTestMain.TENANT_PER_THREAD];
 		for(int i = 0; i < MTestMain.TENANT_PER_THREAD; i++){
 			tenant[i] = new MTenant(MTestMain.TENANT_PER_THREAD * this.id + i + 1);
 		}
 	}
-	public void init() throws HException{
+	public void init() {
 		for(MTenant t : tenant){
 			t.init();
 		}
 	}
-	public void clean() throws HException{
+	public void clean() {
 		for(MTenant t : tenant){
 			t.clean();
 		}
@@ -45,7 +44,7 @@ public class MVirtualTenant extends MTenant {
 					else this.readNumber(1);
 				}
 			}
-		} catch (HException | HSQLTimeOutException e) {
+		} catch (HSQLTimeOutException e) {
 			e.printStackTrace();
 		}
 	}

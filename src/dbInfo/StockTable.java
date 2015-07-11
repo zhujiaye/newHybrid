@@ -1,12 +1,11 @@
 package dbInfo;
 
-import newhybrid.HException;
 import client.HTenantClient;
 import utillity.ValueGenerator;
 import config.Constants;
 
 public class StockTable extends Table {
-	public StockTable(HTenantClient htc) throws HException {
+	public StockTable(HTenantClient htc){
 		super(htc);
 		mName = "stock";
 		mColumnNames = new String[] { "s_i_id", "s_w_id", " s_quantity",
@@ -28,7 +27,7 @@ public class StockTable extends Table {
 	}
 
 	@Override
-	public void generateAllColumns() throws HException {
+	public void generateAllColumns()  {
 		if (mColumnValues == null)
 			mColumnValues = new String[mColumnNames.length];
 		int dataSizeKind = HTC.getDataSizeKind();

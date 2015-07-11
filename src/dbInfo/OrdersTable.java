@@ -1,13 +1,12 @@
 package dbInfo;
 
 import java.util.Random;
-import newhybrid.HException;
 import client.HTenantClient;
 import utillity.ValueGenerator;
 import config.Constants;
 
 public class OrdersTable extends Table {
-	public OrdersTable(HTenantClient htc) throws HException {
+	public OrdersTable(HTenantClient htc) {
 		super(htc);
 		mName = "orders";
 		mColumnNames = new String[] { "o_id", "o_d_id", " o_w_id", "o_c_id",
@@ -27,7 +26,7 @@ public class OrdersTable extends Table {
 	}
 
 	@Override
-	public void generateAllColumns() throws HException {
+	public void generateAllColumns() {
 		if (mColumnValues == null)
 			mColumnValues = new String[mColumnNames.length];
 		Random ran = new Random(System.currentTimeMillis());

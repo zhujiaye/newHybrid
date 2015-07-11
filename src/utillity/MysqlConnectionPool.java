@@ -9,7 +9,6 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 
-import newhybrid.HException;
 import newhybrid.NoMysqlConnectionException;
 import config.Constants;
 import config.HConfig;
@@ -22,18 +21,18 @@ public class MysqlConnectionPool {
 	private HashSet<Connection> mPool;
 	private HConfig mConf;
 
-	public synchronized static MysqlConnectionPool getPool() throws HException {
+	public synchronized static MysqlConnectionPool getPool() {
 		if (pool == null) {
 			pool = new MysqlConnectionPool();
 		}
 		return pool;
 	}
 
-	private MysqlConnectionPool() throws HException {
+	private MysqlConnectionPool() {
 		this(0);
 	}
 
-	private MysqlConnectionPool(int num) throws HException {
+	private MysqlConnectionPool(int num) {
 		mPool = new HashSet<Connection>();
 		mConf = HConfig.getConf();
 		for (int i = 0; i < num; i++) {
@@ -41,7 +40,6 @@ public class MysqlConnectionPool {
 				add();
 			} catch (NoMysqlConnectionException e) {
 				LOG.error("Can't get a new mysql connection:" + e.getMessage());
-				break;
 			}
 		}
 	}
@@ -51,9 +49,8 @@ public class MysqlConnectionPool {
 	 * 
 	 * @throws NoMysqlConnectionException
 	 *             if a new mysql connection can't be got
-	 * @throws HException
 	 */
-	private void add() throws NoMysqlConnectionException, HException {
+	private void add() throws NoMysqlConnectionException {
 		Connection newConnection = null;
 		int cnt = 0;
 		try {
@@ -73,7 +70,7 @@ public class MysqlConnectionPool {
 			throw new NoMysqlConnectionException("Access denied!");
 		} catch (InstantiationException | IllegalAccessException
 				| ClassNotFoundException e) {
-			throw new HException("No jdbc driver!");
+			throw new NoMysqlConnectionException("No jdbc driver!");
 		}
 	}
 
@@ -98,7 +95,11 @@ public class MysqlConnectionPool {
 		mPool.clear();
 	}
 
-	public synchronized Connection getConnection() throws HException {
+	/**
+	 * 
+	 * @return null if there is no useful connection
+	 */
+	public synchronized Connection getConnection() {
 		Connection res = null;
 		Iterator<Connection> iter = null;
 		if (mPool.size() == 0) {

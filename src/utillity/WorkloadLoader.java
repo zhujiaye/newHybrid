@@ -2,7 +2,10 @@ package utillity;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
 import java.util.Scanner;
+
+import javax.swing.text.Position;
 
 import org.apache.log4j.Logger;
 
@@ -15,10 +18,11 @@ public class WorkloadLoader {
 
 	private int mSplits;
 	private TenantWorkload[] mTenantWorkloads;
+	private HashMap<Integer, Integer> mPosition;
+	private int mNumberOfTenants;
 
 	public WorkloadLoader(String path) {
 		mPath = path;
-		mTenantWorkloads = new TenantWorkload[Constants.NUMBER_OF_TENANTS];
 	}
 
 	/**
@@ -36,26 +40,34 @@ public class WorkloadLoader {
 		} catch (FileNotFoundException e) {
 			return false;
 		}
+		mNumberOfTenants = in.nextInt();
 		int intervals, splits;
+		int[] idList = new int[mNumberOfTenants];
+		mTenantWorkloads = new TenantWorkload[mNumberOfTenants];
+		mPosition = new HashMap<>();
 		intervals = in.nextInt();
 		mSplits = splits = intervals * 5;
 		in.nextDouble();
 		in.nextDouble();
+		for (int i = 0; i < mNumberOfTenants; i++) {
+			idList[i] = in.nextInt();
+			mPosition.put(idList[i], i);
+		}
 		int[] SLO, DS, WH;
-		SLO = new int[Constants.NUMBER_OF_TENANTS];
-		DS = new int[Constants.NUMBER_OF_TENANTS];
-		WH = new int[Constants.NUMBER_OF_TENANTS];
-		for (int i = 0; i < Constants.NUMBER_OF_TENANTS; i++) {
+		SLO = new int[mNumberOfTenants];
+		DS = new int[mNumberOfTenants];
+		WH = new int[mNumberOfTenants];
+		for (int i = 0; i < mNumberOfTenants; i++) {
 			SLO[i] = in.nextInt();
 		}
-		for (int i = 0; i < Constants.NUMBER_OF_TENANTS; i++) {
+		for (int i = 0; i < mNumberOfTenants; i++) {
 			DS[i] = in.nextInt();
 		}
-		for (int i = 0; i < Constants.NUMBER_OF_TENANTS; i++) {
+		for (int i = 0; i < mNumberOfTenants; i++) {
 			WH[i] = 20;
 		}
-		for (int i = 0; i < Constants.NUMBER_OF_TENANTS; i++) {
-			mTenantWorkloads[i] = new TenantWorkload(i + 1, SLO[i], DS[i],
+		for (int i = 0; i < mNumberOfTenants; i++) {
+			mTenantWorkloads[i] = new TenantWorkload(idList[i], SLO[i], DS[i],
 					WH[i], splits);
 		}
 		for (int i = 0; i < intervals; i++) {
@@ -64,7 +76,8 @@ public class WorkloadLoader {
 			for (int j = 0; j < numberOfActive; j++) {
 				int id = in.nextInt();
 				for (int k = 0; k < 5; k++)
-					mTenantWorkloads[id - 1].setActiveAtSplit(i * 5 + k, true);
+					mTenantWorkloads[mPosition.get(id)].setActiveAtSplit(i * 5
+							+ k, true);
 			}
 		}
 		for (int i = 0; i < splits; i++) {
@@ -74,7 +87,7 @@ public class WorkloadLoader {
 				in.close();
 				return false;
 			}
-			for (int j = 0; j < Constants.NUMBER_OF_TENANTS; j++) {
+			for (int j = 0; j < mNumberOfTenants; j++) {
 				int workload = in.nextInt();
 				mTenantWorkloads[j].setWorkloadAtSplit(split - 1, workload);
 			}
@@ -89,7 +102,9 @@ public class WorkloadLoader {
 	}
 
 	public TenantWorkload getWorkloadForTenant(int id) {
-		return mTenantWorkloads[id - 1];
+		if (!mPosition.containsKey(id))
+			return null;
+		return mTenantWorkloads[mPosition.get(id)];
 	}
 
 	/**
@@ -99,7 +114,7 @@ public class WorkloadLoader {
 		int[] totWorkload = new int[mSplits];
 		for (int i = 0; i < mSplits; i++) {
 			totWorkload[i] = 0;
-			for (int j = 0; j < Constants.NUMBER_OF_TENANTS; j++)
+			for (int j = 0; j < mNumberOfTenants; j++)
 				totWorkload[i] += mTenantWorkloads[j]
 						.getActualWorkloadAtSplit(i);
 		}
@@ -107,7 +122,7 @@ public class WorkloadLoader {
 			System.out.format("%30d", totWorkload[i]);
 		}
 		System.out.println();
-		for (int j = 0; j < Constants.NUMBER_OF_TENANTS; j++) {
+		for (int j = 0; j < mNumberOfTenants; j++) {
 			TenantWorkload tenantWorkload = mTenantWorkloads[j];
 			for (int i = 0; i < mSplits; i++) {
 				if (tenantWorkload.isActiveAtSplit(i)) {

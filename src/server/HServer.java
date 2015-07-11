@@ -77,7 +77,6 @@ public class HServer {
 		mNeedOffloadChecking = mConf.isUseMysql() && mConf.isUseVoltdb();
 		mTenants = new HashMap<>();
 		mMover = new Mover(this);
-		// mTenantsVoltdbID = new HashMap<>();
 		mVoltdbIDList = new HashMap<>();
 		isStarted = false;
 	}
@@ -100,15 +99,13 @@ public class HServer {
 		LOG.info("tenants information cleared......40%");
 		LOG.info("getting all registered tenants....");
 		WorkloadLoader workloadLoader = new WorkloadLoader(
-				Constants.WORKLOAD_FILE_PATH);
+				Constants.WORKLOAD_DIR + "/" + Constants.WORKLOAD_FILE);
 		if (!workloadLoader.load()) {
 			LOG.warn("no workload file");
 		}
 		for (int i = 1; i <= Constants.NUMBER_OF_TENANTS; i++) {
 			HTenant tenant = new HTenant(this, i,
 					workloadLoader.getWorkloadForTenant(i));
-			// tenant.login();
-			// tenant.start();
 			mTenants.put(i, tenant);
 		}
 		LOG.info("all registered tenants got.......60%");
@@ -349,6 +346,8 @@ public class HServer {
 	public boolean tenantAllLoggedIn() {
 		for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
 			HTenant tenant = tenantEntry.getValue();
+			if (tenant.getWorkload() == null)
+				continue;
 			if (!tenant.isLoggedIn())
 				return false;
 		}

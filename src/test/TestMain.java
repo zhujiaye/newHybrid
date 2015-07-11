@@ -61,20 +61,27 @@ public class TestMain {
 					- start + 1];
 			TenantWorkload[] clientWorkloads = new TenantWorkload[end - start
 					+ 1];
+			boolean[] good = new boolean[end - start + 1];
 			for (int i = start; i <= end; i++) {
-				HTenantClient htc = new HTenantClient(i);
-				htc.connect();
-				clientThreads[i - start] = new ClientThread(htc, workloadLoader
-						.getWorkloadForTenant(i).getWH());
-				clientWorkloadAdderThreads[i - start] = null;
-				clientWorkloads[i - start] = workloadLoader
-						.getWorkloadForTenant(i);
+				if (workloadLoader.getWorkloadForTenant(i) != null) {
+					HTenantClient htc = new HTenantClient(i);
+					htc.connect();
+					clientThreads[i - start] = new ClientThread(htc,
+							workloadLoader.getWorkloadForTenant(i).getWH());
+					clientWorkloadAdderThreads[i - start] = null;
+					clientWorkloads[i - start] = workloadLoader
+							.getWorkloadForTenant(i);
+					good[i - start] = true;
+				} else
+					good[i - start] = false;
 			}
 			LOG.info(String.format("Test from tenant %d to %d starts(login)",
 					start, end));
 			int totThreads = clientThreads.length;
 			int splits = workloadLoader.getNumberOfSplits();
 			for (int i = 0; i < totThreads; i++) {
+				if (!good[i])
+					continue;
 				clientThreads[i].start();
 			}
 			ServerClient serverClient = new ServerClient();
@@ -83,6 +90,8 @@ public class TestMain {
 			}
 			serverClient.shutdown();
 			for (int i = 0; i < totThreads; i++) {
+				if (!good[i])
+					continue;
 				clientThreads[i].startQuery();
 			}
 			LOG.info(String.format("Test from tenant %d to %d starts(start)",
@@ -91,6 +100,8 @@ public class TestMain {
 			for (int i = 0; i < splits; i++) {
 				violatedCount = 0;
 				for (int j = 0; j < totThreads; j++) {
+					if (!good[j])
+						continue;
 					if (!clientThreads[j].updateSplit())
 						violatedCount++;
 					if (clientWorkloadAdderThreads[j] != null)
@@ -123,6 +134,8 @@ public class TestMain {
 			}
 			violatedCount = 0;
 			for (int i = 0; i < totThreads; i++) {
+				if (!good[i])
+					continue;
 				if (clientWorkloadAdderThreads[i] != null)
 					clientWorkloadAdderThreads[i].shutdown();
 				if (!clientThreads[i].updateSplit())
@@ -137,8 +150,11 @@ public class TestMain {
 					.format("Test from tenant %d to %d ends(stop querying)",
 							start, end));
 			try {
-				for (int i = 0; i < totThreads; i++)
+				for (int i = 0; i < totThreads; i++) {
+					if (!good[i])
+						continue;
 					clientThreads[i].join();
+				}
 			} catch (InterruptedException e) {
 				LOG.error("Interrupted while waiting client threads to die:"
 						+ e.getMessage());
@@ -146,6 +162,8 @@ public class TestMain {
 			}
 			serverClient = new ServerClient();
 			for (int i = 0; i < totThreads; i++) {
+				if (!good[i])
+					continue;
 				LOG.debug("report result for tenant " + (i + start));
 				TenantWorkload workload = workloadLoader.getWorkloadForTenant(i
 						+ start);

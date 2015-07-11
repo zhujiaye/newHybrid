@@ -63,8 +63,8 @@ public class Constants {
 			"newhybrid.logger.name", "");
 	final public static String LOGGER_NAME_SERVER = "SERVER_LOGGER";
 	final public static String LOGGER_NAME_CLIENT = "CLIENT_LOGGER";
-	final public static String WORKLOAD_FILE_PATH = System.getProperty(
-			"newhybrid.workloadfile", "load.txt");
+	final public static String WORKLOAD_FILE = System.getProperty(
+			"newhybrid.workloadfile", "load550500_0.250.1_test1.txt");
 	final public static String WORKLOAD_DIR = System.getProperty(
 			"newhybrid.workloaddir", "");
 	/*

@@ -1,18 +1,19 @@
 usage:
-	java -jar WorkloadGenerator ac exr
+	java -jar WorkloadGenerator 5_50_500 tenantNumber ac exr
 where ac is active ratio and exr is exchange ratio.
+5_50_500 can be replaced by 20_60_200, 100_150_200 or any three numbers connected by '_'.
 
 example:
-	java -jar WorkloadGenerator 0.2 0.1
+	java -jar WorkloadGenerator 5_50_500 3000 0.2 0.1
 
 default: ac=0.2, exr=0.1
-active ratio 0.2 seems more appropriate than 0.3
 
 load.txt format:
-line 1: 7 0.20 0.10 --- the number of intervals, active ratio, exchange ratio
+line 1: 8 0.20 0.10 --- the number of intervals, active ratio, exchange ratio
 line 2: 3000 SLOs
 line 3: 3000 DS (integer)
-line 4~10: number of active tenants followed by the id of active tenants.
-line 11~ : a minute index, followed by 3000 numbers and a sum.
+line 4: repeat of interval 0
+line 5~11: number of active tenants followed by the id of active tenants.
+line 12~51 : a minute index, followed by 3000 numbers and a sum.
 PS: tenant id starts from 1.
 

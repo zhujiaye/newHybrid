@@ -216,25 +216,27 @@ public class HTenant implements Comparable<HTenant> {
 	}
 
 	/**
-	 * Get workload for the future consideration, and the workload returned is
-	 * the max workload in the following several splits
+	 * Get workload for the future consideration
 	 * 
 	 * @return the workload in the future
 	 *
 	 */
+	// TODO make this better
 	public synchronized int getWorkloadAhead() {
 		if (mWorkload == null)
 			return 0;
 		long elapsedTime = (System.nanoTime() - mStartTime);
 		long split = elapsedTime / Constants.SPLIT_TIME;
-		int max = 0;
-		for (int i = 1; i <= Constants.NUMBEROF_AHEAD_SPLITS; i++) {
-			int tmp;
-			tmp = mWorkload.getActualWorkloadAtSplit((int) split + i);
-			if (tmp > max)
-				max = tmp;
-		}
-		return max;
+		return mWorkload
+				.getActualWorkloadAtSplit((int) (split + Constants.NUMBEROF_AHEAD_SPLITS));
+		// int max = 0;
+		// for (int i = 1; i <= Constants.NUMBEROF_AHEAD_SPLITS; i++) {
+		// int tmp;
+		// tmp = mWorkload.getActualWorkloadAtSplit((int) split + i);
+		// if (tmp > max)
+		// max = tmp;
+		// }
+		// return max;
 	}
 
 	public synchronized int getWorkloadNow() {
@@ -247,6 +249,10 @@ public class HTenant implements Comparable<HTenant> {
 
 	public synchronized void setWorkload(TenantWorkload workload) {
 		mWorkload = workload;
+	}
+
+	public synchronized TenantWorkload getWorkload() {
+		return mWorkload;
 	}
 
 	@Override

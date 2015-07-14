@@ -15,7 +15,7 @@ for ((i=0;i<15;i++))
 do
 	((start=i*200+1))	
 	((end=(i+1)*200))
-	(nohup java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestMain>/dev/null 2>$FRUGALDB_HOME/logs/error.log $start $end $1 $2)&
+	(nohup java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestMain>/dev/null 2>$FRUGALDB_HOME/logs/error_client.log $start $end $1 $2)&
 	processIDs[i]=$!
 done
 for ((i=0;i<15;i++))

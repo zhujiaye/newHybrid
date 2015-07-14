@@ -97,16 +97,11 @@ public class HServer {
 		}
 		LOG.info("tenants information cleared......40%");
 		LOG.info("getting all registered tenants....");
-		WorkloadLoader workloadLoader = new WorkloadLoader(
-				Constants.WORKLOAD_DIR + "/" + Constants.WORKLOAD_FILE);
-		if (!workloadLoader.load()) {
-			LOG.warn("no workload file");
-		}
 		for (int i = 1; i <= Constants.NUMBER_OF_TENANTS; i++) {
-			HTenant tenant = new HTenant(this, i,
-					workloadLoader.getWorkloadForTenant(i));
+			HTenant tenant = new HTenant(this, i);
 			mTenants.put(i, tenant);
 		}
+		reloadWorkloadFile(Constants.WORKLOAD_FILE);
 		LOG.info("all registered tenants got.......60%");
 		LOG.info("setting up server service......");
 		mServerServiceHandler = new ServerServiceHandler(this);
@@ -199,7 +194,7 @@ public class HServer {
 				MysqlToVoltdbMoverThread thread = new MysqlToVoltdbMoverThread(
 						tenant, voltdbID, false);
 				tenant.startMovingToVoltdb(thread);
-				thread.start();
+				thread.startMovingData();
 				LOG.debug("Moving tenant " + tenant.getID()
 						+ " 's data to voltdb(" + voltdbID + ").....");
 				try {
@@ -236,7 +231,7 @@ public class HServer {
 				VoltdbToMysqlMoverThread thread = new VoltdbToMysqlMoverThread(
 						tenant, false);
 				tenant.startMovingToMysql(thread);
-				thread.start();
+				thread.startMovingData();
 				LOG.debug("Writing tenant " + tenant.getID()
 						+ " 's data back to mysql.....");
 				try {
@@ -356,6 +351,28 @@ public class HServer {
 			clearVoltdb();
 		mNeedOffloadChecking = !isMysqlOnly;
 		mVoltdbSpaceTotal = voltdbCapacity;
+		for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
+			HTenant tenant = tenantEntry.getValue();
+			if (tenant.isLoggedIn()) {
+				LOG.error("Tenant " + tenant.getID() + " logged in!");
+			}
+		}
+		mTenants.clear();
+		for (int i = 1; i <= Constants.NUMBER_OF_TENANTS; i++) {
+			mTenants.put(i, new HTenant(this, i));
+		}
+		for (int i = 1; i <= Constants.NUMBER_OF_VOLTDBID; i++) {
+			if (!mVoltdbIDList.get(i).isEmpty()) {
+				List<Integer> tmplist = mVoltdbIDList.get(i);
+				StringBuffer buffer = new StringBuffer();
+				buffer.append("list for voltdbID " + i + " not cleared!:");
+				for (int tenant_id : tmplist) {
+					buffer.append(tenant_id + " ");
+				}
+				LOG.error(buffer.toString());
+			}
+			mVoltdbIDList.get(i).clear();
+		}
 		LOG.info("reconfigure " + isMysqlOnly + " " + voltdbCapacity);
 	}
 
@@ -641,11 +658,13 @@ public class HServer {
 			}
 			if (voltdbID != -1) {
 				if (mVoltdbIDList.get(voltdbID).contains(tenant_id)) {
-					return -1;
+					LOG.error("Tenant " + tenant_id
+							+ " already in voltdb and voltdb id is " + voltdbID);
 				} else {
 					mVoltdbIDList.get(voltdbID).add(tenant_id);
 				}
-			}
+			} else
+				LOG.error("Can not find a voltdb id for tenant " + tenant_id);
 			return voltdbID;
 		}
 	}

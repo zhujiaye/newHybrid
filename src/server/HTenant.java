@@ -95,7 +95,7 @@ public class HTenant {
 		}
 	}
 
-	public int getIDInVoltdb() {
+	public synchronized int getIDInVoltdb() {
 		return mIDInVoltdb;
 	}
 
@@ -138,17 +138,17 @@ public class HTenant {
 				mID, mServer.getAddress(), mServer.getPort()));
 	}
 
-	public boolean isLoggedIn() {
+	public synchronized boolean isLoggedIn() {
 		return mLoggedIn;
 	}
 
-	public boolean isStarted() {
+	public synchronized boolean isStarted() {
 		if (!mLoggedIn)
 			return false;
 		return mStarted;
 	}
 
-	public boolean isInMysql() {
+	public synchronized boolean isInMysql() {
 		return mIsInMysql;
 	}
 
@@ -168,11 +168,11 @@ public class HTenant {
 		return !mIsInMysql && !mBeingMovingToMysql && !mBeingMovingToVoltdb;
 	}
 
-	public boolean isBeingMovingToVoltdb() {
+	public synchronized boolean isBeingMovingToVoltdb() {
 		return mBeingMovingToVoltdb;
 	}
 
-	public boolean isBeingMovingToMysql() {
+	public synchronized boolean isBeingMovingToMysql() {
 		return mBeingMovingToMysql;
 	}
 

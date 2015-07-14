@@ -6,4 +6,4 @@ OPTS="
 -Dnewhybrid.logger.name=SERVER_LOGGER
 -Dnewhybrid.workloaddir=$FRUGALDB_HOME/workloads
 "
-(nohup $FRUGALDB_HOME/script/server-start.sh >/dev/null 2>$FRUGALDB_HOME/logs/error.log )&
+(nohup $FRUGALDB_HOME/script/server-start.sh >/dev/null 2>$FRUGALDB_HOME/logs/error_server.log )&

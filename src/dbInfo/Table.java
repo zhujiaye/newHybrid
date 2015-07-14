@@ -50,6 +50,11 @@ public abstract class Table {
 		VOLTDB_POOL = VoltdbConnectionPool.getPool();
 	}
 
+	/**
+	 * 
+	 * @return a HQueryResult object represents the random select query;never
+	 *         null
+	 */
 	public HQueryResult sqlRandomSelect() {
 		generateAllColumns();
 		long time1 = 0, time2 = 0;
@@ -139,6 +144,11 @@ public abstract class Table {
 		}
 	}
 
+	/**
+	 * 
+	 * @return a HQueryResult object represents the random select query;never
+	 *         null
+	 */
 	public HQueryResult sqlRandomUpdate() {
 		generateAllColumns();
 		long time1, time2;

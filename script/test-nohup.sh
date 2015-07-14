@@ -6,4 +6,4 @@ OPTS="
 -Dnewhybrid.logger.name=CLIENT_LOGGER
 -Dnewhybrid.workloaddir=$FRUGALDB_HOME/workloads
 "
-(nohup $FRUGALDB_HOME/script/test.sh >/dev/null 2>$FRUGALDB_HOME/logs/error.log)&
+(nohup $FRUGALDB_HOME/script/test.sh >/dev/null 2>$FRUGALDB_HOME/logs/error_client.log)&

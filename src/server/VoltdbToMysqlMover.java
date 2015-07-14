@@ -24,7 +24,7 @@ public class VoltdbToMysqlMover {
 
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 	public int tenantId, volumnId;
-	private volatile boolean mIsCanceled;
+	private volatile boolean mIsCanceled = false;
 
 	/**
 	 * 
@@ -49,7 +49,7 @@ public class VoltdbToMysqlMover {
 		VoltdbConnectionPool voltdb_pool = VoltdbConnectionPool.getPool();
 		Connection conn;
 		Client voltdbConn;
-		
+
 		if (mIsCanceled)
 			return;
 		conn = mysql_pool.getConnection();
@@ -175,7 +175,8 @@ public class VoltdbToMysqlMover {
 		mysql_pool.putConnection(conn);
 		voltdb_pool.putConnection(voltdbConn);
 	}
-	public void cancel(){
-		mIsCanceled=true;
+
+	public void cancel() {
+		mIsCanceled = true;
 	}
 }

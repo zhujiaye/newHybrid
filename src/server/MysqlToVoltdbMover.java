@@ -8,7 +8,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-
+import org.apache.log4j.Logger;
 import org.voltdb.client.Client;
 import org.voltdb.client.ProcCallException;
 
@@ -16,6 +16,7 @@ import config.Constants;
 import config.HConfig;
 
 public class MysqlToVoltdbMover {
+	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 	final private HConfig mConf;
 
 	public int tenantId;
@@ -65,7 +66,7 @@ public class MysqlToVoltdbMover {
 			Process process = Runtime.getRuntime().exec(cmd);
 			process.waitFor();
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOG.error(e.getMessage());
 		}
 	}
 
@@ -167,7 +168,7 @@ public class MysqlToVoltdbMover {
 	 * move data from mysql to voltdb
 	 * 
 	 * @throws InterruptedException
-	 * @throws InterruptedIOException 
+	 * @throws InterruptedIOException
 	 */
 	public void move() throws InterruptedException, InterruptedIOException {
 		try {
@@ -208,8 +209,10 @@ public class MysqlToVoltdbMover {
 		} catch (SQLException | IOException | ProcCallException e) {
 			if (e instanceof InterruptedIOException)
 				throw (InterruptedIOException) e;
-			e.printStackTrace();
-		}finally{
+			else
+				LOG.error(e.getMessage());
+
+		} finally {
 			clearCSVfile(mConf.getMysqlTempFolder() + "/" + tables[tableId]
 					+ tenantId + ".csv");
 		}

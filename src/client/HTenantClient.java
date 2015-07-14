@@ -8,6 +8,7 @@ import newhybrid.ClientShutdownException;
 import newhybrid.HQueryResult;
 import newhybrid.HSQLTimeOutException;
 import newhybrid.NoServerConnectionException;
+import newhybrid.QueryType;
 
 import org.apache.log4j.Logger;
 import org.voltdb.client.Client;
@@ -219,11 +220,13 @@ public class HTenantClient {
 	public synchronized HQueryResult sqlRandomSelect() {
 		if (!isLoggedIn()) {
 			LOG.error("Tenant " + mID + " not logged in!");
-			return null;
+			return new HQueryResult(QueryType.SELECT, true, false,
+					"tenant not logged in", 0, 0, null, null, 0);
 		}
 		if (!isStarted()) {
 			LOG.error("Tenant " + mID + " not started!");
-			return null;
+			return new HQueryResult(QueryType.SELECT, true, false,
+					"tenant not started", 0, 0, null, null, 0);
 		}
 		Random random = new Random(System.currentTimeMillis());
 		int tableIndex;
@@ -236,11 +239,13 @@ public class HTenantClient {
 	public synchronized HQueryResult sqlRandomUpdate() {
 		if (!isLoggedIn()) {
 			LOG.error("Tenant " + mID + " not logged in!");
-			return null;
+			return new HQueryResult(QueryType.UPDATE, true, false,
+					"tenant not logged in", 0, 0, null, null, 0);
 		}
 		if (!isStarted()) {
 			LOG.error("Tenant " + mID + " not started!");
-			return null;
+			return new HQueryResult(QueryType.UPDATE, true, false,
+					"tenant not started", 0, 0, null, null, 0);
 		}
 		Random random = new Random(System.currentTimeMillis());
 		int tableIndex;

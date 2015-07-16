@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 FRUGALDB_HOME=`cd "$(dirname "$0")";cd ..;pwd`
 OPTS="
 -Dnewhybrid.envpath=$FRUGALDB_HOME/conf/newhybrid-env

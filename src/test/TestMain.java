@@ -99,8 +99,6 @@ public class TestMain {
 							+ e.getMessage());
 				}
 			}
-
-			serverClient.shutdown();
 			for (int i = 0; i < totThreads; i++) {
 				if (!good[i])
 					continue;
@@ -108,14 +106,20 @@ public class TestMain {
 			}
 			LOG.info(String.format("Test from tenant %d to %d starts(start)",
 					start, end));
-			int violatedCount = 0;
+			int violatedTenants = 0;
+			int violatedQueries = 0;
 			for (int i = 0; i < splits; i++) {
-				violatedCount = 0;
+				violatedTenants = 0;
+				violatedQueries = 0;
 				for (int j = 0; j < totThreads; j++) {
 					if (!good[j])
 						continue;
-					if (!clientThreads[j].updateSplit())
-						violatedCount++;
+					int tmp = clientThreads[j]
+							.updateSplitAndGetViolatedQueries();
+					if (tmp > 0) {
+						violatedTenants++;
+						violatedQueries += tmp;
+					}
 					if (clientWorkloadAdderThreads[j] != null)
 						clientWorkloadAdderThreads[j].shutdown();
 					int totCount = clientWorkloads[j]
@@ -134,8 +138,10 @@ public class TestMain {
 						clientWorkloadAdderThreads[j].start();
 					}
 				}
-				if (i - 1 >= 0)
-					LOG.info("Split " + i + ":violated number " + violatedCount);
+				if (i - 1 >= 0) {
+					LOG.info("Split " + i + ":violated tenant number "
+							+ violatedTenants);
+				}
 				try {
 					Thread.sleep(Constants.SPLIT_TIME / 1000000);
 				} catch (InterruptedException e) {
@@ -144,20 +150,25 @@ public class TestMain {
 					return;
 				}
 			}
-			violatedCount = 0;
+			violatedTenants = 0;
+			violatedQueries = 0;
 			for (int i = 0; i < totThreads; i++) {
 				if (!good[i])
 					continue;
 				if (clientWorkloadAdderThreads[i] != null)
 					clientWorkloadAdderThreads[i].shutdown();
-				if (!clientThreads[i].updateSplit())
-					violatedCount++;
+				int tmp = clientThreads[i].updateSplitAndGetViolatedQueries();
+				if (tmp > 0) {
+					violatedTenants++;
+					violatedQueries += tmp;
+				}
 				clientThreads[i].finishQuery();
 				synchronized (clientThreads[i]) {
 					clientThreads[i].notify();
 				}
 			}
-			LOG.info("Split " + splits + ":violated number " + violatedCount);
+			LOG.info("Split " + splits + ":violated tenant number "
+					+ violatedTenants);
 			LOG.info(String
 					.format("Test from tenant %d to %d ends(stop querying)",
 							start, end));
@@ -172,7 +183,6 @@ public class TestMain {
 						+ e.getMessage());
 				return;
 			}
-			serverClient = new ServerClient();
 			for (int i = 0; i < totThreads; i++) {
 				if (!good[i])
 					continue;
@@ -313,17 +323,17 @@ class ClientThread extends Thread {
 
 	/**
 	 * 
-	 * @return true if the tenant is not violated
+	 * @return number of query the tenant violated
 	 */
-	public synchronized boolean updateSplit() {
-		boolean ok = true;
+	public synchronized int updateSplitAndGetViolatedQueries() {
+		int count = 0;
 		if (mSplit != -1) {
 			SplitResult splitResult = new SplitResult(mSplit,
 					mLastRemainQueries, mWorkloadInSplit, mRemainQueries,
 					mSentQueriesInSplit, mSuccessQueriesInSplit);
 			mSplitResults.add(splitResult);
 			if (mSuccessQueriesInSplit < mWorkloadInSplit)
-				ok = false;
+				count = mWorkloadInSplit - mSuccessQueriesInSplit;
 			LOG.debug(String.format("%6d%3d%10d%10d%10d%10d%10d", HTC.getID(),
 					mSplit, mLastRemainQueries, mWorkloadInSplit,
 					mRemainQueries, mSentQueriesInSplit, mSuccessQueriesInSplit));
@@ -335,7 +345,7 @@ class ClientThread extends Thread {
 		mLastRemainQueries = mRemainQueries;
 		mSentQueriesInSplit = 0;
 		mSuccessQueriesInSplit = 0;
-		return ok;
+		return count;
 	}
 
 	public void finishQuery() {

@@ -11,6 +11,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +66,8 @@ public class HServer {
 	private HeartbeatThread mServerOffloaderThread = null;
 	private HeartbeatThread mServerMonitorThread = null;
 	private Mover mMover;
+
+	private SplitViolaionInfo mSplitViolationInfo;
 
 	private int mLastThroughput = -1;
 	private int mNowTroughput = 0;
@@ -157,6 +161,24 @@ public class HServer {
 		LOG.info("Server@" + mAddress + ":" + mPort + " stopped!");
 	}
 
+	public void reportSplit(int splitID, int splitViolatedTenants,
+			int splitViolatedQueries) {
+		if (mSplitViolationInfo == null) {
+			LOG.error("null for SplitViolationInfo");
+			return;
+		}
+		mSplitViolationInfo.addSplitViolation(splitID, splitViolatedTenants,
+				splitViolatedQueries);
+	}
+
+	public boolean clientNeedToStop() {
+		if (mSplitViolationInfo == null) {
+			LOG.error("null for SplitViolationInfo");
+			return false;
+		}
+		return mSplitViolationInfo.isViolated();
+	}
+
 	public boolean reloadWorkloadFile(String fileName) {
 		WorkloadLoader workloadLoader = new WorkloadLoader(
 				Constants.WORKLOAD_DIR + "/" + fileName);
@@ -169,6 +191,8 @@ public class HServer {
 			tenant.setWorkload(workloadLoader.getWorkloadForTenant(tenant
 					.getID()));
 		}
+		mSplitViolationInfo = new SplitViolaionInfo(
+				workloadLoader.getNumberOfSplits());
 		LOG.info("reload workload from " + fileName);
 		return true;
 	}

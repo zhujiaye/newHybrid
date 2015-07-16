@@ -98,4 +98,15 @@ public class ServerServiceHandler implements ServerService.Iface {
 		mServer.reconfigure(isMysqlOnly, voltdbCapacity);
 	}
 
+	@Override
+	public void test_reportSplit(int splitID, int splitViolatedTenants,
+			int splitViolatedQueries) throws TException {
+		mServer.reportSplit(splitID, splitViolatedTenants, splitViolatedQueries);
+	}
+
+	@Override
+	public boolean test_clientNeedToStop() throws TException {
+		return mServer.clientNeedToStop();
+	}
+
 }

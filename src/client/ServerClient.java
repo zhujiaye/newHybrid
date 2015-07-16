@@ -328,12 +328,44 @@ public class ServerClient {
 		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public void serverReconfigure(boolean isMysqlOnly, int voltdbCapacity) throws ClientShutdownException {
+	public void serverReconfigure(boolean isMysqlOnly, int voltdbCapacity)
+			throws ClientShutdownException {
 		while (!mIsShutdown) {
 			try {
 				connect();
 				mClient.server_reconfigure(isMysqlOnly, voltdbCapacity);
 				return;
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
+
+	public void reportSplit(int splitID, int splitViolatedTenants,
+			int splitViolatedQueries) throws ClientShutdownException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				mClient.test_reportSplit(splitID, splitViolatedTenants,
+						splitViolatedQueries);
+				return;
+			} catch (TException | ClientShutdownException
+					| NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
+
+	public boolean clientNeedToStop() throws ClientShutdownException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				return mClient.test_clientNeedToStop();
 			} catch (TException | ClientShutdownException
 					| NoServerConnectionException e) {
 				LOG.error(e.getMessage());

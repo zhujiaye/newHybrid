@@ -25,7 +25,7 @@ workloadlist=`ls $FRUGALDB_HOME/workloads | grep .txt$`
 for workloadfile in $workloadlist
 do
 	echo "start testing for workload ${workloadfile}..."
-	if [ -z `echo ${workloadfile} | grep load550500` ]; then
+	if [ -z `echo ${workloadfile} | grep load550500_0.30.1` ]; then
 		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure mysql 2000 
 		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
 		do_client $workloadfile ${workloadfile}_mysql.results 

@@ -23,7 +23,7 @@ do_client(){
 	do
 		((start=i*200+1))	
 		((end=(i+1)*200))
-		(nohup java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.Test>/dev/null 2>$FRUGALDB_HOME/logs/error_client.log $start $end $1 $2) &
+		(nohup java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestConsolidation>/dev/null 2>$FRUGALDB_HOME/logs/error_client.log $start $end $1 $2) &
 		processIDs[i]=$!
 	done
 	((ok=0))

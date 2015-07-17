@@ -740,7 +740,7 @@ public class HServer {
 
 	// TODO make this better
 	private synchronized int getWorkloadLimitInMysql() {
-		return 28000;
+		return 25000;
 	}
 
 	private int getWorkloadNow(HTenant[] tenants) {

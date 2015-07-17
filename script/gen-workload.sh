@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 FRUGALDB_HOME=`cd "$(dirname "$0")";cd ..;pwd`
-USAGE="Usage: gen [-h] WHAT [DB] [lower_bound] [upper_bound] 
+USAGE="Usage: gen-workload [-h] WHAT [DB] [lower_bound] [upper_bound] 
 Where WHAT is one of
 	main\t\t generate workloads for main testing
 	consolidation\t\t generate workloads for consolidation testing
@@ -25,7 +25,7 @@ gen_consolidation(){
 		hybrid)
 			for ((i=$2;i<=$3;i++))
 			do
-				java -jar $FRUGALDB_HOME/workloads/WorkloadGenerator.jar 5_50_500 $i 0.3 0.1 1.0
+				java -jar $FRUGALDB_HOME/workloads/WorkloadGenerator.jar 5_50_500 $i 1.0 0.1 1.0
 				mv load.txt $FRUGALDB_HOME/workloads/load$i.txt
 			done
 			;;
@@ -39,10 +39,10 @@ gen_consolidation(){
 gen_main(){
 	for ((i=1;i<=5;i++))
 	do
-		java -jar $FRUGALDB_HOME/workloads/WorkloadGenerator.jar 20_60_200 2000 0.3 0.1 1.0
-		mv load.txt $FRUGALDB_HOME/workloads/load2060200_0.30.1_test$i.txt
-		java -jar $FRUGALDB_HOME/workloads/WorkloadGenerator.jar 100_150_200 2000 0.3 0.1 1.0
-		mv load.txt $FRUGALDB_HOME/workloads/load100150200_0.30.1_test$i.txt
+		java -jar $FRUGALDB_HOME/workloads/WorkloadGenerator.jar 20_60_200 2000 0.25 0.1 1.0
+		mv load.txt $FRUGALDB_HOME/workloads/load2060200_0.250.1_test$i.txt
+		java -jar $FRUGALDB_HOME/workloads/WorkloadGenerator.jar 100_150_200 2000 0.25 0.1 1.0
+		mv load.txt $FRUGALDB_HOME/workloads/load100150200_0.250.1_test$i.txt
 		java -jar $FRUGALDB_HOME/workloads/WorkloadGenerator.jar 5_50_500 2000 0.25 0.1 1.0
 		mv load.txt $FRUGALDB_HOME/workloads/load550500_0.250.1_test$i.txt
 		java -jar $FRUGALDB_HOME/workloads/WorkloadGenerator.jar 5_50_500 2000 0.3 0.1 1.0

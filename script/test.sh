@@ -33,21 +33,21 @@ do
 		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
 		do_client $workloadfile ${workloadfile}_hybrid_2000M.results
 	else
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure mysql 2000 
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
-		do_client $workloadfile ${workloadfile}_mysql.results 
+		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure mysql 2000 
+		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
+		#do_client $workloadfile ${workloadfile}_mysql.results 
 		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 2000 
 		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
 		do_client $workloadfile ${workloadfile}_hybrid_2000M.results
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 1500 
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
-		do_client $workloadfile ${workloadfile}_hybrid_1500M.results
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 1000 
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
-		do_client $workloadfile ${workloadfile}_hybrid_1000M.results
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 500 
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
-		do_client $workloadfile ${workloadfile}_hybrid_500M.results
+		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 1500 
+		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
+		#do_client $workloadfile ${workloadfile}_hybrid_1500M.results
+		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 1000 
+		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
+		#do_client $workloadfile ${workloadfile}_hybrid_1000M.results
+		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 500 
+		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
+		#do_client $workloadfile ${workloadfile}_hybrid_500M.results
 	fi
 	echo "${workloadfile} testing finished."
 done

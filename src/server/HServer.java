@@ -66,6 +66,7 @@ public class HServer {
 	private HeartbeatThread mServerOffloaderThread = null;
 	private HeartbeatThread mServerMonitorThread = null;
 	private Mover mMover;
+	private MemMonitor mMemMonitor;
 
 	private SplitViolaionInfo mSplitViolationInfo;
 
@@ -92,6 +93,10 @@ public class HServer {
 			LOG.info("clearing voltdb contents....");
 			clearVoltdb();
 			LOG.info("voltdb contents cleared......20%");
+		}
+		if (mConf.isUseServerMemmonitor()) {
+			mMemMonitor = new MemMonitor();
+			mMemMonitor.start();
 		}
 		LOG.info("clearing tenants information.......");
 		mTenants.clear();

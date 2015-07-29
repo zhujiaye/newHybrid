@@ -61,6 +61,8 @@ public class Constants {
 
 	final public static String LOGGER_NAME = System.getProperty(
 			"newhybrid.logger.name", "");
+	final public static String LOGGER_DIR = System.getProperty(
+			"newhybrid.logdir", "");
 	final public static String LOGGER_NAME_SERVER = "SERVER_LOGGER";
 	final public static String LOGGER_NAME_CLIENT = "CLIENT_LOGGER";
 	final public static String WORKLOAD_FILE = System.getProperty(

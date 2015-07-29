@@ -6,7 +6,8 @@ public class TenantWorkload {
 	final private int mDataSize;
 	final private int mWH;
 	final private int mSplits;
-	private int[] mWorkloads;
+	private int[] mActualWorkloads;
+	private int[] mEstimatedWorkloads;
 	private boolean[] mIsActive;
 
 	public TenantWorkload(int ID, int SLO, int dataSize, int WH, int splits) {
@@ -15,10 +16,11 @@ public class TenantWorkload {
 		mDataSize = dataSize;
 		mWH = WH;
 		mSplits = splits;
-		mWorkloads = new int[mSplits];
+		mActualWorkloads = new int[mSplits];
+		mEstimatedWorkloads = new int[mSplits];
 		mIsActive = new boolean[mSplits];
 		for (int i = 0; i < mSplits; i++) {
-			mWorkloads[i] = 0;
+			mActualWorkloads[i] = mEstimatedWorkloads[i] = 0;
 			mIsActive[i] = false;
 		}
 	}
@@ -53,25 +55,23 @@ public class TenantWorkload {
 		if (split < 0 || split >= mSplits) {
 			return 0;
 		}
-		return mWorkloads[split];
+		return mActualWorkloads[split];
 	}
 
-	// TODO This method is wrong
-	private int getEstimatedWorkloadAtSplit(int split) {
+	public int getEstimatedWorkloadAtSplit(int split) {
 		if (split < 0 || split >= mSplits) {
 			return 0;
 		}
-		if (mIsActive[split])
-			return mSLO;
-		else
-			return 0;
+		return mEstimatedWorkloads[split];
 	}
 
-	public void setWorkloadAtSplit(int split, int workload) {
+	public void setWorkloadAtSplit(int split, int actualWorkload,
+			int estimatedWorkload) {
 		if (split < 0 || split >= mSplits) {
 			return;
 		}
-		mWorkloads[split] = workload;
+		mActualWorkloads[split] = actualWorkload;
+		mEstimatedWorkloads[split] = estimatedWorkload; 
 	}
 
 	public boolean isActiveAtSplit(int split) {

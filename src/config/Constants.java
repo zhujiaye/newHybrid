@@ -78,7 +78,7 @@ public class Constants {
 	final public static Boolean DEFAULT_USE_MYSQL = true;
 	final public static Boolean DEFAULT_USE_VOLTDB = true;
 	final public static String DEFAULT_INITDB = INITDB_MYSQL;
-	final public static Boolean DEFAULT_USE_MEMMONITOR = true;
+	final public static Boolean DEFAULT_USE_MEMMONITOR = false;
 	final public static Boolean DEFAULT_MODEL_DETERMINISTIC = false;
 	final public static String DEFAULT_MYSQL_USERNAME = "remote";
 	final public static String DEFAULT_MYSQL_PASSWORD = "remote";

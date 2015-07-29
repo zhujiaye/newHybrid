@@ -32,8 +32,7 @@ public class HTenant {
 		this(server, tenant_id, null);
 	}
 
-	public HTenant(HServer server, int tenant_id, TenantWorkload workload)
-			 {
+	public HTenant(HServer server, int tenant_id, TenantWorkload workload) {
 		mConf = HConfig.getConf();
 		mServer = server;
 		mID = tenant_id;
@@ -226,8 +225,13 @@ public class HTenant {
 			return 0;
 		long elapsedTime = (System.nanoTime() - mStartTime);
 		long split = elapsedTime / Constants.SPLIT_TIME;
-		return mWorkload
-				.getActualWorkloadAtSplit((int) (split + Constants.NUMBEROF_AHEAD_SPLITS));
+		if (mConf.isServerModelDeterministic()) {
+			return mWorkload
+					.getActualWorkloadAtSplit((int) (split + Constants.NUMBEROF_AHEAD_SPLITS));
+		} else {
+			return mWorkload
+					.getEstimatedWorkloadAtSplit((int) (split + Constants.NUMBEROF_AHEAD_SPLITS));
+		}
 		// int max = 0;
 		// for (int i = 1; i <= Constants.NUMBEROF_AHEAD_SPLITS; i++) {
 		// int tmp;
@@ -243,7 +247,11 @@ public class HTenant {
 			return 0;
 		long elapsedTime = (System.nanoTime() - mStartTime);
 		long split = elapsedTime / Constants.SPLIT_TIME;
-		return mWorkload.getActualWorkloadAtSplit((int) split);
+		if (mConf.isServerModelDeterministic()) {
+			return mWorkload.getActualWorkloadAtSplit((int) split);
+		} else {
+			return mWorkload.getEstimatedWorkloadAtSplit((int) split);
+		}
 	}
 
 	public synchronized void setWorkload(TenantWorkload workload) {

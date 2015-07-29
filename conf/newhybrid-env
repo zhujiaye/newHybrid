@@ -11,7 +11,7 @@
 	newhybrid.server.timeout 600000000000
 	#newhybrid.server.port 12345
 	#newhybrid.server.model.isdeterministic false
-	#newhybrid.sever.usememmonitor true
+	#newhybrid.sever.usememmonitor false
 [MySQL server]
 	//mysql server address must be defined
 	newhybrid.mysql.server.address 10.20.2.28

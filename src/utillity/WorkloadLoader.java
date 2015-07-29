@@ -88,9 +88,14 @@ public class WorkloadLoader {
 				return false;
 			}
 			for (int j = 0; j < mNumberOfTenants; j++) {
-				int workload = in.nextInt();
-				mTenantWorkloads[j].setWorkloadAtSplit(split - 1, workload);
+				int actualWorkload = in.nextInt();
+				int estimatedWorkload = in.nextInt();
+				mTenantWorkloads[j].setWorkloadAtSplit(split - 1,
+						actualWorkload, estimatedWorkload);
 			}
+			//total actual workloads
+			in.nextInt();
+			//total estimated workloads
 			in.nextInt();
 		}
 		in.close();

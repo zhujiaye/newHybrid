@@ -11,7 +11,7 @@ import org.apache.log4j.Logger;
 
 import newhybrid.NoMysqlConnectionException;
 import config.Constants;
-import config.HConfig;
+import config.ServerConf;
 
 public class MysqlConnectionPool {
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
@@ -19,7 +19,7 @@ public class MysqlConnectionPool {
 	static private MysqlConnectionPool pool = null;
 
 	private HashSet<Connection> mPool;
-	private HConfig mConf;
+	private ServerConf mConf;
 
 	public synchronized static MysqlConnectionPool getPool() {
 		if (pool == null) {
@@ -34,7 +34,7 @@ public class MysqlConnectionPool {
 
 	private MysqlConnectionPool(int num) {
 		mPool = new HashSet<Connection>();
-		mConf = HConfig.getConf();
+		mConf = ServerConf.getConf();
 		for (int i = 0; i < num; i++) {
 			try {
 				add();

@@ -17,7 +17,7 @@ import org.voltdb.client.NoConnectionsException;
 import org.voltdb.client.ProcedureCallback;
 
 import config.Constants;
-import config.HConfig;
+import config.ServerConf;
 
 public class VoltdbConnectionPool {
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
@@ -25,7 +25,7 @@ public class VoltdbConnectionPool {
 	static private VoltdbConnectionPool pool = null;
 
 	private HashSet<Client> mPool;
-	private HConfig mConf;
+	private ServerConf mConf;
 
 	public static synchronized VoltdbConnectionPool getPool() {
 		if (pool == null) {
@@ -40,7 +40,7 @@ public class VoltdbConnectionPool {
 
 	private VoltdbConnectionPool(int num) {
 		mPool = new HashSet<Client>();
-		mConf = HConfig.getConf();
+		mConf = ServerConf.getConf();
 		for (int i = 0; i < num; i++) {
 			try {
 				add();

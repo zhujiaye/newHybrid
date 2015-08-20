@@ -13,11 +13,11 @@ import org.voltdb.client.Client;
 import org.voltdb.client.ProcCallException;
 
 import config.Constants;
-import config.HConfig;
+import config.ServerConf;
 
 public class MysqlToVoltdbMover {
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
-	final private HConfig mConf;
+	final private ServerConf mConf;
 
 	public int tenantId;
 	public int volumnId;
@@ -38,7 +38,7 @@ public class MysqlToVoltdbMover {
 	 */
 	public MysqlToVoltdbMover(int tenantId, int volumnId, int tableId,
 			Connection conn, Client client) {
-		mConf = HConfig.getConf();
+		mConf = ServerConf.getConf();
 		this.tenantId = tenantId;
 		this.volumnId = volumnId;
 		this.tableId = tableId;

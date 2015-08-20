@@ -19,11 +19,11 @@ import org.voltdb.client.ProcCallException;
 
 import utillity.MysqlConnectionPool;
 import utillity.VoltdbConnectionPool;
-import config.HConfig;
+import config.ServerConf;
 import client.HTenantClient;
 
 public abstract class Table {
-	protected final HConfig mConf;
+	protected final ServerConf mConf;
 	protected final HTenantClient HTC;
 	protected final MysqlConnectionPool MYSQL_POOL;
 	protected final VoltdbConnectionPool VOLTDB_POOL;
@@ -45,7 +45,7 @@ public abstract class Table {
 
 	Table(HTenantClient htc) {
 		HTC = htc;
-		mConf = HConfig.getConf();
+		mConf = ServerConf.getConf();
 		MYSQL_POOL = MysqlConnectionPool.getPool();
 		VOLTDB_POOL = VoltdbConnectionPool.getPool();
 	}

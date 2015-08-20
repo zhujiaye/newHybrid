@@ -41,7 +41,7 @@ public class HTenantClient {
 
 	public HTenantClient(int tenantId) {
 		mID = tenantId;
-		mTables = new Table[Constants.NUMBER_OF_TABLES];
+		mTables = new Table[9];
 		mTables[0] = new CustomerTable(this);
 		mTables[1] = new DistrictTable(this);
 		mTables[2] = new HistoryTable(this);

@@ -14,12 +14,12 @@ import org.apache.thrift.transport.TTransportException;
 import thrift.ServerService;
 import thrift.TenantResult;
 import config.Constants;
-import config.HConfig;
+import config.ServerConf;
 
 public class ServerClient {
 	final private static Logger LOG = Logger
 			.getLogger(Constants.LOGGER_NAME_CLIENT);
-	final private HConfig mConf;
+	final private ServerConf mConf;
 	private volatile boolean mIsConnected = false;
 	private volatile boolean mIsShutdown = false;
 	private volatile long mLastAccessTime;
@@ -28,7 +28,7 @@ public class ServerClient {
 	private ServerService.Client mClient;
 
 	public ServerClient() {
-		mConf = HConfig.getConf();
+		mConf = ServerConf.getConf();
 	}
 
 	/**

@@ -41,7 +41,7 @@ import utillity.VoltdbConnectionPool;
 import utillity.WorkloadLoader;
 import newhybrid.HeartbeatThread;
 import config.Constants;
-import config.HConfig;
+import config.ServerConf;
 
 /*
  * HServer maintains all the server-side information and is used to interact with clients
@@ -49,7 +49,7 @@ import config.HConfig;
 public class HServer {
 	final static private Logger LOG = Logger
 			.getLogger(Constants.LOGGER_NAME_SERVER);
-	final private HConfig mConf;
+	final private ServerConf mConf;
 	final private String mAddress;
 	final private int mPort;
 	private boolean mNeedOffloadChecking;
@@ -74,7 +74,7 @@ public class HServer {
 	private int mNowTroughput = 0;
 
 	public HServer() {
-		mConf = HConfig.getConf();
+		mConf = ServerConf.getConf();
 		mAddress = mConf.getServerAddress();
 		mPort = mConf.getServerPort();
 		mVoltdbSpaceTotal = mConf.getVoltdbCapacity();

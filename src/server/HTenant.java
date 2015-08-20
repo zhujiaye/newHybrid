@@ -4,12 +4,12 @@ import org.apache.log4j.Logger;
 
 import newhybrid.TenantWorkload;
 import config.Constants;
-import config.HConfig;
+import config.ServerConf;
 
 public class HTenant {
 	final static private Logger LOG = Logger
 			.getLogger(Constants.LOGGER_NAME_SERVER);
-	final private HConfig mConf;
+	final private ServerConf mConf;
 	final private int mID;
 	final private int mDataSize;
 	final private HServer mServer;
@@ -33,7 +33,7 @@ public class HTenant {
 	}
 
 	public HTenant(HServer server, int tenant_id, TenantWorkload workload) {
-		mConf = HConfig.getConf();
+		mConf = ServerConf.getConf();
 		mServer = server;
 		mID = tenant_id;
 		// TODO get right dataszie

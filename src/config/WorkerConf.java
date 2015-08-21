@@ -2,6 +2,7 @@ package config;
 
 import org.apache.log4j.Logger;
 
+import thrift.DbmsType;
 import utillity.NetWorkUtils;
 
 public class WorkerConf {
@@ -14,7 +15,7 @@ public class WorkerConf {
 
 	public final String WORKER_ADDRESS;
 	public final int WORKER_PORT;
-	public final String WORKER_DBMS_TYPE;
+	public final DbmsType WORKER_DBMS_TYPE;
 	public final String WORKER_TEMP_FOLDER;
 	/*
 	 * mysql-type variables
@@ -48,9 +49,14 @@ public class WorkerConf {
 				Constants.DEFAULT_SERVER_CLIENT_CONNECT_TIMEOUT_S + ""));
 		WORKER_ADDRESS = NetWorkUtils.getLocalIpAddress();
 		WORKER_PORT = Integer.valueOf(System.getProperty("newhybrid.worker.port", Constants.DEFAULT_WORKER_PORT + ""));
-		WORKER_DBMS_TYPE = System.getProperty("newhybrid.worker.dbms.type");
-		if (WORKER_DBMS_TYPE == null) {
-			LOG.error("worker dbms type must be defined");
+		String dbmsType = System.getProperty("newhybrid.worker.dbms.type");
+		if (dbmsType.equals(Constants.MYSQL_FLAG))
+			WORKER_DBMS_TYPE = DbmsType.MYSQL;
+		else if (dbmsType.equals(Constants.VOLTDB_FLAG))
+			WORKER_DBMS_TYPE = DbmsType.VOLTDB;
+		else {
+			WORKER_DBMS_TYPE = null;
+			LOG.error("worker dbms type must be defined either mysql or voltdb");
 			System.exit(1);
 		}
 		WORKER_TEMP_FOLDER = System.getProperty("newhybrid.temp.folder", Constants.DEFAULT_TEMP_FOLDER);
@@ -67,18 +73,18 @@ public class WorkerConf {
 	 * just for test
 	 */
 	public void print() {
-		System.out.println("SERVER_ADDRESS:"+SERVER_ADDRESS);
-		System.out.println("SERVER_PORT:"+SERVER_PORT);
-		System.out.println("SERVER_CLIENT_CONNECT_TIMEOUT_S:"+SERVER_CLIENT_CONNECT_TIMEOUT_S);
-		System.out.println("WORKER_ADDRESS:"+WORKER_ADDRESS);
-		System.out.println("WORKER_PORT:"+WORKER_PORT);
-		System.out.println("WORKER_DBMS_TYPE:"+WORKER_DBMS_TYPE);
-		System.out.println("WORKER_TEMP_FOLDER:"+WORKER_TEMP_FOLDER);
-		System.out.println("MYSQL_DB_NAME:"+MYSQL_DB_NAME);
-		System.out.println("MYSQL_COMPLETE_CONNECTION_STRING:"+MYSQL_COMPLETE_CONNECTION_STRING);
-		System.out.println("MYSQL_USERNAME:"+MYSQL_USERNAME);
-		System.out.println("MYSQL_PASSWORD:"+MYSQL_PASSWORD);
-		System.out.println("VOLTDB_CAPACITY_MB:"+VOLTDB_CAPACITY_MB);
-		System.out.println("VOLTDB_COMPLETE_CONNECTION_STRING:"+VOLTDB_COMPLETE_CONNECTION_STRING);
+		System.out.println("SERVER_ADDRESS:" + SERVER_ADDRESS);
+		System.out.println("SERVER_PORT:" + SERVER_PORT);
+		System.out.println("SERVER_CLIENT_CONNECT_TIMEOUT_S:" + SERVER_CLIENT_CONNECT_TIMEOUT_S);
+		System.out.println("WORKER_ADDRESS:" + WORKER_ADDRESS);
+		System.out.println("WORKER_PORT:" + WORKER_PORT);
+		System.out.println("WORKER_DBMS_TYPE:" + WORKER_DBMS_TYPE);
+		System.out.println("WORKER_TEMP_FOLDER:" + WORKER_TEMP_FOLDER);
+		System.out.println("MYSQL_DB_NAME:" + MYSQL_DB_NAME);
+		System.out.println("MYSQL_COMPLETE_CONNECTION_STRING:" + MYSQL_COMPLETE_CONNECTION_STRING);
+		System.out.println("MYSQL_USERNAME:" + MYSQL_USERNAME);
+		System.out.println("MYSQL_PASSWORD:" + MYSQL_PASSWORD);
+		System.out.println("VOLTDB_CAPACITY_MB:" + VOLTDB_CAPACITY_MB);
+		System.out.println("VOLTDB_COMPLETE_CONNECTION_STRING:" + VOLTDB_COMPLETE_CONNECTION_STRING);
 	}
 }

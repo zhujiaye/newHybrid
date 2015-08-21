@@ -43,12 +43,12 @@ import newhybrid.HeartbeatThread;
 import config.Constants;
 import config.ServerConf;
 
-/*
- * HServer maintains all the server-side information and is used to interact with clients
+/**
+ * HServer maintains all the server-side information and is used to interact
+ * with clients
  */
 public class HServer {
-	final static private Logger LOG = Logger
-			.getLogger(Constants.LOGGER_NAME_SERVER);
+	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME_SERVER);
 	final private ServerConf mConf;
 	final private String mAddress;
 	final private int mPort;
@@ -117,24 +117,19 @@ public class HServer {
 		ServerService.Processor<ServerServiceHandler> serverServiceProcessor = new ServerService.Processor<ServerServiceHandler>(
 				mServerServiceHandler);
 
-		mServerTNonblockingServerSocket = new TNonblockingServerSocket(
-				new InetSocketAddress(mAddress, mPort));
+		mServerTNonblockingServerSocket = new TNonblockingServerSocket(new InetSocketAddress(mAddress, mPort));
 		mServerServiceServer = new TThreadedSelectorServer(
-				new TThreadedSelectorServer.Args(
-						mServerTNonblockingServerSocket)
-						.processor(serverServiceProcessor)
+				new TThreadedSelectorServer.Args(mServerTNonblockingServerSocket).processor(serverServiceProcessor)
 						.selectorThreads(Constants.SELECTOR_THREADS)
-						.acceptQueueSizePerThread(
-								Constants.QUEUE_SIZE_PER_SELECTOR)
+						.acceptQueueSizePerThread(Constants.QUEUE_SIZE_PER_SELECTOR)
 						.workerThreads(Constants.SERVER_THREADS));
 		isStarted = true;
 		LOG.info("server service start to work......80%");
-		mServerOffloaderThread = new HeartbeatThread("Server_Offloader",
-				new ServerOffloaderHeartbeatExecutor(this),
+		mServerOffloaderThread = new HeartbeatThread("Server_Offloader", new ServerOffloaderHeartbeatExecutor(this),
 				Constants.OFFLOADER_FIXED_INTERVAL_TIME);
 		mServerOffloaderThread.start();
-		mServerMonitorThread = new HeartbeatThread("Server_Monitor",
-				new ServerMonitorHeartbeatExecutor(this), Constants.SPLIT_TIME);
+		mServerMonitorThread = new HeartbeatThread("Server_Monitor", new ServerMonitorHeartbeatExecutor(this),
+				Constants.SPLIT_TIME);
 		mServerMonitorThread.start();
 		LOG.info("Server@" + mAddress + ":" + mPort + " started!......100%");
 		mServerServiceServer.serve();
@@ -166,14 +161,12 @@ public class HServer {
 		LOG.info("Server@" + mAddress + ":" + mPort + " stopped!");
 	}
 
-	public void reportSplit(int splitID, int splitViolatedTenants,
-			int splitViolatedQueries) {
+	public void reportSplit(int splitID, int splitViolatedTenants, int splitViolatedQueries) {
 		if (mSplitViolationInfo == null) {
 			LOG.error("null for SplitViolationInfo");
 			return;
 		}
-		mSplitViolationInfo.addSplitViolation(splitID, splitViolatedTenants,
-				splitViolatedQueries);
+		mSplitViolationInfo.addSplitViolation(splitID, splitViolatedTenants, splitViolatedQueries);
 	}
 
 	public boolean clientNeedToStop() {
@@ -185,19 +178,16 @@ public class HServer {
 	}
 
 	public boolean reloadWorkloadFile(String fileName) {
-		WorkloadLoader workloadLoader = new WorkloadLoader(
-				Constants.WORKLOAD_DIR + "/" + fileName);
+		WorkloadLoader workloadLoader = new WorkloadLoader(Constants.WORKLOAD_DIR + "/" + fileName);
 		if (!workloadLoader.load()) {
 			LOG.warn("no workload file");
 			return false;
 		}
 		for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
 			HTenant tenant = tenantEntry.getValue();
-			tenant.setWorkload(workloadLoader.getWorkloadForTenant(tenant
-					.getID()));
+			tenant.setWorkload(workloadLoader.getWorkloadForTenant(tenant.getID()));
 		}
-		mSplitViolationInfo = new SplitViolaionInfo(
-				workloadLoader.getNumberOfSplits());
+		mSplitViolationInfo = new SplitViolaionInfo(workloadLoader.getNumberOfSplits());
 		LOG.info("reload workload from " + fileName);
 		return true;
 	}
@@ -216,16 +206,13 @@ public class HServer {
 		if (tenant != null) {
 			if (tenant.isLoggedIn())
 				return true;
-			if (mConf.getInitdb().equals(Constants.INITDB_VOLTDB)
-					&& mConf.isUseVoltdb()) {
+			if (mConf.getInitdb().equals(Constants.INITDB_VOLTDB) && mConf.isUseVoltdb()) {
 				int tenant_id = tenant.getID();
 				int voltdbID = getAndAddNewVoltdbIDForTenant(tenant_id);
-				MysqlToVoltdbMoverThread thread = new MysqlToVoltdbMoverThread(
-						tenant, voltdbID, false);
+				MysqlToVoltdbMoverThread thread = new MysqlToVoltdbMoverThread(tenant, voltdbID, false);
 				tenant.startMovingToVoltdb(thread);
 				thread.startMovingData();
-				LOG.debug("Moving tenant " + tenant.getID()
-						+ " 's data to voltdb(" + voltdbID + ").....");
+				LOG.debug("Moving tenant " + tenant.getID() + " 's data to voltdb(" + voltdbID + ").....");
 				try {
 					thread.join();
 				} catch (InterruptedException e) {
@@ -257,12 +244,10 @@ public class HServer {
 				}
 			}
 			if (!tenant.isInMysql() && mConf.isUseMysql()) {
-				VoltdbToMysqlMoverThread thread = new VoltdbToMysqlMoverThread(
-						tenant, false);
+				VoltdbToMysqlMoverThread thread = new VoltdbToMysqlMoverThread(tenant, false);
 				tenant.startMovingToMysql(thread);
 				thread.startMovingData();
-				LOG.debug("Writing tenant " + tenant.getID()
-						+ " 's data back to mysql.....");
+				LOG.debug("Writing tenant " + tenant.getID() + " 's data back to mysql.....");
 				try {
 					thread.join();
 				} catch (InterruptedException e) {
@@ -413,8 +398,7 @@ public class HServer {
 		File file = new File(Constants.WORKLOAD_DIR, outputFileName);
 		synchronized (this) {
 			if (!file.exists()) {
-				LOG.info("result file " + outputFileName
-						+ " does't exists, must be created");
+				LOG.info("result file " + outputFileName + " does't exists, must be created");
 				try {
 					file.createNewFile();
 				} catch (IOException e) {
@@ -422,8 +406,7 @@ public class HServer {
 					return;
 				}
 			} else if (!file.canWrite()) {
-				LOG.error("no permission to write results to file "
-						+ outputFileName);
+				LOG.error("no permission to write results to file " + outputFileName);
 				return;
 			}
 		}
@@ -437,35 +420,32 @@ public class HServer {
 				writer.format(
 						"***********************************************************Tenant %d information start***********************************************************%n",
 						tenantResult.mID);
-				writer.format("%20s%20s%20s%20s%n", "id", "SLO", "dataSize",
-						"writeHeavy");
-				writer.format("%20d%20d%20d%20d%n", tenantResult.mID,
-						tenantResult.mSLO, tenantResult.mDataSize,
+				writer.format("%20s%20s%20s%20s%n", "id", "SLO", "dataSize", "writeHeavy");
+				writer.format("%20d%20d%20d%20d%n", tenantResult.mID, tenantResult.mSLO, tenantResult.mDataSize,
 						tenantResult.mWH);
 				writer.format(
 						"***********************************************************Tenant %d information end***********************************************************%n",
 						tenantResult.mID);
 				// Split information
-				writer.format("***********************************************************Split information start***********************************************************%n");
-				writer.format("%20s%20s%20s%20s%20s%20s%n", "id",
-						"remainQueriesBefore", "workload",
+				writer.format(
+						"***********************************************************Split information start***********************************************************%n");
+				writer.format("%20s%20s%20s%20s%20s%20s%n", "id", "remainQueriesBefore", "workload",
 						"remainQueriesAfter", "sentQueries", "successQueries");
 				List<SplitResult> splitResultsList = tenantResult.mSplitResults;
 				for (int i = 0; i < splitResultsList.size(); i++) {
 					SplitResult tmp = splitResultsList.get(i);
-					writer.format("%20d%20d%20d%20d%20d%20d%n",
-							tmp.mSplitID + 1, tmp.mRemainQueriesBefore,
-							tmp.mWorkload, tmp.mRemainQueriesAfter,
-							tmp.mSentQueries, tmp.mSuccessQueries);
+					writer.format("%20d%20d%20d%20d%20d%20d%n", tmp.mSplitID + 1, tmp.mRemainQueriesBefore,
+							tmp.mWorkload, tmp.mRemainQueriesAfter, tmp.mSentQueries, tmp.mSuccessQueries);
 					if (tmp.mSuccessQueries < tmp.mWorkload)
 						violated = true;
 				}
-				writer.format("***********************************************************Split information end***********************************************************%n");
+				writer.format(
+						"***********************************************************Split information end***********************************************************%n");
 				// Query information
-				writer.format("***********************************************************Query information start***********************************************************%n");
-				writer.format("%20s%20s%20s%20s%20s%20s%20s%n", "id", "whatDB",
-						"whatAccess", "startTime", "endTime", "latency",
-						"split");
+				writer.format(
+						"***********************************************************Query information start***********************************************************%n");
+				writer.format("%20s%20s%20s%20s%20s%20s%20s%n", "id", "whatDB", "whatAccess", "startTime", "endTime",
+						"latency", "split");
 				List<SuccessQueryResult> successQueryResultsList = tenantResult.mQueryResults;
 				for (int i = 0; i < successQueryResultsList.size(); i++) {
 					SuccessQueryResult tmp = successQueryResultsList.get(i);
@@ -473,12 +453,11 @@ public class HServer {
 					t1 = ((long) tmp.mStartTime);
 					t2 = ((long) tmp.mEndTime);
 					t3 = ((long) tmp.mLatency);
-					writer.format("%20d%20s%20s%20d%20d%20d%20d%n", tmp.mID,
-							tmp.mIsInMysql ? "MySQL" : "VoltDB",
-							tmp.mIsRead ? "Read" : "Write", t1 / 1000000,
-							t2 / 1000000, t3 / 1000000, tmp.mSplit);
+					writer.format("%20d%20s%20s%20d%20d%20d%20d%n", tmp.mID, tmp.mIsInMysql ? "MySQL" : "VoltDB",
+							tmp.mIsRead ? "Read" : "Write", t1 / 1000000, t2 / 1000000, t3 / 1000000, tmp.mSplit);
 				}
-				writer.format("***********************************************************Query information end***********************************************************%n");
+				writer.format(
+						"***********************************************************Query information end***********************************************************%n");
 				writer.format("@<Tenant %s%n", violated ? "violated!" : "");
 				writer.flush();
 				writer.close();
@@ -515,10 +494,8 @@ public class HServer {
 		tenantsInVoltdbNow = findTenantsInVoltdbNow();
 		workloadInMysqlAhead = getWorkloadAhead(tenantsInMysqlAhead);
 		workloadInMysqlNow = getWorkloadNow(tenantsInMysqlNow);
-		availableSpaceInVoltdbNow = mVoltdbSpaceTotal
-				- getSpace(tenantsInVoltdbNow);
-		availableSpaceInVoltdbAhead = mVoltdbSpaceTotal
-				- getSpace(tenantsInVoltdbAhead);
+		availableSpaceInVoltdbNow = mVoltdbSpaceTotal - getSpace(tenantsInVoltdbNow);
+		availableSpaceInVoltdbAhead = mVoltdbSpaceTotal - getSpace(tenantsInVoltdbAhead);
 		freeWorkloadInMysqlAhead = workloadLimitInMysql - workloadInMysqlAhead;
 		freeWorkloadInMysqlNow = workloadLimitInMysql - workloadInMysqlNow;
 
@@ -530,17 +507,12 @@ public class HServer {
 		for (int i = 0; i < tenantsInVoltdbNow.length; i++)
 			if (tenantsInVoltdbNow[i].isBeingMovingToMysql())
 				numberOfTenantsMovingToMysql++;
-		LOG.info(String.format("MySQL:%d(%d) tenants  VoltDB:%d(%d) tenants",
-				tenantsInMysqlNow.length, numberOfTenantsMovingToVoltdb,
-				tenantsInVoltdbNow.length, numberOfTenantsMovingToMysql));
-		LOG.info(String.format("MySQL workload NOW:%d(%d)", workloadInMysqlNow,
-				workloadLimitInMysql));
-		LOG.info(String.format("MySQL workload AHEAD:%d(%d)",
-				workloadInMysqlAhead, workloadLimitInMysql));
-		LOG.info(String.format("VoltDB memory NOW:%d(%d)",
-				availableSpaceInVoltdbNow, mVoltdbSpaceTotal));
-		LOG.info(String.format("VoltDB memory AHEAD:%d(%d)",
-				availableSpaceInVoltdbAhead, mVoltdbSpaceTotal));
+		LOG.info(String.format("MySQL:%d(%d) tenants  VoltDB:%d(%d) tenants", tenantsInMysqlNow.length,
+				numberOfTenantsMovingToVoltdb, tenantsInVoltdbNow.length, numberOfTenantsMovingToMysql));
+		LOG.info(String.format("MySQL workload NOW:%d(%d)", workloadInMysqlNow, workloadLimitInMysql));
+		LOG.info(String.format("MySQL workload AHEAD:%d(%d)", workloadInMysqlAhead, workloadLimitInMysql));
+		LOG.info(String.format("VoltDB memory NOW:%d(%d)", availableSpaceInVoltdbNow, mVoltdbSpaceTotal));
+		LOG.info(String.format("VoltDB memory AHEAD:%d(%d)", availableSpaceInVoltdbAhead, mVoltdbSpaceTotal));
 		if (LOG.isDebugEnabled()) {
 			LOG.debug(String.format("%20s%10s%20s", "MySQL", "", "VoltDB"));
 			for (Entry<Integer, HTenant> tenantEntry : mTenants.entrySet()) {
@@ -549,28 +521,22 @@ public class HServer {
 					if (!tenant.isStarted())
 						continue;
 					StringBuilder str = new StringBuilder();
-					str.append(tenant.getID() + "(" + tenant.getWorkloadAhead()
-							+ "," + tenant.getDataSize() + ")");
+					str.append(tenant.getID() + "(" + tenant.getWorkloadAhead() + "," + tenant.getDataSize() + ")");
 					if (tenant.isInMysql()) {
 						StringBuilder tmp = new StringBuilder();
 						if (tenant.isBeingMovingToVoltdb()) {
 							tmp.append("----");
-							tmp.append(tenant.getMovingToVoltdbThread()
-									.getVoltdbID());
+							tmp.append(tenant.getMovingToVoltdbThread().getVoltdbID());
 							tmp.append("-------->");
-							LOG.debug(String.format("%20s", str.toString())
-									+ String.format("%10s", tmp));
+							LOG.debug(String.format("%20s", str.toString()) + String.format("%10s", tmp));
 						} else
-							LOG.debug(String.format("%20s", str.toString())
-									+ String.format("%10s", ""));
+							LOG.debug(String.format("%20s", str.toString()) + String.format("%10s", ""));
 					} else {
 						if (tenant.isBeingMovingToMysql())
-							LOG.debug(String.format("%20s", "")
-									+ String.format("%10s", "<------------")
+							LOG.debug(String.format("%20s", "") + String.format("%10s", "<------------")
 									+ String.format("%20s", str.toString()));
 						else
-							LOG.debug(String.format("%20s", "")
-									+ String.format("%10s", "")
+							LOG.debug(String.format("%20s", "") + String.format("%10s", "")
 									+ String.format("%20s", str.toString()));
 					}
 				}
@@ -581,41 +547,33 @@ public class HServer {
 			sort(tenantsInVoltdbAhead);
 			int workloadNeedToOffload = -freeWorkloadInMysqlAhead;
 			int j = tenantsInVoltdbAhead.length - 1;
-			for (int i = 0; i < tenantsInMysqlAhead.length
-					&& workloadNeedToOffload > 0; i++) {
+			for (int i = 0; i < tenantsInMysqlAhead.length && workloadNeedToOffload > 0; i++) {
 				HTenant tenantToOffload = tenantsInMysqlAhead[i];
-				while (availableSpaceInVoltdbAhead < tenantToOffload
-						.getDataSize() && j >= 0) {
+				while (availableSpaceInVoltdbAhead < tenantToOffload.getDataSize() && j >= 0) {
 					HTenant tenantToWriteBack = tenantsInVoltdbAhead[j];
 					synchronized (tenantToWriteBack) {
 						if (!tenantToWriteBack.isStarted())
 							continue;
-						if (tenantToWriteBack.getWorkloadAhead() > tenantToOffload
-								.getWorkloadAhead()) {
+						if (tenantToWriteBack.getWorkloadAhead() > tenantToOffload.getWorkloadAhead()) {
 							j--;
 							continue;
 						}
 						if (tenantToWriteBack.isBeingMovingToVoltdb()) {
-							tenantToWriteBack.getMovingToVoltdbThread()
-									.cancel();
+							tenantToWriteBack.getMovingToVoltdbThread().cancel();
 							tenantToWriteBack.cancelMoving();
 							removeVoltdbIDForTenant(tenantToWriteBack.getID());
 						} else {
-							VoltdbToMysqlMoverThread thread = new VoltdbToMysqlMoverThread(
-									tenantToWriteBack, true);
+							VoltdbToMysqlMoverThread thread = new VoltdbToMysqlMoverThread(tenantToWriteBack, true);
 							tenantToWriteBack.startMovingToMysql(thread);
 							mMover.addThread(thread);
 						}
-						availableSpaceInVoltdbAhead += tenantToWriteBack
-								.getDataSize();
-						workloadNeedToOffload += tenantToWriteBack
-								.getWorkloadAhead();
+						availableSpaceInVoltdbAhead += tenantToWriteBack.getDataSize();
+						workloadNeedToOffload += tenantToWriteBack.getWorkloadAhead();
 
 						j--;
 					}
 				}
-				if (availableSpaceInVoltdbAhead >= tenantToOffload
-						.getDataSize()) {
+				if (availableSpaceInVoltdbAhead >= tenantToOffload.getDataSize()) {
 					synchronized (tenantToOffload) {
 						if (!tenantToOffload.isStarted())
 							continue;
@@ -625,15 +583,13 @@ public class HServer {
 						} else {
 							int tenantToOffload_id = tenantToOffload.getID();
 							int voltdbID = getAndAddNewVoltdbIDForTenant(tenantToOffload_id);
-							MysqlToVoltdbMoverThread thread = new MysqlToVoltdbMoverThread(
-									tenantToOffload, voltdbID, true);
+							MysqlToVoltdbMoverThread thread = new MysqlToVoltdbMoverThread(tenantToOffload, voltdbID,
+									true);
 							tenantToOffload.startMovingToVoltdb(thread);
 							mMover.addThread(thread);
 						}
-						workloadNeedToOffload -= tenantToOffload
-								.getWorkloadAhead();
-						availableSpaceInVoltdbAhead -= tenantToOffload
-								.getDataSize();
+						workloadNeedToOffload -= tenantToOffload.getWorkloadAhead();
+						availableSpaceInVoltdbAhead -= tenantToOffload.getDataSize();
 					}
 				} else
 					break;
@@ -641,8 +597,7 @@ public class HServer {
 		}
 		mMover.updateConcurrencyLimit(getConcurrencyLimit(freeWorkloadInMysqlNow));
 		mMover.trigger();
-		LOG.debug("Number of running moverthreads:"
-				+ mMover.getNumberOfRunningThreads());
+		LOG.debug("Number of running moverthreads:" + mMover.getNumberOfRunningThreads());
 	}
 
 	private void sort(HTenant[] tenants) {
@@ -651,8 +606,7 @@ public class HServer {
 		int n = tenants.length;
 		SortableTenant[] sortedTenants = new SortableTenant[n];
 		for (int i = 0; i < n; i++)
-			sortedTenants[i] = new SortableTenant(i, tenants[i].getDataSize(),
-					tenants[i].getWorkloadAhead());
+			sortedTenants[i] = new SortableTenant(i, tenants[i].getDataSize(), tenants[i].getWorkloadAhead());
 		Arrays.sort(sortedTenants);
 		HTenant[] res = new HTenant[n];
 		for (int i = 0; i < n; i++)
@@ -687,8 +641,7 @@ public class HServer {
 			}
 			if (voltdbID != -1) {
 				if (mVoltdbIDList.get(voltdbID).contains(tenant_id)) {
-					LOG.error("Tenant " + tenant_id
-							+ " already in voltdb and voltdb id is " + voltdbID);
+					LOG.error("Tenant " + tenant_id + " already in voltdb and voltdb id is " + voltdbID);
 				} else {
 					mVoltdbIDList.get(voltdbID).add(tenant_id);
 				}
@@ -840,22 +793,18 @@ public class HServer {
 		String tableName;
 		if (voltdbConnection != null) {
 			try {
-				response = voltdbConnection.callProcedure("@SystemCatalog",
-						"TABLES");
-				if (response != null
-						&& response.getStatus() == ClientResponse.SUCCESS) {
+				response = voltdbConnection.callProcedure("@SystemCatalog", "TABLES");
+				if (response != null && response.getStatus() == ClientResponse.SUCCESS) {
 					tables = response.getResults();
 					for (int i = 0; i < tables.length; i++) {
 						table = tables[i];
 						while (table.advanceRow()) {
 							tableName = table.getString("TABLE_NAME");
-							response = voltdbConnection.callProcedure("@AdHoc",
-									"delete from " + tableName + ";");
+							response = voltdbConnection.callProcedure("@AdHoc", "delete from " + tableName + ";");
 							if (response.getStatus() != ClientResponse.SUCCESS) {
 								LOG.error("Can not delete table " + tableName);
 							} else {
-								LOG.debug("voltdb table " + tableName
-										+ " cleared");
+								LOG.debug("voltdb table " + tableName + " cleared");
 							}
 						}
 					}

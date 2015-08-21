@@ -25,7 +25,24 @@ struct TenantResult{
 	5: list<SplitResult> mSplitResults;
 	6: list<SuccessQueryResult> mQueryResults;
 }
+enum DbmsType{
+	MYSQL=0,
+	VOLTDB=1,
+}
+struct DbmsInfo{
+	1: DbmsType mType;
+	2: string mCompleteConnectionString;
+	3: string mMysqlUsername;
+	4: string mMysqlPassword;
+	5: string mVoltdbCapacityMB;
+}
+struct ServerWorkerInfo{
+	1: string mAddress;
+	2: i32 mPort;
+	3: DbmsInfo mDbmsInfo;
+}
 service ServerService{
+	bool worker_register(1: ServerWorkerInfo workerInfo);
 	i32 tenant_getIDInVoltdb(1: i32 id);
 	i32 tenant_getDataSize(1: i32 id);
 	i32 tenant_getDataSizeKind(1: i32 id);
@@ -44,4 +61,7 @@ service ServerService{
 	void server_reconfigure(1:bool isMysqlOnly, 2: i32 voltdbCapacity);
 	void test_reportSplit(1: i32 splitID, 2: i32 splitViolatedTenants 3: i32 splitViolatedQueries);
 	bool test_clientNeedToStop(); 
+}
+service WorkerService{
+	
 }

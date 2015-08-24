@@ -1,4 +1,4 @@
-package client;
+package server;
 
 import newhybrid.ClientShutdownException;
 import newhybrid.NoServerConnectionException;
@@ -17,6 +17,13 @@ import thrift.TenantResult;
 import config.Constants;
 import config.ServerConf;
 
+/**
+ * a server client to interact with server,it's not thread-safe now,so create
+ * one for every thread
+ * 
+ * @author zhujiaye
+ *
+ */
 public class ServerClient {
 	private final static Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 
@@ -344,6 +351,13 @@ public class ServerClient {
 		throw new ClientShutdownException("server client is already shut down");
 	}
 
+	/**
+	 * register a worker from server
+	 * 
+	 * @param workerInfo
+	 * @return true if succeeded, false if the worker already exists
+	 * @throws ClientShutdownException
+	 */
 	public boolean worker_register(ServerWorkerInfo workerInfo) throws ClientShutdownException {
 		while (!mIsShutdown) {
 			try {

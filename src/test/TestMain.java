@@ -9,11 +9,11 @@ import newhybrid.HQueryResult;
 import newhybrid.HeartbeatExecutor;
 import newhybrid.HeartbeatThread;
 import newhybrid.TenantWorkload;
+import server.ServerClient;
 
 import org.apache.log4j.Logger;
 
 import client.HTenantClient;
-import client.ServerClient;
 import config.Constants;
 import thrift.SplitResult;
 import thrift.SuccessQueryResult;

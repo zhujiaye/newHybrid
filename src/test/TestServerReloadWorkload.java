@@ -4,7 +4,7 @@ import org.apache.log4j.Logger;
 
 import config.Constants;
 import newhybrid.ClientShutdownException;
-import client.ServerClient;
+import server.ServerClient;
 
 public class TestServerReloadWorkload {
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);

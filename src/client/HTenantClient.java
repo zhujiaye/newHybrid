@@ -9,6 +9,7 @@ import newhybrid.HQueryResult;
 import newhybrid.HSQLTimeOutException;
 import newhybrid.NoServerConnectionException;
 import newhybrid.QueryType;
+import server.ServerClient;
 
 import org.apache.log4j.Logger;
 import org.voltdb.client.Client;

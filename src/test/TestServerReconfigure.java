@@ -1,10 +1,10 @@
 package test;
 
 import newhybrid.ClientShutdownException;
+import server.ServerClient;
 
 import org.apache.log4j.Logger;
 
-import client.ServerClient;
 import config.Constants;
 
 public class TestServerReconfigure {

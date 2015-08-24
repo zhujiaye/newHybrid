@@ -3,13 +3,13 @@ package test;
 import newhybrid.ClientShutdownException;
 import newhybrid.HeartbeatThread;
 import newhybrid.TenantWorkload;
+import server.ServerClient;
 
 import org.apache.log4j.Logger;
 
 import thrift.TenantResult;
 import utillity.WorkloadLoader;
 import client.HTenantClient;
-import client.ServerClient;
 import config.Constants;
 
 public class TestConsolidation {

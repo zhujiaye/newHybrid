@@ -55,6 +55,8 @@ public class HConnectionPool {
 				while (cnt++ < MAX_RETRY && newConnection == null) {
 					newConnection = DriverManager.getConnection(dbmsInfo.mCompleteConnectionString,
 							dbmsInfo.mMysqlUsername, dbmsInfo.mMysqlPassword);
+					if (newConnection.isValid(0))
+						break;
 				}
 				if (newConnection == null) {
 					throw new NoHConnectionException(dbmsInfo,
@@ -78,6 +80,8 @@ public class HConnectionPool {
 			try {
 				while (cnt++ < MAX_RETRY && newConnection.getConnectedHostList().isEmpty()) {
 					newConnection.createConnection(dbmsInfo.mCompleteConnectionString);
+					if (!newConnection.getConnectedHostList().isEmpty())
+						break;
 				}
 				if (newConnection == null || newConnection.getConnectedHostList().isEmpty()) {
 					throw new NoHConnectionException(dbmsInfo,
@@ -90,6 +94,13 @@ public class HConnectionPool {
 		}
 	}
 
+	/**
+	 * get a HConnection according to the dbms information can be null
+	 * 
+	 * @param dbmsInfo
+	 *            the dbms information
+	 * @return HConnection,can be null
+	 */
 	public synchronized HConnection getConnectionByDbmsInfo(DbmsInfo dbmsInfo) {
 		HConnection res = null;
 		if (mList.isEmpty()) {
@@ -131,7 +142,8 @@ public class HConnectionPool {
 			return;
 		mList.add(conn);
 	}
-	
-	public static void main(String[] args){
+
+	public synchronized int size() {
+		return mList.size();
 	}
 }

@@ -34,7 +34,7 @@ struct DbmsInfo{
 	2: string mCompleteConnectionString;
 	3: string mMysqlUsername;
 	4: string mMysqlPassword;
-	5: string mVoltdbCapacityMB;
+	5: i32 mVoltdbCapacityMB;
 }
 struct ServerWorkerInfo{
 	1: string mAddress;

@@ -43,7 +43,7 @@ public abstract class Table {
 	protected String[] mColumnValuesInVoltdb;
 	protected int[] mPrimaryKeyColumnInVoltdb;
 
-	Table(HTenantClient htc) {
+	protected Table(HTenantClient htc) {
 		HTC = htc;
 		mConf = ServerConf.getConf();
 		MYSQL_POOL = MysqlConnectionPool.getPool();
@@ -250,21 +250,21 @@ public abstract class Table {
 		}
 	}
 
-	public void generateNameInMysql() {
+	protected void generateNameInMysql() {
 		mNameInMysql = mName + (HTC.getID() - 1);
 	}
 
-	public void generateNameInVoltdb() {
+	protected void generateNameInVoltdb() {
 		mNameInVoltdb = mName + (HTC.getIDInVoltdb() - 1);
 	}
 
-	public abstract void generateAllColumns();
+	protected abstract void generateAllColumns();
 
-	public void generateAllColumnsInMysql() {
+	protected void generateAllColumnsInMysql() {
 		mColumnValuesInMysql = mColumnValues.clone();
 	}
 
-	public void generateAllColumnsInVoltdb(int isInsert, int isUpdate) {
+	protected void generateAllColumnsInVoltdb(int isInsert, int isUpdate) {
 		if (mColumnValuesInVoltdb == null) {
 			mColumnValuesInVoltdb = new String[mColumnNamesInVoltdb.length];
 		}

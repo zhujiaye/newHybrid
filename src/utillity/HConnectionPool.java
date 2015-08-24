@@ -43,10 +43,11 @@ public class HConnectionPool {
 	 * 
 	 * @param dbmsInfo
 	 *            the dbms information
+	 * @return HConnection which is added to the pool
 	 * @throws NoHConnectionException
 	 *             if no HConnection is got
 	 */
-	private void addByDbmsInfo(DbmsInfo dbmsInfo) throws NoHConnectionException {
+	private HConnection addByDbmsInfo(DbmsInfo dbmsInfo) throws NoHConnectionException {
 		if (dbmsInfo.mType == DbmsType.MYSQL) {
 			int cnt = 0;
 			Connection newConnection = null;
@@ -62,7 +63,9 @@ public class HConnectionPool {
 					throw new NoHConnectionException(dbmsInfo,
 							"tried " + MAX_RETRY + " times but can not establish connection!");
 				}
-				mList.add(new MysqlConnection(dbmsInfo, newConnection));
+				HConnection res = new MysqlConnection(dbmsInfo, newConnection);
+				mList.add(res);
+				return res;
 			} catch (SQLTimeoutException e) {
 				throw new NoHConnectionException(dbmsInfo, "Time out!");
 			} catch (SQLException e) {
@@ -87,7 +90,9 @@ public class HConnectionPool {
 					throw new NoHConnectionException(dbmsInfo,
 							"tried " + MAX_RETRY + " times but can not establish connection!");
 				}
-				mList.add(new VoltdbConnection(dbmsInfo, newConnection));
+				HConnection res = new VoltdbConnection(dbmsInfo, newConnection);
+				mList.add(res);
+				return res;
 			} catch (IOException e) {
 				throw new NoHConnectionException(dbmsInfo, "java network or connection problem");
 			}
@@ -103,13 +108,6 @@ public class HConnectionPool {
 	 */
 	public synchronized HConnection getConnectionByDbmsInfo(DbmsInfo dbmsInfo) {
 		HConnection res = null;
-		if (mList.isEmpty()) {
-			try {
-				addByDbmsInfo(dbmsInfo);
-			} catch (NoHConnectionException e) {
-				LOG.error("can't get a new HConnection for " + e.getDbmsInfo().getMType() + ":" + e.getMessage());
-			}
-		}
 		ArrayList<HConnection> removeList = new ArrayList<>();
 		for (HConnection tmp : mList) {
 			if (tmp == null || !tmp.isUseful()) {
@@ -124,6 +122,15 @@ public class HConnectionPool {
 		}
 		for (HConnection tmp : removeList) {
 			mList.remove(tmp);
+		}
+		if (res == null) {
+			try {
+				res = addByDbmsInfo(dbmsInfo);
+				mList.remove(res);
+				return res;
+			} catch (NoHConnectionException e) {
+				LOG.error("can't get a new HConnection for " + e.getDbmsInfo().getMType() + ":" + e.getMessage());
+			}
 		}
 		return res;
 	}
@@ -145,5 +152,36 @@ public class HConnectionPool {
 
 	public synchronized int size() {
 		return mList.size();
+	}
+
+	/**
+	 * just for test
+	 * 
+	 * @param args
+	 * @throws InterruptedException
+	 */
+	public static void main(String[] args) throws InterruptedException {
+		DbmsInfo info1, info2, info3, info4;
+		info1 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.30/newhybrid", "remote", "remote", 0);
+		info2 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.31/newhybrid", "remote", "remote", 0);
+		info3 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.30", null, null, 2000);
+		info4 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.31", null, null, 2000);
+		HConnectionPool pool = HConnectionPool.getPool();
+		HConnection connection;
+		for (int i = 1; i <= 5; i++) {
+			connection = pool.getConnectionByDbmsInfo(info1);
+			pool.putConnection(connection);
+			connection = pool.getConnectionByDbmsInfo(info2);
+			pool.putConnection(connection);
+			connection = pool.getConnectionByDbmsInfo(info3);
+			pool.putConnection(connection);
+			connection = pool.getConnectionByDbmsInfo(info4);
+			pool.putConnection(connection);
+			System.out.println(pool.size());
+		}
+		Object o = new Object();
+		synchronized (o) {
+			o.wait();
+		}
 	}
 }

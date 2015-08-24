@@ -1,17 +1,48 @@
 package dbInfo;
 
+import java.io.IOException;
+
 import org.apache.log4j.Logger;
 import org.voltdb.client.Client;
+import org.voltdb.client.ClientConfig;
+import org.voltdb.client.ClientFactory;
 import org.voltdb.client.NoConnectionsException;
 
 import config.Constants;
+import newhybrid.NoHConnectionException;
 import thrift.DbmsInfo;
 
 public class VoltdbConnection extends HConnection {
-	private final static Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
+	static private final Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
+	static private final int MAX_RETRY = 5;
+
+	static public HConnection getConnection(DbmsInfo dbmsInfo) throws NoHConnectionException {
+		int cnt = 0;
+		Client newConnection = null;
+		ClientConfig config = new ClientConfig();
+		config.setConnectionResponseTimeout(0);
+		config.setProcedureCallTimeout(0);
+		newConnection = ClientFactory.createClient(config);
+		try {
+			while (cnt++ < MAX_RETRY && newConnection.getConnectedHostList().isEmpty()) {
+				newConnection.createConnection(dbmsInfo.mCompleteConnectionString);
+				if (!newConnection.getConnectedHostList().isEmpty())
+					break;
+			}
+			if (newConnection == null || newConnection.getConnectedHostList().isEmpty()) {
+				throw new NoHConnectionException(dbmsInfo,
+						"tried " + MAX_RETRY + " times but can not establish connection!");
+			}
+			HConnection res = new VoltdbConnection(dbmsInfo, newConnection);
+			return res;
+		} catch (IOException e) {
+			throw new NoHConnectionException(dbmsInfo, "java network or connection problem");
+		}
+	}
+
 	private Client mVoltdbConnection;
 
-	public VoltdbConnection(DbmsInfo dbmsInfo,Client voltdbConnection) {
+	public VoltdbConnection(DbmsInfo dbmsInfo, Client voltdbConnection) {
 		super(dbmsInfo);
 		mVoltdbConnection = voltdbConnection;
 	}
@@ -36,5 +67,9 @@ public class VoltdbConnection extends HConnection {
 		} finally {
 			mVoltdbConnection = null;
 		}
+	}
+
+	public Client getConnection() {
+		return mVoltdbConnection;
 	}
 }

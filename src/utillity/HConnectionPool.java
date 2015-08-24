@@ -48,55 +48,14 @@ public class HConnectionPool {
 	 *             if no HConnection is got
 	 */
 	private HConnection addByDbmsInfo(DbmsInfo dbmsInfo) throws NoHConnectionException {
+		HConnection res = null;
 		if (dbmsInfo.mType == DbmsType.MYSQL) {
-			int cnt = 0;
-			Connection newConnection = null;
-			try {
-				Class.forName("com.mysql.jdbc.Driver").newInstance();
-				while (cnt++ < MAX_RETRY && newConnection == null) {
-					newConnection = DriverManager.getConnection(dbmsInfo.mCompleteConnectionString,
-							dbmsInfo.mMysqlUsername, dbmsInfo.mMysqlPassword);
-					if (newConnection.isValid(0))
-						break;
-				}
-				if (newConnection == null) {
-					throw new NoHConnectionException(dbmsInfo,
-							"tried " + MAX_RETRY + " times but can not establish connection!");
-				}
-				HConnection res = new MysqlConnection(dbmsInfo, newConnection);
-				mList.add(res);
-				return res;
-			} catch (SQLTimeoutException e) {
-				throw new NoHConnectionException(dbmsInfo, "Time out!");
-			} catch (SQLException e) {
-				throw new NoHConnectionException(dbmsInfo, "Access error or url error!");
-			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-				throw new NoHConnectionException(dbmsInfo, "No jdbc driver!");
-			}
+			res = MysqlConnection.getConnection(dbmsInfo);
 		} else {
-			int cnt = 0;
-			Client newConnection = null;
-			ClientConfig config = new ClientConfig();
-			config.setConnectionResponseTimeout(0);
-			config.setProcedureCallTimeout(0);
-			newConnection = ClientFactory.createClient(config);
-			try {
-				while (cnt++ < MAX_RETRY && newConnection.getConnectedHostList().isEmpty()) {
-					newConnection.createConnection(dbmsInfo.mCompleteConnectionString);
-					if (!newConnection.getConnectedHostList().isEmpty())
-						break;
-				}
-				if (newConnection == null || newConnection.getConnectedHostList().isEmpty()) {
-					throw new NoHConnectionException(dbmsInfo,
-							"tried " + MAX_RETRY + " times but can not establish connection!");
-				}
-				HConnection res = new VoltdbConnection(dbmsInfo, newConnection);
-				mList.add(res);
-				return res;
-			} catch (IOException e) {
-				throw new NoHConnectionException(dbmsInfo, "java network or connection problem");
-			}
+			res = VoltdbConnection.getConnection(dbmsInfo);
 		}
+		mList.add(res);
+		return res;
 	}
 
 	/**

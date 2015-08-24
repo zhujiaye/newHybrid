@@ -2,10 +2,18 @@ package dbInfo;
 
 import thrift.DbmsInfo;
 
-public abstract class HConnection {
+/**
+ * This class behaves like a DBMS and all database operations should be done by
+ * this class. Also, this class has a pool implementation ,see HConnectionPool.
+ * It's not thread-safe.
+ * 
+ * @author zhujiaye
+ *
+ */
+public abstract class HConnection{
 	protected final DbmsInfo DBMSINFO;
 
-	HConnection(DbmsInfo dbmsInfo) {
+	protected HConnection(DbmsInfo dbmsInfo) {
 		DBMSINFO = dbmsInfo;
 	}
 

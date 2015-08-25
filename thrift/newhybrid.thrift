@@ -25,6 +25,20 @@ struct TenantResult{
 	5: list<SplitResult> mSplitResults;
 	6: list<SuccessQueryResult> mQueryResults;
 }
+enum DType{
+	INT=0,
+	FLOAT=1,
+	VARCHAR=2, //we now fix the varchar length to 20,can be changed if needed
+}
+struct ColumnInfo{
+	1:string mName;
+	2:DType mDType;
+}
+struct TableInfo{
+	1:string mName;
+	2:list<ColumnInfo> mColumns;
+	3:list<i32> mPrimaryKeyPos; // it's 0-base index
+}
 enum DbmsType{
 	MYSQL=0,
 	VOLTDB=1,

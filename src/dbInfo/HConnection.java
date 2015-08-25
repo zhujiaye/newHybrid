@@ -10,7 +10,7 @@ import thrift.DbmsInfo;
  * @author zhujiaye
  *
  */
-public abstract class HConnection{
+public abstract class HConnection {
 	protected final DbmsInfo DBMSINFO;
 
 	protected HConnection(DbmsInfo dbmsInfo) {
@@ -20,6 +20,18 @@ public abstract class HConnection{
 	public abstract boolean isUseful();
 
 	public abstract void release();
+
+	/**
+	 * drop all tenants' table,this will remove all the data,be careful to use
+	 * it
+	 * 
+	 * @return true if succeeded,false if failed
+	 */
+	public abstract boolean dropAll();
+
+	public abstract HResult doRandomSelect(Table table);
+
+	public abstract HResult doRandomUpdate(Table table);
 
 	public boolean match(DbmsInfo dbmsInfo) {
 		if (DBMSINFO == null || dbmsInfo == null)

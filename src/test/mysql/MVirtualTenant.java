@@ -2,7 +2,7 @@ package test.mysql;
 
 import java.util.Random;
 
-import newhybrid.HSQLTimeOutException;
+import dbInfo.HSQLTimeOutException;
 
 public class MVirtualTenant extends MTenant {
 	private int id;

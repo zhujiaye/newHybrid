@@ -2,6 +2,7 @@ package dbInfo;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLTimeoutException;
 
@@ -11,6 +12,13 @@ import thrift.DbmsInfo;
 public class MysqlConnection extends HConnection {
 	static private final int MAX_RETRY = 5;
 
+	/**
+	 * get a mysql HConnection by dbms information
+	 * 
+	 * @param dbmsInfo
+	 * @return mysql HConnection,not null
+	 * @throws NoHConnectionException
+	 */
 	static public HConnection getConnection(DbmsInfo dbmsInfo) throws NoHConnectionException {
 		int cnt = 0;
 		Connection newConnection = null;
@@ -22,7 +30,7 @@ public class MysqlConnection extends HConnection {
 				if (newConnection.isValid(0))
 					break;
 			}
-			if (newConnection == null) {
+			if (newConnection == null || !newConnection.isValid(0)) {
 				throw new NoHConnectionException(dbmsInfo,
 						"tried " + MAX_RETRY + " times but can not establish connection!");
 			}
@@ -67,7 +75,19 @@ public class MysqlConnection extends HConnection {
 		}
 	}
 
-	public Connection getConnection() {
-		return mMysqlConnection;
+	@Override
+	public boolean dropAll() {
+		try {
+			ResultSet result = mMysqlConnection.getMetaData().getTables(null, null, null, null);
+			while (result.next()) {
+				for (int index = 1; index <= 4; index++) {
+					System.out.println(result.getString(index) + " ");
+				}
+			}
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return false;
 	}
 }

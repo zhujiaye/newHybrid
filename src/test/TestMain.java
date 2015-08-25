@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Random;
 
 import newhybrid.ClientShutdownException;
-import newhybrid.HQueryResult;
 import newhybrid.HeartbeatExecutor;
 import newhybrid.HeartbeatThread;
 import newhybrid.TenantWorkload;
@@ -15,6 +14,7 @@ import org.apache.log4j.Logger;
 
 import client.HTenantClient;
 import config.Constants;
+import dbInfo.HResult;
 import thrift.SplitResult;
 import thrift.SuccessQueryResult;
 import thrift.TenantResult;
@@ -267,7 +267,7 @@ class ClientThread extends Thread {
 	@Override
 	public void run() {
 		Random random = new Random(System.currentTimeMillis());
-		HQueryResult result = null;
+		HResult result = null;
 		try {
 			HTC.login();
 			while (!mIsStarted) {

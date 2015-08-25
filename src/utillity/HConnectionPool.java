@@ -43,7 +43,7 @@ public class HConnectionPool {
 	 * 
 	 * @param dbmsInfo
 	 *            the dbms information
-	 * @return HConnection which is added to the pool
+	 * @return HConnection which is added to the pool,not null
 	 * @throws NoHConnectionException
 	 *             if no HConnection is got
 	 */
@@ -63,9 +63,10 @@ public class HConnectionPool {
 	 * 
 	 * @param dbmsInfo
 	 *            the dbms information
-	 * @return HConnection,can be null
+	 * @return HConnection,not null
+	 * @throws NoHConnectionException
 	 */
-	public synchronized HConnection getConnectionByDbmsInfo(DbmsInfo dbmsInfo) {
+	public synchronized HConnection getConnectionByDbmsInfo(DbmsInfo dbmsInfo) throws NoHConnectionException {
 		HConnection res = null;
 		ArrayList<HConnection> removeList = new ArrayList<>();
 		for (HConnection tmp : mList) {
@@ -83,13 +84,8 @@ public class HConnectionPool {
 			mList.remove(tmp);
 		}
 		if (res == null) {
-			try {
-				res = addByDbmsInfo(dbmsInfo);
-				mList.remove(res);
-				return res;
-			} catch (NoHConnectionException e) {
-				LOG.error("can't get a new HConnection for " + e.getDbmsInfo().getMType() + ":" + e.getMessage());
-			}
+			res = addByDbmsInfo(dbmsInfo);
+			mList.remove(res);
 		}
 		return res;
 	}
@@ -118,8 +114,9 @@ public class HConnectionPool {
 	 * 
 	 * @param args
 	 * @throws InterruptedException
+	 * @throws NoHConnectionException
 	 */
-	public static void main(String[] args) throws InterruptedException {
+	public static void main(String[] args) throws InterruptedException, NoHConnectionException {
 		DbmsInfo info1, info2, info3, info4;
 		info1 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.30/newhybrid", "remote", "remote", 0);
 		info2 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.31/newhybrid", "remote", "remote", 0);
@@ -138,6 +135,8 @@ public class HConnectionPool {
 			pool.putConnection(connection);
 			System.out.println(pool.size());
 		}
+		connection = pool.getConnectionByDbmsInfo(info1);
+		connection.dropAll();
 		Object o = new Object();
 		synchronized (o) {
 			o.wait();

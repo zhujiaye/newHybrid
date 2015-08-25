@@ -5,10 +5,7 @@ import java.sql.SQLException;
 import java.util.Random;
 
 import newhybrid.ClientShutdownException;
-import newhybrid.HQueryResult;
-import newhybrid.HSQLTimeOutException;
 import newhybrid.NoServerConnectionException;
-import newhybrid.QueryType;
 import server.ServerClient;
 
 import org.apache.log4j.Logger;
@@ -19,11 +16,14 @@ import utillity.VoltdbConnectionPool;
 import config.Constants;
 import dbInfo.CustomerTable;
 import dbInfo.DistrictTable;
+import dbInfo.HResult;
+import dbInfo.HSQLTimeOutException;
 import dbInfo.HistoryTable;
 import dbInfo.ItemTable;
 import dbInfo.NewOrdersTable;
 import dbInfo.OrderLineTable;
 import dbInfo.OrdersTable;
+import dbInfo.QueryType;
 import dbInfo.StockTable;
 import dbInfo.Table;
 import dbInfo.WarehouseTable;
@@ -218,40 +218,40 @@ public class HTenantClient {
 		}
 	}
 
-	public synchronized HQueryResult sqlRandomSelect() {
+	public synchronized HResult sqlRandomSelect() {
 		if (!isLoggedIn()) {
 			LOG.error("Tenant " + mID + " not logged in!");
-			return new HQueryResult(QueryType.SELECT, true, false,
+			return new HResult(QueryType.SELECT, true, false,
 					"tenant not logged in", 0, 0, null, null, 0);
 		}
 		if (!isStarted()) {
 			LOG.error("Tenant " + mID + " not started!");
-			return new HQueryResult(QueryType.SELECT, true, false,
+			return new HResult(QueryType.SELECT, true, false,
 					"tenant not started", 0, 0, null, null, 0);
 		}
 		Random random = new Random(System.currentTimeMillis());
 		int tableIndex;
 		tableIndex = random.nextInt(mTables.length);
-		HQueryResult result;
+		HResult result;
 		result = mTables[tableIndex].sqlRandomSelect();
 		return result;
 	}
 
-	public synchronized HQueryResult sqlRandomUpdate() {
+	public synchronized HResult sqlRandomUpdate() {
 		if (!isLoggedIn()) {
 			LOG.error("Tenant " + mID + " not logged in!");
-			return new HQueryResult(QueryType.UPDATE, true, false,
+			return new HResult(QueryType.UPDATE, true, false,
 					"tenant not logged in", 0, 0, null, null, 0);
 		}
 		if (!isStarted()) {
 			LOG.error("Tenant " + mID + " not started!");
-			return new HQueryResult(QueryType.UPDATE, true, false,
+			return new HResult(QueryType.UPDATE, true, false,
 					"tenant not started", 0, 0, null, null, 0);
 		}
 		Random random = new Random(System.currentTimeMillis());
 		int tableIndex;
 		tableIndex = random.nextInt(mTables.length);
-		HQueryResult result;
+		HResult result;
 		result = mTables[tableIndex].sqlRandomUpdate();
 		return result;
 	}

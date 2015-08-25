@@ -16,6 +16,13 @@ public class VoltdbConnection extends HConnection {
 	static private final Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 	static private final int MAX_RETRY = 5;
 
+	/**
+	 * get a voltdb HConnection by dbms information
+	 * 
+	 * @param dbmsInfo
+	 * @return voltdb HConnection,not null
+	 * @throws NoHConnectionException
+	 */
 	static public HConnection getConnection(DbmsInfo dbmsInfo) throws NoHConnectionException {
 		int cnt = 0;
 		Client newConnection = null;
@@ -69,7 +76,4 @@ public class VoltdbConnection extends HConnection {
 		}
 	}
 
-	public Client getConnection() {
-		return mVoltdbConnection;
-	}
 }

@@ -4,9 +4,9 @@ import java.util.Random;
 
 import utillity.MysqlConnectionPool;
 import utillity.VoltdbConnectionPool;
-import newhybrid.HQueryResult;
-import newhybrid.HSQLTimeOutException;
 import client.HTenantClient;
+import dbInfo.HResult;
+import dbInfo.HSQLTimeOutException;
 
 public class MTenant extends Thread {
 	public static MysqlConnectionPool mPool;
@@ -80,7 +80,7 @@ public class MTenant extends Thread {
 	public void run() {
 
 		Random rand = new Random(System.nanoTime());
-		HQueryResult result;
+		HResult result;
 		boolean isWrite;
 		while (MTestMain.checkIsActive()) {
 			if (rand.nextDouble() < this.writePercent) {
@@ -108,7 +108,7 @@ public class MTenant extends Thread {
 	 * @throws HSQLTimeOutException
 	 */
 	public boolean doSelect() throws HSQLTimeOutException {
-		HQueryResult result = htc.sqlRandomSelect();
+		HResult result = htc.sqlRandomSelect();
 		if (result != null && result.isSuccess())
 			return true;
 		return false;
@@ -121,7 +121,7 @@ public class MTenant extends Thread {
 	 * @throws HSQLTimeOutException
 	 */
 	public boolean doUpdate() throws HSQLTimeOutException {
-		HQueryResult result = htc.sqlRandomUpdate();
+		HResult result = htc.sqlRandomUpdate();
 		if (result != null && result.isSuccess())
 			return true;
 		return false;

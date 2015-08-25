@@ -1,4 +1,4 @@
-package newhybrid;
+package dbInfo;
 
 public class HSQLTimeOutException extends Exception {
 

@@ -1,4 +1,4 @@
-package newhybrid;
+package dbInfo;
 
 public enum QueryType {
 	SELECT(0), UPDATE(1), INSERT(2), DELETE(3);

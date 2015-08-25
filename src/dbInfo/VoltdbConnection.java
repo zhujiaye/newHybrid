@@ -76,4 +76,21 @@ public class VoltdbConnection extends HConnection {
 		}
 	}
 
+	@Override
+	public void dropAll() {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public HResult doRandomSelect(Table table) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public HResult doRandomUpdate(Table table) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

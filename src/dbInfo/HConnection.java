@@ -24,10 +24,8 @@ public abstract class HConnection {
 	/**
 	 * drop all tenants' table,this will remove all the data,be careful to use
 	 * it
-	 * 
-	 * @return true if succeeded,false if failed
 	 */
-	public abstract boolean dropAll();
+	public abstract void dropAll();
 
 	public abstract HResult doRandomSelect(Table table);
 

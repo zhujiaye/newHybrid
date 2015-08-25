@@ -5,11 +5,17 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLTimeoutException;
+import java.sql.Statement;
+import java.util.ArrayList;
 
+import org.apache.log4j.Logger;
+
+import config.Constants;
 import newhybrid.NoHConnectionException;
 import thrift.DbmsInfo;
 
 public class MysqlConnection extends HConnection {
+	static private final Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 	static private final int MAX_RETRY = 5;
 
 	/**
@@ -70,13 +76,14 @@ public class MysqlConnection extends HConnection {
 		try {
 			mMysqlConnection.close();
 		} catch (SQLException e) {
+			LOG.error(e.getMessage());
 		} finally {
 			mMysqlConnection = null;
 		}
 	}
 
 	@Override
-	public boolean dropAll() {
+	public void dropAll() {
 		try {
 			ResultSet result = mMysqlConnection.getMetaData().getTables(null, null, null, null);
 			while (result.next()) {
@@ -88,6 +95,38 @@ public class MysqlConnection extends HConnection {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		return false;
+	}
+
+	@Override
+	public HResult doRandomSelect(Table table) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public HResult doRandomUpdate(Table table) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/**
+	 * do sql operation,return only the first result
+	 * 
+	 * @param sqlString
+	 * @return the first HResult from mysql connection
+	 */
+	public HResult doSql(String sqlString) {
+		Statement stmt;
+		try {
+			stmt = mMysqlConnection.createStatement();
+			if (stmt.execute(sqlString)) {
+				return new MysqlResult(QueryType.READ, true, "success", stmt.getResultSet());
+			} else {
+				return new MysqlResult(QueryType.WRITE, true, "success", stmt.getUpdateCount());
+			}
+		} catch (SQLException e) {
+			return new MysqlResult(null, false,
+					"database access error or statement closed error or others:" + e.getMessage(), -1);
+		}
 	}
 }

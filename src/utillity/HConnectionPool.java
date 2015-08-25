@@ -135,8 +135,6 @@ public class HConnectionPool {
 			pool.putConnection(connection);
 			System.out.println(pool.size());
 		}
-		connection = pool.getConnectionByDbmsInfo(info1);
-		connection.dropAll();
 		Object o = new Object();
 		synchronized (o) {
 			o.wait();

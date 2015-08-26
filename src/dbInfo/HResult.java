@@ -2,10 +2,16 @@ package dbInfo;
 
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.List;
 
 import newhybrid.NoHConnectionException;
+import newhybrid.Tenant;
+import thrift.ColumnInfo;
+import thrift.DType;
 import thrift.DbmsInfo;
 import thrift.DbmsType;
+import thrift.TableInfo;
+import thrift.TenantInfo;
 import utillity.HConnectionPool;
 
 /**
@@ -93,6 +99,14 @@ public abstract class HResult {
 	 */
 	public abstract ArrayList<String> getColumnValues() throws HSQLException;
 
+	/**
+	 * just for test
+	 * 
+	 * @param args
+	 * @throws InterruptedException
+	 * @throws NoHConnectionException
+	 * @throws HSQLException
+	 */
 	public static void main(String[] args) throws InterruptedException, NoHConnectionException, HSQLException {
 		DbmsInfo info1, info2, info3, info4;
 		info1 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.30/newhybrid", "remote", "remote", 0);
@@ -125,6 +139,5 @@ public abstract class HResult {
 			}
 			result.release();
 		}
-		hConnection.dropAll();
 	}
 }

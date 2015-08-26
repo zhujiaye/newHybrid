@@ -7,15 +7,18 @@ import java.sql.SQLException;
 import java.sql.SQLTimeoutException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import config.Constants;
 import newhybrid.NoHConnectionException;
+import newhybrid.Tenant;
+import thrift.ColumnInfo;
+import thrift.DType;
 import thrift.DbmsInfo;
 
 public class MysqlConnection extends HConnection {
-	static private final Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 	static private final int MAX_RETRY = 5;
 
 	/**
@@ -132,8 +135,77 @@ public class MysqlConnection extends HConnection {
 	}
 
 	@Override
-	public void dropTable(Table table) {
-		// TODO Auto-generated method stub
+	public void dropTable(Table table) throws HSQLException {
+		String realTableName = getRealTableName(table);
+		HResult result = doSql("drop table if exists " + realTableName);
+		if (!result.isSuccess())
+			throw new HSQLException("failed to drop table " + realTableName + ":" + result.getMessage());
+	}
 
+	@Override
+	public boolean createTable(Table table) throws HSQLException {
+		if (tableExist(table))
+			return false;
+		String realTableName = getRealTableName(table);
+		StringBuffer createString = new StringBuffer("create table ");
+		List<ColumnInfo> columns = table.getColumns();
+		List<Integer> primary_key_pos = table.getPrimaryKeyPos();
+		int columnCount = columns.size();
+		createString.append(realTableName);
+		createString.append("(");
+		for (int i = 0; i < columnCount; i++) {
+			ColumnInfo nowColumn = columns.get(i);
+			if (i > 0)
+				createString.append(",");
+			createString.append(nowColumn.mName);
+			createString.append(" ");
+			if (nowColumn.mDType == DType.INT)
+				createString.append("integer");
+			if (nowColumn.mDType == DType.FLOAT)
+				createString.append("float");
+			if (nowColumn.mDType == DType.VARCHAR)
+				createString.append("varchar(20)");
+			createString.append(" not null");
+		}
+		createString.append(",primary key(");
+		for (int i = 0; i < primary_key_pos.size(); i++) {
+			String keyName = columns.get(primary_key_pos.get(i)).mName;
+			if (i > 0)
+				createString.append(",");
+			createString.append(keyName);
+		}
+		createString.append(")");
+		createString.append(")");
+		HResult result = doSql(createString.toString());
+		if (!result.isSuccess())
+			throw new HSQLException(result.getMessage());
+		return true;
+	}
+
+	@Override
+	public ArrayList<String> getAllTableNames() throws HSQLException {
+		ArrayList<String> res = new ArrayList<>();
+		try {
+			ResultSet tables = mMysqlConnection.getMetaData().getTables(null, null, null, null);
+			while (tables.next()) {
+				String tableName = tables.getString("TABLE_NAME");
+				res.add(tableName);
+			}
+			tables.close();
+			return res;
+		} catch (SQLException e) {
+			throw new HSQLException(e.getMessage());
+		}
+	}
+
+	@Override
+	public boolean tableExist(Table table) throws HSQLException {
+		String realTableName = getRealTableName(table);
+		ArrayList<String> allNames = getAllTableNames();
+		return allNames.contains(realTableName);
+	}
+
+	private String getRealTableName(Table table) {
+		return table.getName() + "_" + table.getTenant().getID();
 	}
 }

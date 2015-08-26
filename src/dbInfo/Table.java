@@ -26,6 +26,22 @@ public class Table {
 		PRIMARY_KEY_POS = tableInfo.mPrimaryKeyPos;
 	}
 
+	public Tenant getTenant() {
+		return TENANT;
+	}
+
+	public String getName() {
+		return NAME;
+	}
+
+	public List<ColumnInfo> getColumns() {
+		return COLUMNS;
+	}
+
+	public List<Integer> getPrimaryKeyPos() {
+		return PRIMARY_KEY_POS;
+	}
+
 	/**
 	 * randomly generate a row for this table
 	 * 

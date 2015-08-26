@@ -8,4 +8,8 @@ public class Tenant {
 	public Tenant(TenantInfo tenantInfo) {
 		TENANT_ID = tenantInfo.mId;
 	}
+
+	public int getID() {
+		return TENANT_ID;
+	}
 }

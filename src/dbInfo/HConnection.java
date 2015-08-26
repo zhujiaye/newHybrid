@@ -1,6 +1,16 @@
 package dbInfo;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import newhybrid.NoHConnectionException;
+import newhybrid.Tenant;
+import thrift.ColumnInfo;
+import thrift.DType;
 import thrift.DbmsInfo;
+import thrift.DbmsType;
+import thrift.TableInfo;
+import thrift.TenantInfo;
 
 /**
  * This class behaves like a DBMS and all database operations should be done by
@@ -49,8 +59,41 @@ public abstract class HConnection {
 	 * drop a table if it exists
 	 * 
 	 * @param table
+	 * @throws HSQLException
+	 *             if database access error or other reasons
 	 */
-	public abstract void dropTable(Table table);
+	public abstract void dropTable(Table table) throws HSQLException;
+
+	/**
+	 * get all tables' name in the dbms
+	 * 
+	 * @return a string list containing all the tables' name
+	 * @throws HSQLException
+	 *             if a database access error occurs
+	 */
+	public abstract ArrayList<String> getAllTableNames() throws HSQLException;
+
+	/**
+	 * return whether the corresponding table exists
+	 * 
+	 * @param table
+	 * @return <b>true</b> if exists,<b>false</b> otherwise
+	 * @throws HSQLException
+	 *             if a database access error occurs
+	 */
+	public abstract boolean tableExist(Table table) throws HSQLException;
+
+	/**
+	 * create a table if it doesn't exist
+	 * 
+	 * @param table
+	 *            all information the new created table needed
+	 * @return <b>true</b> if the table doesn't exist and was successfully
+	 *         created,<b>false</b> if the table already exists
+	 * @throws HSQLException
+	 *             if a database access error occurs
+	 */
+	public abstract boolean createTable(Table table) throws HSQLException;
 
 	public abstract HResult doRandomSelect(Table table);
 
@@ -72,5 +115,42 @@ public abstract class HConnection {
 		System.out.println(DBMSINFO.mMysqlUsername);
 		System.out.println(DBMSINFO.mMysqlPassword);
 		System.out.println(DBMSINFO.mVoltdbCapacityMB);
+	}
+
+	/**
+	 * just for test
+	 * 
+	 * @param args
+	 * @throws NoHConnectionException
+	 * @throws HSQLException
+	 */
+	public static void main(String[] args) throws NoHConnectionException, HSQLException {
+		DbmsInfo info1, info2, info3, info4;
+		info1 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.30/newhybrid", "remote", "remote", 0);
+		info2 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.31/newhybrid", "remote", "remote", 0);
+		info3 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.30", null, null, 2000);
+		info4 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.31", null, null, 2000);
+		HConnection hConnection = MysqlConnection.getConnection(info1);
+		List<ColumnInfo> columns = new ArrayList<>();
+		List<Integer> primary_key_pos = new ArrayList<>();
+		columns.add(new ColumnInfo("id", DType.INT));
+		columns.add(new ColumnInfo("value1", DType.INT));
+		columns.add(new ColumnInfo("value2", DType.FLOAT));
+		columns.add(new ColumnInfo("value3", DType.VARCHAR));
+		primary_key_pos.add(0);
+		primary_key_pos.add(1);
+		TableInfo tableInfo = new TableInfo("orders", columns, primary_key_pos);
+		Table table = new Table(new Tenant(new TenantInfo(1)), tableInfo);
+		if (hConnection.tableExist(table))
+			System.out.println("table exists!");
+		else {
+			if (hConnection.createTable(table))
+				System.out.println("success");
+			else
+				System.out.println("error");
+		}
+		ArrayList<String> names = hConnection.getAllTableNames();
+		for (int i = 0; i < names.size(); i++)
+			System.out.println(names.get(i));
 	}
 }

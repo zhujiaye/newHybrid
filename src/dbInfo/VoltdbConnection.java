@@ -99,4 +99,10 @@ public class VoltdbConnection extends HConnection {
 		
 	}
 
+	@Override
+	public boolean createTable(Table table) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

@@ -5,7 +5,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
-
 public class MysqlResult extends HResult {
 	private int mUpdatedCount;
 	private ResultSet mResult;
@@ -28,7 +27,8 @@ public class MysqlResult extends HResult {
 			try {
 				Statement stmt = mResult.getStatement();
 				mResult.close();
-				stmt.close();
+				if (stmt != null)
+					stmt.close();
 			} catch (SQLException e) {
 				throw new HSQLException("database access error:" + e.getMessage());
 			} finally {

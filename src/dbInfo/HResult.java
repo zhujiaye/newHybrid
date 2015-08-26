@@ -99,29 +99,36 @@ public abstract class HResult {
 		info2 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.31/newhybrid", "remote", "remote", 0);
 		info3 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.30", null, null, 2000);
 		info4 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.31", null, null, 2000);
-		MysqlConnection hConnection = (MysqlConnection) MysqlConnection.getConnection(info1);
+		MysqlConnection hConnection = (MysqlConnection) MysqlConnection.getConnection(info2);
 		HResult result = null;
+		if (hConnection.dropAll()) {
+			System.out.println("all dropped");
+		} else {
+			System.out.println("part dropped");
+		}
 		result = hConnection.doSql("show tables");
-		if (result.isSuccess()) {
-			if (result.getType().isRead()) {
-				ArrayList<String> columnNames = result.getColumnNames();
-				int columns = columnNames.size();
-				for (int i = 0; i < columns; i++)
-					System.out.print(" " + columnNames.get(i));
-				System.out.println();
-				ArrayList<String> columnValues = null;
-				while (result.hasNext()) {
-					columnValues = result.getColumnValues();
+		if (result != null) {
+			if (result.isSuccess()) {
+				if (result.getType().isRead()) {
+					ArrayList<String> columnNames = result.getColumnNames();
+					int columns = columnNames.size();
 					for (int i = 0; i < columns; i++)
-						System.out.print(" " + columnValues.get(i));
+						System.out.print(" " + columnNames.get(i));
 					System.out.println();
+					ArrayList<String> columnValues = null;
+					while (result.hasNext()) {
+						columnValues = result.getColumnValues();
+						for (int i = 0; i < columns; i++)
+							System.out.print(" " + columnValues.get(i));
+						System.out.println();
+					}
+				} else {
+					System.out.println("updated count:" + result.getUpdateCount());
 				}
 			} else {
-				System.out.println("updated count:" + result.getUpdateCount());
+				System.out.println("failed message:" + result.getMessage());
 			}
-		} else {
-			System.out.println("failed message:" + result.getMessage());
+			result.release();
 		}
-
 	}
 }

@@ -35,17 +35,23 @@ public abstract class HConnection {
 	public abstract void release() throws HSQLException;
 
 	/**
-	 * drop all tenants' table,this will remove all the data,be careful to use
-	 * it
+	 * drop all tenants' tables if they exist,this will remove all the data,be
+	 * careful to use it
 	 * 
-	 * @return <b>true</b> if all tables dropped,<b>false</b> if a part of
-	 *         tables dropped
 	 * 
 	 * @throws HSQLException
-	 *             if database access error or called on a closed connection
+	 *             if database access error or called on a closed connection or
+	 *             only a part of tables were dropped
 	 */
-	public abstract boolean dropAll() throws HSQLException;
-	
+	public abstract void dropAll() throws HSQLException;
+
+	/**
+	 * drop a table if it exists
+	 * 
+	 * @param table
+	 */
+	public abstract void dropTable(Table table);
+
 	public abstract HResult doRandomSelect(Table table);
 
 	public abstract HResult doRandomUpdate(Table table);

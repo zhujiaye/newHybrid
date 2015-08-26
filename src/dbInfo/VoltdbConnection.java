@@ -77,8 +77,7 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	@Override
-	public boolean dropAll() {
-		return false;
+	public void dropAll() {
 		// TODO Auto-generated method stub
 	}
 
@@ -92,6 +91,12 @@ public class VoltdbConnection extends HConnection {
 	public HResult doRandomUpdate(Table table) {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public void dropTable(Table table) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

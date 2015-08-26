@@ -83,18 +83,16 @@ public class MysqlConnection extends HConnection {
 	}
 
 	@Override
-	public boolean dropAll() throws HSQLException {
+	public void dropAll() throws HSQLException {
 		try {
 			ResultSet tables = mMysqlConnection.getMetaData().getTables(null, null, null, null);
 			while (tables.next()) {
 				String tableName = tables.getString("TABLE_NAME");
-				HResult result = doSql("drop table " + tableName);
+				HResult result = doSql("drop table if exists " + tableName);
 				if (!result.isSuccess()) {
-					LOG.error("failed to drop table " + tableName + ":" + result.getMessage());
-					return false;
+					throw new HSQLException("failed to drop table " + tableName + ":" + result.getMessage());
 				}
 			}
-			return true;
 		} catch (SQLException e) {
 			throw new HSQLException("database access error or called on a closed connection:" + e.getMessage());
 		}
@@ -131,5 +129,11 @@ public class MysqlConnection extends HConnection {
 			return new MysqlResult(null, false,
 					"database access error or statement closed error or others:" + e.getMessage(), -1);
 		}
+	}
+
+	@Override
+	public void dropTable(Table table) {
+		// TODO Auto-generated method stub
+
 	}
 }

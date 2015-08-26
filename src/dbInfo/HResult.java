@@ -99,13 +99,8 @@ public abstract class HResult {
 		info2 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.31/newhybrid", "remote", "remote", 0);
 		info3 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.30", null, null, 2000);
 		info4 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.31", null, null, 2000);
-		MysqlConnection hConnection = (MysqlConnection) MysqlConnection.getConnection(info2);
+		MysqlConnection hConnection = (MysqlConnection) MysqlConnection.getConnection(info1);
 		HResult result = null;
-		if (hConnection.dropAll()) {
-			System.out.println("all dropped");
-		} else {
-			System.out.println("part dropped");
-		}
 		result = hConnection.doSql("show tables");
 		if (result != null) {
 			if (result.isSuccess()) {
@@ -130,5 +125,6 @@ public abstract class HResult {
 			}
 			result.release();
 		}
+		hConnection.dropAll();
 	}
 }

@@ -1,19 +1,12 @@
 package utillity;
 
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.SQLTimeoutException;
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
-import org.voltdb.client.Client;
-import org.voltdb.client.ClientConfig;
-import org.voltdb.client.ClientFactory;
 
 import config.Constants;
 import dbInfo.HConnection;
+import dbInfo.HSQLException;
 import dbInfo.MysqlConnection;
 import dbInfo.VoltdbConnection;
 import newhybrid.NoHConnectionException;
@@ -22,7 +15,6 @@ import thrift.DbmsType;
 
 public class HConnectionPool {
 	private final static Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
-	private final static int MAX_RETRY = 5;
 	static private HConnectionPool pool = null;
 
 	private ArrayList<HConnection> mList;
@@ -93,7 +85,11 @@ public class HConnectionPool {
 	public synchronized void clear() {
 		for (HConnection tmp : mList) {
 			if (tmp != null) {
-				tmp.release();
+				try {
+					tmp.release();
+				} catch (HSQLException e) {
+					LOG.error(e.getMessage());
+				}
 			}
 		}
 		mList.clear();

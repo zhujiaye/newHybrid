@@ -13,14 +13,14 @@ import thrift.TableInfo;
  *
  */
 public class Table {
-	protected final String mName;
-	protected final List<ColumnInfo> mColumns;
-	protected final List<Integer> mPrimaryKeyPos;
+	protected final String NAME;
+	protected final List<ColumnInfo> COLUMNS;
+	protected final List<Integer> PRIMARY_KEY_POS;
 
 	protected Table(TableInfo tableInfo) {
-		mName = tableInfo.mName;
-		mColumns = tableInfo.mColumns;
-		mPrimaryKeyPos = tableInfo.mPrimaryKeyPos;
+		NAME = tableInfo.mName;
+		COLUMNS = tableInfo.mColumns;
+		PRIMARY_KEY_POS = tableInfo.mPrimaryKeyPos;
 	}
 
 	/**
@@ -30,8 +30,8 @@ public class Table {
 	 */
 	public ArrayList<String> generateOneRow() {
 		ArrayList<String> res = new ArrayList<>();
-		for (int i = 0; i < mColumns.size(); i++) {
-			String value = DataType.getDataTypeByValue(mColumns.get(i).mDType.getValue()).getRandomValue();
+		for (int i = 0; i < COLUMNS.size(); i++) {
+			String value = DataType.getDataTypeByValue(COLUMNS.get(i).mDType.getValue()).getRandomValue();
 			res.add(value);
 		}
 		return res;

@@ -40,7 +40,7 @@ public enum DataType {
 		Random random = new Random(System.currentTimeMillis());
 		switch (mValue) {
 		case 0:
-			return String.valueOf(random.nextInt());
+			return String.valueOf(random.nextInt(100));
 		case 1:
 			return String.valueOf(random.nextFloat() * 1e10);
 		case 2:

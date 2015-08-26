@@ -25,6 +25,10 @@ struct TenantResult{
 	5: list<SplitResult> mSplitResults;
 	6: list<SuccessQueryResult> mQueryResults;
 }
+struct TenantInfo{
+	1: i32 mId; //this is unique across the whole system
+	//more information about tenant can be added here
+}
 enum DType{
 	INT=0,
 	FLOAT=1,

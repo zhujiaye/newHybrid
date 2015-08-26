@@ -3,6 +3,7 @@ package dbInfo;
 import java.util.ArrayList;
 import java.util.List;
 
+import newhybrid.Tenant;
 import thrift.ColumnInfo;
 import thrift.TableInfo;
 
@@ -13,11 +14,13 @@ import thrift.TableInfo;
  *
  */
 public class Table {
+	protected final Tenant TENANT;
 	protected final String NAME;
 	protected final List<ColumnInfo> COLUMNS;
 	protected final List<Integer> PRIMARY_KEY_POS;
 
-	protected Table(TableInfo tableInfo) {
+	protected Table(Tenant tenant, TableInfo tableInfo) {
+		TENANT = tenant;
 		NAME = tableInfo.mName;
 		COLUMNS = tableInfo.mColumns;
 		PRIMARY_KEY_POS = tableInfo.mPrimaryKeyPos;

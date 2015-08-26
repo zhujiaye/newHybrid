@@ -17,16 +17,35 @@ public abstract class HConnection {
 		DBMSINFO = dbmsInfo;
 	}
 
+	/**
+	 * tell whether the connection is useful to operate
+	 * 
+	 * @return <b>true</b> if the connection is useful,<b>false</b> if the
+	 *         connection is not valid anymore
+	 */
 	public abstract boolean isUseful();
 
-	public abstract void release();
+	/**
+	 * try to release resources of the connection
+	 * 
+	 * @throws HSQLException
+	 *             if a database access error occurs
+	 * 
+	 */
+	public abstract void release() throws HSQLException;
 
 	/**
 	 * drop all tenants' table,this will remove all the data,be careful to use
 	 * it
+	 * 
+	 * @return <b>true</b> if all tables dropped,<b>false</b> if a part of
+	 *         tables dropped
+	 * 
+	 * @throws HSQLException
+	 *             if database access error or called on a closed connection
 	 */
-	public abstract void dropAll();
-
+	public abstract boolean dropAll() throws HSQLException;
+	
 	public abstract HResult doRandomSelect(Table table);
 
 	public abstract HResult doRandomUpdate(Table table);

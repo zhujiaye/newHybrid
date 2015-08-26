@@ -59,7 +59,7 @@ public class HConnectionPool {
 	}
 
 	/**
-	 * get a HConnection according to the dbms information can be null
+	 * get a HConnection according to the dbms information
 	 * 
 	 * @param dbmsInfo
 	 *            the dbms information

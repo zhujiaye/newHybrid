@@ -70,30 +70,33 @@ public class MysqlConnection extends HConnection {
 	}
 
 	@Override
-	public void release() {
+	public void release() throws HSQLException {
 		if (mMysqlConnection == null)
 			return;
 		try {
 			mMysqlConnection.close();
 		} catch (SQLException e) {
-			LOG.error(e.getMessage());
+			throw new HSQLException("database access error:" + e.getMessage());
 		} finally {
 			mMysqlConnection = null;
 		}
 	}
 
 	@Override
-	public void dropAll() {
+	public boolean dropAll() throws HSQLException {
 		try {
-			ResultSet result = mMysqlConnection.getMetaData().getTables(null, null, null, null);
-			while (result.next()) {
-				for (int index = 1; index <= 4; index++) {
-					System.out.println(result.getString(index) + " ");
+			ResultSet tables = mMysqlConnection.getMetaData().getTables(null, null, null, null);
+			while (tables.next()) {
+				String tableName = tables.getString("TABLE_NAME");
+				HResult result = doSql("drop table " + tableName);
+				if (!result.isSuccess()) {
+					LOG.error("failed to drop table " + tableName + ":" + result.getMessage());
+					return false;
 				}
 			}
+			return true;
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new HSQLException("database access error or called on a closed connection:" + e.getMessage());
 		}
 	}
 

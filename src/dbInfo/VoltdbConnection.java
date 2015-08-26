@@ -77,7 +77,8 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	@Override
-	public void dropAll() {
+	public boolean dropAll() {
+		return false;
 		// TODO Auto-generated method stub
 	}
 

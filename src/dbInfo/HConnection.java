@@ -95,9 +95,19 @@ public abstract class HConnection {
 	 */
 	public abstract boolean createTable(Table table) throws HSQLException;
 
+	/**
+	 * execute a select operation randomly from a table
+	 * 
+	 * @param table
+	 * @return HResult
+	 */
 	public abstract HResult doRandomSelect(Table table);
 
 	public abstract HResult doRandomUpdate(Table table);
+
+	public abstract HResult doRandomInsert(Table table);
+
+	public abstract HResult doRandomDelete(Table table);
 
 	public boolean match(DbmsInfo dbmsInfo) {
 		if (DBMSINFO == null || dbmsInfo == null)
@@ -138,19 +148,29 @@ public abstract class HConnection {
 		columns.add(new ColumnInfo("value2", DType.FLOAT));
 		columns.add(new ColumnInfo("value3", DType.VARCHAR));
 		primary_key_pos.add(0);
-		primary_key_pos.add(1);
-		TableInfo tableInfo = new TableInfo("orders", columns, primary_key_pos);
+		TableInfo tableInfo = new TableInfo("customer", columns, primary_key_pos);
 		Table table = new Table(new Tenant(new TenantInfo(1)), tableInfo);
-		if (hConnection.tableExist(table))
-			System.out.println("table exists!");
-		else {
-			if (hConnection.createTable(table))
-				System.out.println("success");
-			else
-				System.out.println("error");
+		for (int i = 3; i <= 100; i++) {
+			((MysqlConnection) hConnection).doSql("insert into customer_1 values(" + i + ",1,3.5,'T T ')");
 		}
-		ArrayList<String> names = hConnection.getAllTableNames();
-		for (int i = 0; i < names.size(); i++)
-			System.out.println(names.get(i));
+		HResult result = hConnection.doRandomSelect(table);
+		if (result.isSuccess()) {
+			if (result.getType().isRead()) {
+				ArrayList<String> names = result.getColumnNames();
+				for (int i = 0; i < names.size(); i++)
+					System.out.print(names.get(i) + " ");
+				System.out.println();
+				while (result.hasNext()) {
+					ArrayList<String> values = result.getColumnValues();
+					for (int i = 0; i < values.size(); i++)
+						System.out.print(values.get(i) + " ");
+					System.out.println();
+				}
+			} else {
+				System.out.println("write operation:updated count " + result.getUpdateCount());
+			}
+		} else {
+			System.out.println(result.getMessage());
+		}
 	}
 }

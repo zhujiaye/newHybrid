@@ -101,18 +101,6 @@ public class MysqlConnection extends HConnection {
 		}
 	}
 
-	@Override
-	public HResult doRandomSelect(Table table) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public HResult doRandomUpdate(Table table) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	/**
 	 * do sql operation,return only the first result
 	 * 
@@ -207,5 +195,29 @@ public class MysqlConnection extends HConnection {
 
 	private String getRealTableName(Table table) {
 		return table.getName() + "_" + table.getTenant().getID();
+	}
+
+	@Override
+	public HResult doRandomSelect(Table table) {
+		String realTableName = getRealTableName(table);
+		return doSql("select * from " + realTableName + " where " + table.generateWhereClause(true));
+	}
+
+	@Override
+	public HResult doRandomUpdate(Table table) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public HResult doRandomInsert(Table table) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public HResult doRandomDelete(Table table) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }

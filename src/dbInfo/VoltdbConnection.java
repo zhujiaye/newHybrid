@@ -1,6 +1,7 @@
 package dbInfo;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 import org.voltdb.client.Client;
@@ -103,6 +104,30 @@ public class VoltdbConnection extends HConnection {
 	public boolean createTable(Table table) {
 		// TODO Auto-generated method stub
 		return false;
+	}
+
+	@Override
+	public ArrayList<String> getAllTableNames() throws HSQLException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean tableExist(Table table) throws HSQLException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public HResult doRandomInsert(Table table) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public HResult doRandomDelete(Table table) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

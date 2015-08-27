@@ -3,6 +3,7 @@ package dbInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.StringTokenizer;
 
 import org.omg.Messaging.SYNC_WITH_TRANSPORT;
 
@@ -19,22 +20,47 @@ import thrift.TableInfo;
  */
 public class Table {
 	/**
-	 * convert some key/value pairs to an <i>AND</i> expression
+	 * convert some key/value pairs to an expression which is like '
+	 * <i>key1=value1 delimiter key2=value2....</i>'
 	 * 
 	 * @param pairs
-	 * @return
+	 *            key/value pairs
+	 * @param delimiter
+	 *            the delimiter used in the expression
+	 * @return result string
 	 */
-	static public String convertPairsToAND(ArrayList<Pair<String, String>> pairs) {
+	static public String convertPairs(ArrayList<Pair<String, String>> pairs, String delimiter) {
 		StringBuilder res = new StringBuilder();
 		for (int i = 0; i < pairs.size(); i++) {
 			if (i > 0)
-				res.append(" and ");
+				res.append(" " + delimiter + " ");
 			res.append(pairs.get(i).first());
 			res.append("=");
 			res.append("'");
 			res.append(pairs.get(i).second());
 			res.append("'");
 		}
+		return res.toString();
+	}
+
+	/**
+	 * convert a list of values to a value expression like '
+	 * <i>(value1,value2,...)</i>'
+	 * 
+	 * @param values
+	 * @return
+	 */
+	static public String convertValues(ArrayList<String> values) {
+		StringBuilder res = new StringBuilder();
+		res.append("(");
+		for (int i = 0; i < values.size(); i++) {
+			if (i > 0)
+				res.append(",");
+			res.append("'");
+			res.append(values.get(i));
+			res.append("'");
+		}
+		res.append(")");
 		return res.toString();
 	}
 
@@ -81,26 +107,56 @@ public class Table {
 	}
 
 	/**
-	 * randomly generate a <b>where clause</b>
+	 * generate key/value pairs on the corresponding columns
+	 * 
+	 * @param pos
+	 *            the positions of columns which will be generate key/value pair
+	 *            from
+	 * @return key/value pairs
+	 */
+	private ArrayList<Pair<String, String>> generatePairs(List<Integer> pos) {
+		ArrayList<Pair<String, String>> pairs = new ArrayList<>();
+		for (int i = 0; i < pos.size(); i++) {
+			ColumnInfo nowColumn = COLUMNS.get(pos.get(i));
+			pairs.add(new Pair<String, String>(nowColumn.mName,
+					DataType.getDataTypeByValue(nowColumn.mDType.getValue()).getRandomValue()));
+		}
+		return pairs;
+	}
+
+	/**
+	 * randomly generate a <b>where clause</b>. It's like
+	 * "key1=value1 and key2=value2 and ..."
 	 * 
 	 * @param primary
 	 *            whether the where condition comes from primary key
 	 * @return <b>a where clause</b>
 	 */
 	public String generateWhereClause(boolean primary) {
-		ArrayList<Pair<String, String>> pairs = new ArrayList<>();
 		if (primary) {
-			for (int i = 0; i < PRIMARY_KEY_POS.size(); i++) {
-				ColumnInfo nowColumn = COLUMNS.get(PRIMARY_KEY_POS.get(i));
-				pairs.add(new Pair<String, String>(nowColumn.mName,
-						DataType.getDataTypeByValue(nowColumn.mDType.getValue()).getRandomValue()));
-			}
+			return convertPairs(generatePairs(PRIMARY_KEY_POS), "and");
 		} else {
-			Random random = new Random(System.currentTimeMillis());
-			ColumnInfo nowColumn = COLUMNS.get(random.nextInt(COLUMNS.size()));
-			pairs.add(new Pair<String, String>(nowColumn.mName,
-					DataType.getDataTypeByValue(nowColumn.mDType.getValue()).getRandomValue()));
+			Random random = new Random(System.nanoTime());
+			List<Integer> pos = new ArrayList<>();
+			pos.add(random.nextInt(COLUMNS.size()));
+			return convertPairs(generatePairs(pos), "and");
 		}
-		return convertPairsToAND(pairs);
+	}
+
+	/**
+	 * randomly generate a <b>set clause</b>. It's like
+	 * "key1=value1,key2=value2,...". Notice that here the primary key is not
+	 * included
+	 * 
+	 * @return
+	 */
+	public String generateSetClause() {
+		List<Integer> pos = new ArrayList<>();
+		for (int i = 0; i < COLUMNS.size(); i++) {
+			if (PRIMARY_KEY_POS.contains(i))
+				continue;
+			pos.add(i);
+		}
+		return convertPairs(generatePairs(pos), ",");
 	}
 }

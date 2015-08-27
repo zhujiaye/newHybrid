@@ -37,12 +37,12 @@ public enum DataType {
 	}
 
 	public String getRandomValue() {
-		Random random = new Random(System.currentTimeMillis());
+		Random random = new Random(System.nanoTime());
 		switch (mValue) {
 		case 0:
 			return String.valueOf(random.nextInt(100));
 		case 1:
-			return String.valueOf(random.nextFloat() * 1e10);
+			return String.valueOf(random.nextFloat() * 100.0);
 		case 2:
 			return ValueGenerator.MakeAlphaString(1, 20);
 		default:

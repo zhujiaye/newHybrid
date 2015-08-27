@@ -150,27 +150,30 @@ public abstract class HConnection {
 		primary_key_pos.add(0);
 		TableInfo tableInfo = new TableInfo("customer", columns, primary_key_pos);
 		Table table = new Table(new Tenant(new TenantInfo(1)), tableInfo);
-		for (int i = 3; i <= 100; i++) {
-			((MysqlConnection) hConnection).doSql("insert into customer_1 values(" + i + ",1,3.5,'T T ')");
-		}
-		HResult result = hConnection.doRandomSelect(table);
-		if (result.isSuccess()) {
-			if (result.getType().isRead()) {
-				ArrayList<String> names = result.getColumnNames();
-				for (int i = 0; i < names.size(); i++)
-					System.out.print(names.get(i) + " ");
-				System.out.println();
-				while (result.hasNext()) {
-					ArrayList<String> values = result.getColumnValues();
-					for (int i = 0; i < values.size(); i++)
-						System.out.print(values.get(i) + " ");
+		// for (int i = 0; i <= 0; i++) {
+		// ((MysqlConnection) hConnection).doSql("insert into customer_1
+		// values(" + i + ",1,3.5,'T T ')");
+		// }
+		for (int cnt = 1; cnt <= 100; cnt++) {
+			HResult result = hConnection.doRandomUpdate(table);
+			if (result.isSuccess()) {
+				if (result.getType().isRead()) {
+					ArrayList<String> names = result.getColumnNames();
+					for (int i = 0; i < names.size(); i++)
+						System.out.print(names.get(i) + " ");
 					System.out.println();
+					while (result.hasNext()) {
+						ArrayList<String> values = result.getColumnValues();
+						for (int i = 0; i < values.size(); i++)
+							System.out.print(values.get(i) + " ");
+						System.out.println();
+					}
+				} else {
+					System.out.println("write operation:updated count " + result.getUpdateCount());
 				}
 			} else {
-				System.out.println("write operation:updated count " + result.getUpdateCount());
+				System.out.println(result.getMessage());
 			}
-		} else {
-			System.out.println(result.getMessage());
 		}
 	}
 }

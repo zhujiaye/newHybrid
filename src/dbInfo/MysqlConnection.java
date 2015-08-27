@@ -109,6 +109,7 @@ public class MysqlConnection extends HConnection {
 	 */
 	public HResult doSql(String sqlString) {
 		Statement stmt;
+		// System.out.println(sqlString);
 		try {
 			stmt = mMysqlConnection.createStatement();
 			if (stmt.execute(sqlString)) {
@@ -149,10 +150,12 @@ public class MysqlConnection extends HConnection {
 			createString.append(" ");
 			if (nowColumn.mDType == DType.INT)
 				createString.append("integer");
-			if (nowColumn.mDType == DType.FLOAT)
+			else if (nowColumn.mDType == DType.FLOAT)
 				createString.append("float");
-			if (nowColumn.mDType == DType.VARCHAR)
+			else if (nowColumn.mDType == DType.VARCHAR)
 				createString.append("varchar(20)");
+			else
+				throw new HSQLException("unknown data type!");
 			createString.append(" not null");
 		}
 		createString.append(",primary key(");
@@ -205,19 +208,21 @@ public class MysqlConnection extends HConnection {
 
 	@Override
 	public HResult doRandomUpdate(Table table) {
-		// TODO Auto-generated method stub
-		return null;
+		String realTableName = getRealTableName(table);
+		return doSql("update " + realTableName + " set " + table.generateSetClause() + " where "
+				+ table.generateWhereClause(true));
 	}
 
 	@Override
 	public HResult doRandomInsert(Table table) {
-		// TODO Auto-generated method stub
-		return null;
+		String realTableName = getRealTableName(table);
+		String valueString = Table.convertValues(table.generateOneRow());
+		return doSql("insert ignore into " + realTableName + " value " + valueString);
 	}
 
 	@Override
 	public HResult doRandomDelete(Table table) {
-		// TODO Auto-generated method stub
-		return null;
+		String realTableName = getRealTableName(table);
+		return doSql("delete from " + realTableName + " where " + table.generateWhereClause(true));
 	}
 }

@@ -1,7 +1,7 @@
 package dbInfo;
 
 public enum QueryType {
-	SELECT(0), UPDATE(1), INSERT(2), DELETE(3), READ(4), WRITE(5);
+	SELECT(0), UPDATE(1), INSERT(2), DELETE(3), READ(4), WRITE(5), UNKNOWN(6), FAILED(7);
 
 	private final int mValue;
 

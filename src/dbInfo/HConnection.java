@@ -11,11 +11,12 @@ import thrift.DbmsInfo;
 import thrift.DbmsType;
 import thrift.TableInfo;
 import thrift.TenantInfo;
+import utillity.HConnectionPool;
 
 /**
  * This class behaves like a DBMS and all database operations should be done by
  * this class. Also, this class has a pool implementation ,see HConnectionPool.
- * It's not thread-safe.
+ * It's not thread-safe. Extend it to develop your own database connection
  * 
  * @author zhujiaye
  *
@@ -54,6 +55,14 @@ public abstract class HConnection {
 	 *             only a part of tables were dropped
 	 */
 	public abstract void dropAll() throws HSQLException;
+
+	/**
+	 * do whatever the sqlString says,only return the first result
+	 * 
+	 * @param sqlString
+	 * @return
+	 */
+	public abstract HResult doSql(String sqlString);
 
 	/**
 	 * drop a table if it exists
@@ -136,11 +145,12 @@ public abstract class HConnection {
 	 */
 	public static void main(String[] args) throws NoHConnectionException, HSQLException {
 		DbmsInfo info1, info2, info3, info4;
+		HConnectionPool pool = HConnectionPool.getPool();
 		info1 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.30/newhybrid", "remote", "remote", 0);
 		info2 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.31/newhybrid", "remote", "remote", 0);
 		info3 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.30", null, null, 2000);
 		info4 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.31", null, null, 2000);
-		HConnection hConnection = MysqlConnection.getConnection(info1);
+		HConnection hConnection = pool.getConnectionByDbmsInfo(info1);
 		List<ColumnInfo> columns = new ArrayList<>();
 		List<Integer> primary_key_pos = new ArrayList<>();
 		columns.add(new ColumnInfo("id", DType.INT));
@@ -148,31 +158,33 @@ public abstract class HConnection {
 		columns.add(new ColumnInfo("value2", DType.FLOAT));
 		columns.add(new ColumnInfo("value3", DType.VARCHAR));
 		primary_key_pos.add(0);
-		TableInfo tableInfo = new TableInfo("customer", columns, primary_key_pos);
+		TableInfo tableInfo = new TableInfo("stock", columns, primary_key_pos);
 		Table table = new Table(new Tenant(new TenantInfo(1)), tableInfo);
-		// for (int i = 0; i <= 0; i++) {
-		// ((MysqlConnection) hConnection).doSql("insert into customer_1
-		// values(" + i + ",1,3.5,'T T ')");
-		// }
+		ArrayList<String> names = hConnection.getAllTableNames();
+		for (int j = 0; j < names.size(); j++)
+			System.out.println(names.get(j));
 		for (int cnt = 1; cnt <= 100; cnt++) {
-			HResult result = hConnection.doRandomUpdate(table);
-			if (result.isSuccess()) {
-				if (result.getType().isRead()) {
-					ArrayList<String> names = result.getColumnNames();
-					for (int i = 0; i < names.size(); i++)
-						System.out.print(names.get(i) + " ");
-					System.out.println();
-					while (result.hasNext()) {
-						ArrayList<String> values = result.getColumnValues();
-						for (int i = 0; i < values.size(); i++)
-							System.out.print(values.get(i) + " ");
+			HResult result = null;
+			result = hConnection.doRandomInsert(table);
+			if (result != null) {
+				if (result.isSuccess()) {
+					if (result.getType().isRead()) {
+						ArrayList<String> columnnames = result.getColumnNames();
+						for (int i = 0; i < columnnames.size(); i++)
+							System.out.print(columnnames.get(i) + " ");
 						System.out.println();
+						while (result.hasNext()) {
+							ArrayList<String> values = result.getColumnValues();
+							for (int i = 0; i < values.size(); i++)
+								System.out.print(values.get(i) + " ");
+							System.out.println();
+						}
+					} else {
+						System.out.println("write operation:updated count " + result.getUpdateCount());
 					}
 				} else {
-					System.out.println("write operation:updated count " + result.getUpdateCount());
+					System.out.println(result.getMessage());
 				}
-			} else {
-				System.out.println(result.getMessage());
 			}
 		}
 	}

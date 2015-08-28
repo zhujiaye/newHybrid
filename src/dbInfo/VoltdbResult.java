@@ -3,20 +3,22 @@ package dbInfo;
 import java.util.ArrayList;
 
 import org.voltdb.VoltTable;
+import org.voltdb.VoltType;
 
 public class VoltdbResult extends HResult {
 	private int mUpdatedCount;
 	private VoltTable mResult;
 
-	protected VoltdbResult(QueryType queryType, boolean success, String message, VoltTable[] result) {
+	public VoltdbResult(QueryType queryType, boolean success, String message, VoltTable result) {
 		super(queryType, success, message);
-		if (TYPE == QueryType.SELECT) {
-			mUpdatedCount = -1;
-			mResult = result[0];
-		} else {
-			mResult = null;
-			// TODO get updated count according to the VoltTable result
-		}
+		mResult = result;
+		mUpdatedCount = -1;
+	}
+
+	public VoltdbResult(QueryType queryType, boolean success, String message, int updatedCount) {
+		super(queryType, success, message);
+		mResult = null;
+		mUpdatedCount = updatedCount;
 	}
 
 	@Override
@@ -69,8 +71,10 @@ public class VoltdbResult extends HResult {
 			throw new HSQLException("called on a released result object!");
 		ArrayList<String> res = new ArrayList<>();
 		int size = mResult.getColumnCount();
-		for (int i = 0; i < size; i++)
-			res.add(mResult.getString(i));
+		for (int i = 0; i < size; i++) {
+			VoltType type = mResult.getColumnType(i);
+			res.add(String.valueOf(mResult.get(i, type)));
+		}
 		return res;
 	}
 

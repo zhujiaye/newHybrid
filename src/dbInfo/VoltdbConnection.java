@@ -2,12 +2,16 @@ package dbInfo;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
+import org.voltdb.VoltTable;
 import org.voltdb.client.Client;
 import org.voltdb.client.ClientConfig;
 import org.voltdb.client.ClientFactory;
+import org.voltdb.client.ClientResponse;
 import org.voltdb.client.NoConnectionsException;
+import org.voltdb.client.ProcCallException;
 
 import config.Constants;
 import newhybrid.NoHConnectionException;
@@ -55,6 +59,10 @@ public class VoltdbConnection extends HConnection {
 		mVoltdbConnection = voltdbConnection;
 	}
 
+	private String getRealTableName(Table table) {
+		return table.getName() + "_" + table.getTenant().getID();
+	}
+
 	@Override
 	public boolean isUseful() {
 		if (mVoltdbConnection == null)
@@ -78,56 +86,132 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	@Override
-	public void dropAll() {
-		// TODO Auto-generated method stub
+	public void dropAll() throws HSQLException {
+		ArrayList<String> allNames = getAllTableNames();
+		for (int i = 0; i < allNames.size(); i++) {
+			String name = allNames.get(i);
+			HResult result = doSql("drop table " + name + " if exists cascade");
+			if (!result.isSuccess())
+				throw new HSQLException("failed to drop table " + name + ":" + result.getMessage());
+		}
 	}
 
 	@Override
-	public HResult doRandomSelect(Table table) {
-		// TODO Auto-generated method stub
-		return null;
+	public void dropTable(Table table) throws HSQLException {
+		String realTableName = getRealTableName(table);
+		HResult result = doSql("drop table " + realTableName + " if exists cascade");
+		if (!result.isSuccess())
+			throw new HSQLException("failed to drop table " + realTableName + ":" + result.getMessage());
 	}
 
 	@Override
-	public HResult doRandomUpdate(Table table) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void dropTable(Table table) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public boolean createTable(Table table) {
-		// TODO Auto-generated method stub
-		return false;
+	public boolean createTable(Table table) throws HSQLException {
+		if (tableExist(table))
+			return false;
+		String realTableName = getRealTableName(table);
+		StringBuffer createString = new StringBuffer("create table ");
+		ArrayList<String> definitions;
+		createString.append(realTableName);
+		createString.append("(");
+		definitions = table.getColumnDefinition();
+		for (int i = 0; i < definitions.size(); i++) {
+			if (i > 0)
+				createString.append(",");
+			createString.append(definitions.get(i));
+		}
+		definitions = table.getConstraintDefinition();
+		for (int i = 0; i < definitions.size(); i++) {
+			createString.append(",");
+			createString.append(definitions.get(i));
+		}
+		createString.append(")");
+		HResult result = doSql(createString.toString());
+		if (!result.isSuccess())
+			throw new HSQLException(result.getMessage());
+		result = doSql("partition table " + realTableName + " on column "
+				+ table.getColumns().get(table.getPrimaryKeyPos().get(0)).mName);
+		if (!result.isSuccess())
+			throw new HSQLException("failed to partition table " + realTableName + ":" + result.getMessage());
+		return true;
 	}
 
 	@Override
 	public ArrayList<String> getAllTableNames() throws HSQLException {
-		// TODO Auto-generated method stub
-		return null;
+		ArrayList<String> res = new ArrayList<>();
+		try {
+			ClientResponse response = mVoltdbConnection.callProcedure("@SystemCatalog", "TABLES");
+			if (response.getStatus() == ClientResponse.SUCCESS) {
+				VoltTable tables = response.getResults()[0];
+				while (tables.advanceRow()) {
+					String name = tables.getString("TABLE_NAME");
+					res.add(name);
+				}
+			} else {
+				throw new HSQLException("voltdb unsuccess:" + response.getStatusString());
+			}
+		} catch (IOException | ProcCallException e) {
+			throw new HSQLException("voltdb exception:" + e.getMessage());
+		}
+		return res;
 	}
 
 	@Override
-	public boolean tableExist(Table table) throws HSQLException {
-		// TODO Auto-generated method stub
-		return false;
+	public HResult doRandomSelect(Table table) {
+		String realTableName = getRealTableName(table);
+		return doSql("select * from " + realTableName + " where " + table.generateWhereClause(true));
+	}
+
+	@Override
+	public HResult doRandomUpdate(Table table) {
+		String realTableName = getRealTableName(table);
+		return doSql("update " + realTableName + " set " + table.generateSetClause() + " where "
+				+ table.generateWhereClause(true));
 	}
 
 	@Override
 	public HResult doRandomInsert(Table table) {
-		// TODO Auto-generated method stub
-		return null;
+		String realTableName = getRealTableName(table);
+		String valueString = Table.convertValues(table.generateOneRow());
+		return doSql("upsert into " + realTableName + " values " + valueString);
 	}
 
 	@Override
 	public HResult doRandomDelete(Table table) {
-		// TODO Auto-generated method stub
-		return null;
+		String realTableName = getRealTableName(table);
+		return doSql("delete from " + realTableName + " where " + table.generateWhereClause(true));
+	}
+
+	@Override
+	public boolean tableExist(Table table) throws HSQLException {
+		String realTableName = getRealTableName(table);
+		ArrayList<String> allNames = getAllTableNames();
+		return allNames.contains(realTableName.toLowerCase()) || allNames.contains(realTableName.toUpperCase());
+	}
+
+	@Override
+	public HResult doSql(String sqlString) {
+		System.out.println(sqlString);
+		ClientResponse response = null;
+		try {
+			response = mVoltdbConnection.callProcedure("@AdHoc", sqlString);
+			if (response.getStatus() == ClientResponse.SUCCESS) {
+				VoltTable[] results = response.getResults();
+				if (results.length == 0) {
+					LOG.warn("VoltTable length equals zero");
+					return new VoltdbResult(QueryType.UNKNOWN, true, "success", -1);
+				} else {
+					VoltTable result = results[0];
+					if (result.advanceRow() && result.getColumnName(0).equals("modified_tuples")) {
+						return new VoltdbResult(QueryType.WRITE, true, "success", (int) result.getLong(0));
+					} else
+						return new VoltdbResult(QueryType.READ, true, "success", result);
+				}
+			} else {
+				return new VoltdbResult(QueryType.FAILED, false, response.getStatusString(), -1);
+			}
+		} catch (IOException | ProcCallException e) {
+			return new VoltdbResult(QueryType.FAILED, false, e.getMessage(), -1);
+		}
 	}
 
 }

@@ -30,16 +30,19 @@ public class Table {
 	 *            the delimiter used in the expression
 	 * @return result string
 	 */
-	static public String convertPairs(ArrayList<Pair<String, String>> pairs, String delimiter) {
+	static public String convertPairs(ArrayList<Pair<String, Data>> pairs, String delimiter) {
 		StringBuilder res = new StringBuilder();
 		for (int i = 0; i < pairs.size(); i++) {
+			Pair<String, Data> pair = pairs.get(i);
 			if (i > 0)
 				res.append(" " + delimiter + " ");
-			res.append(pairs.get(i).first());
+			res.append(pair.first());
 			res.append("=");
-			res.append("'");
-			res.append(pairs.get(i).second());
-			res.append("'");
+			if (pair.second().getType().isStringKind())
+				res.append("'");
+			res.append(pairs.get(i).second().getValue());
+			if (pair.second().getType().isStringKind())
+				res.append("'");
 		}
 		return res.toString();
 	}
@@ -51,15 +54,18 @@ public class Table {
 	 * @param values
 	 * @return
 	 */
-	static public String convertValues(ArrayList<String> values) {
+	static public String convertValues(ArrayList<Data> values) {
 		StringBuilder res = new StringBuilder();
 		res.append("(");
 		for (int i = 0; i < values.size(); i++) {
+			Data value = values.get(i);
 			if (i > 0)
 				res.append(",");
-			res.append("'");
-			res.append(values.get(i));
-			res.append("'");
+			if (value.getType().isStringKind())
+				res.append("'");
+			res.append(value.getValue());
+			if (value.getType().isStringKind())
+				res.append("'");
 		}
 		res.append(")");
 		return res.toString();
@@ -98,11 +104,13 @@ public class Table {
 	 * 
 	 * @return a string list contain every column value of the generated row
 	 */
-	public ArrayList<String> generateOneRow() {
-		ArrayList<String> res = new ArrayList<>();
+	public ArrayList<Data> generateOneRow() {
+		ArrayList<Data> res = new ArrayList<>();
 		for (int i = 0; i < COLUMNS.size(); i++) {
-			String value = DataType.getDataTypeByValue(COLUMNS.get(i).mDType.getValue()).getRandomValue();
-			res.add(value);
+			ColumnInfo nowColumn = COLUMNS.get(i);
+			DataType dataType = DataType.getDataTypeByValue(nowColumn.mDType.getValue());
+			String value = dataType.getRandomValue();
+			res.add(new Data(dataType, value));
 		}
 		return res;
 	}
@@ -115,12 +123,13 @@ public class Table {
 	 *            from
 	 * @return key/value pairs
 	 */
-	private ArrayList<Pair<String, String>> generatePairs(List<Integer> pos) {
-		ArrayList<Pair<String, String>> pairs = new ArrayList<>();
+	private ArrayList<Pair<String, Data>> generatePairs(List<Integer> pos) {
+		ArrayList<Pair<String, Data>> pairs = new ArrayList<>();
 		for (int i = 0; i < pos.size(); i++) {
 			ColumnInfo nowColumn = COLUMNS.get(pos.get(i));
-			pairs.add(new Pair<String, String>(nowColumn.mName,
-					DataType.getDataTypeByValue(nowColumn.mDType.getValue()).getRandomValue()));
+			DataType dataType = DataType.getDataTypeByValue(nowColumn.mDType.getValue());
+			String value = dataType.getRandomValue();
+			pairs.add(new Pair<String, Data>(nowColumn.mName, new Data(dataType, value)));
 		}
 		return pairs;
 	}

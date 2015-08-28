@@ -12,9 +12,10 @@ import utillity.ValueGenerator;
  *
  */
 public enum DataType {
-	INT(0, "integer"), FLOAT(1, "float"), VARCHAR(2, "varchar(20)");
+	INT(0, "integer", false), FLOAT(1, "float", false), VARCHAR(2, "varchar(20)", true);
 	private final int mValue;
 	private final String mDataTypeString;
+	private final boolean mStringKind;
 
 	static public DataType getDataTypeByValue(int value) {
 		switch (value) {
@@ -29,9 +30,10 @@ public enum DataType {
 		}
 	}
 
-	private DataType(int value, String dataTypeString) {
+	private DataType(int value, String dataTypeString, boolean stringKind) {
 		mValue = value;
 		mDataTypeString = dataTypeString;
+		mStringKind = stringKind;
 	}
 
 	public int getValue() {
@@ -40,6 +42,10 @@ public enum DataType {
 
 	public String getDataTypeString() {
 		return mDataTypeString;
+	}
+
+	public boolean isStringKind() {
+		return mStringKind;
 	}
 
 	public String getRandomValue() {

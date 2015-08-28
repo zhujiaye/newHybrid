@@ -10,6 +10,7 @@ import org.omg.Messaging.SYNC_WITH_TRANSPORT;
 import newhybrid.Pair;
 import newhybrid.Tenant;
 import thrift.ColumnInfo;
+import thrift.DType;
 import thrift.TableInfo;
 
 /**
@@ -158,5 +159,47 @@ public class Table {
 			pos.add(i);
 		}
 		return convertPairs(generatePairs(pos), ",");
+	}
+
+	/**
+	 * get all columns' definition
+	 * 
+	 * @return a string list in which every string stands for a column
+	 *         definition
+	 */
+	public ArrayList<String> getColumnDefinition() {
+		ArrayList<String> res = new ArrayList<>();
+		for (int i = 0; i < COLUMNS.size(); i++) {
+			StringBuilder stringBuilder = new StringBuilder();
+			ColumnInfo nowColumn = COLUMNS.get(i);
+			stringBuilder.append(nowColumn.mName);
+			stringBuilder.append(" ");
+			DataType dataType = DataType.getDataTypeByValue(nowColumn.mDType.getValue());
+			stringBuilder.append(dataType.getDataTypeString());
+			stringBuilder.append(" not null");
+			res.add(stringBuilder.toString());
+		}
+		return res;
+	}
+
+	/**
+	 * get all constraint definition
+	 * 
+	 * @return a string list in which every string stands for a constraint
+	 *         definition
+	 */
+	public ArrayList<String> getConstraintDefinition() {
+		ArrayList<String> res = new ArrayList<>();
+		StringBuilder stringBuilder = new StringBuilder();
+		stringBuilder.append("primary key(");
+		for (int i = 0; i < PRIMARY_KEY_POS.size(); i++) {
+			String key_name = COLUMNS.get(PRIMARY_KEY_POS.get(i)).mName;
+			if (i > 0)
+				stringBuilder.append(",");
+			stringBuilder.append(key_name);
+		}
+		stringBuilder.append(")");
+		res.add(stringBuilder.toString());
+		return res;
 	}
 }

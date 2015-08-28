@@ -132,35 +132,20 @@ public class MysqlConnection extends HConnection {
 			return false;
 		String realTableName = getRealTableName(table);
 		StringBuffer createString = new StringBuffer("create table ");
-		List<ColumnInfo> columns = table.getColumns();
-		List<Integer> primary_key_pos = table.getPrimaryKeyPos();
-		int columnCount = columns.size();
+		ArrayList<String> definitions;
 		createString.append(realTableName);
 		createString.append("(");
-		for (int i = 0; i < columnCount; i++) {
-			ColumnInfo nowColumn = columns.get(i);
+		definitions = table.getColumnDefinition();
+		for (int i = 0; i < definitions.size(); i++) {
 			if (i > 0)
 				createString.append(",");
-			createString.append(nowColumn.mName);
-			createString.append(" ");
-			if (nowColumn.mDType == DType.INT)
-				createString.append("integer");
-			else if (nowColumn.mDType == DType.FLOAT)
-				createString.append("float");
-			else if (nowColumn.mDType == DType.VARCHAR)
-				createString.append("varchar(20)");
-			else
-				throw new HSQLException("unknown data type!");
-			createString.append(" not null");
+			createString.append(definitions.get(i));
 		}
-		createString.append(",primary key(");
-		for (int i = 0; i < primary_key_pos.size(); i++) {
-			String keyName = columns.get(primary_key_pos.get(i)).mName;
-			if (i > 0)
-				createString.append(",");
-			createString.append(keyName);
+		definitions = table.getConstraintDefinition();
+		for (int i = 0; i < definitions.size(); i++) {
+			createString.append(",");
+			createString.append(definitions.get(i));
 		}
-		createString.append(")");
 		createString.append(")");
 		HResult result = doSql(createString.toString());
 		if (!result.isSuccess())

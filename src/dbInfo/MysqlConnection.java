@@ -101,12 +101,7 @@ public class MysqlConnection extends HConnection {
 		}
 	}
 
-	/**
-	 * do sql operation,return only the first result
-	 * 
-	 * @param sqlString
-	 * @return the first HResult from mysql connection
-	 */
+	@Override
 	public HResult doSql(String sqlString) {
 		Statement stmt;
 		// System.out.println(sqlString);
@@ -118,7 +113,7 @@ public class MysqlConnection extends HConnection {
 				return new MysqlResult(QueryType.WRITE, true, "success", stmt.getUpdateCount());
 			}
 		} catch (SQLException e) {
-			return new MysqlResult(null, false,
+			return new MysqlResult(QueryType.FAILED, false,
 					"database access error or statement closed error or others:" + e.getMessage(), -1);
 		}
 	}
@@ -193,7 +188,7 @@ public class MysqlConnection extends HConnection {
 	public boolean tableExist(Table table) throws HSQLException {
 		String realTableName = getRealTableName(table);
 		ArrayList<String> allNames = getAllTableNames();
-		return allNames.contains(realTableName);
+		return allNames.contains(realTableName.toLowerCase()) || allNames.contains(realTableName.toUpperCase());
 	}
 
 	private String getRealTableName(Table table) {

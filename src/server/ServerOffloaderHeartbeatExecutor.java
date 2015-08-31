@@ -3,15 +3,14 @@ package server;
 import newhybrid.HeartbeatExecutor;
 
 public class ServerOffloaderHeartbeatExecutor implements HeartbeatExecutor {
-	final private HServer mServer;
+	private final ServerInfo mServerInfo;
 
-	public ServerOffloaderHeartbeatExecutor(HServer server) {
-		mServer = server;
+	public ServerOffloaderHeartbeatExecutor(ServerInfo serverInfo) {
+		mServerInfo = serverInfo;
 	}
 
 	@Override
 	public void heartbeat() {
-		mServer.offloadWorkloads();
 	}
 
 }

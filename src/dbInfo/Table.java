@@ -82,6 +82,10 @@ public class Table {
 		PRIMARY_KEY_POS = tableInfo.mPrimaryKeyPos;
 	}
 
+	public TableInfo generateTableInfo() {
+		return new TableInfo(NAME, COLUMNS, PRIMARY_KEY_POS);
+	}
+
 	public int getTenantID() {
 		return TENANT_ID;
 	}

@@ -17,6 +17,9 @@ public class WorkerConf {
 	public final int WORKER_PORT;
 	public final DbmsType WORKER_DBMS_TYPE;
 	public final String WORKER_TEMP_FOLDER;
+	public final int WORKER_SELECTOR_THREADS;
+	public final int WORKER_QUEUE_SIZE_PER_SELECTOR;
+	public final int WORKER_SERVER_THREADS;
 	/*
 	 * mysql-type variables
 	 */
@@ -49,7 +52,7 @@ public class WorkerConf {
 				Constants.DEFAULT_SERVER_CLIENT_CONNECT_TIMEOUT_S + ""));
 		WORKER_ADDRESS = NetWorkUtils.getLocalIpAddress();
 		WORKER_PORT = Integer.valueOf(System.getProperty("newhybrid.worker.port", Constants.DEFAULT_WORKER_PORT + ""));
-		String dbmsType = System.getProperty("newhybrid.worker.dbms.type");
+		String dbmsType = System.getProperty("newhybrid.worker.dbms.type","");
 		if (dbmsType.equals(Constants.MYSQL_FLAG))
 			WORKER_DBMS_TYPE = DbmsType.MYSQL;
 		else if (dbmsType.equals(Constants.VOLTDB_FLAG))
@@ -67,6 +70,13 @@ public class WorkerConf {
 		VOLTDB_CAPACITY_MB = Integer
 				.valueOf(System.getProperty("newhybrid.voltdb.capacity.mb", Constants.DEFAULT_VOLTDB_CAPACITY_MB + ""));
 		VOLTDB_COMPLETE_CONNECTION_STRING = WORKER_ADDRESS;
+
+		WORKER_SELECTOR_THREADS = Integer.valueOf(System.getProperty("newhybrid.thrift.selector.threads",
+				Constants.DEFAULT_THRIFT_SELECTOR_THREADS + ""));
+		WORKER_QUEUE_SIZE_PER_SELECTOR = Integer.valueOf(System.getProperty("newhybrid.thrift.queue.size.per.selector",
+				Constants.DEFAULT_THRIFT_QUEUE_SIZE_PER_SELECTOR + ""));
+		WORKER_SERVER_THREADS = Integer.valueOf(
+				System.getProperty("newhybrid.thrift.server.threads", Constants.DEFAULT_THRIFT_SERVER_THREADS + ""));
 	}
 
 	/**
@@ -86,5 +96,12 @@ public class WorkerConf {
 		System.out.println("MYSQL_PASSWORD:" + MYSQL_PASSWORD);
 		System.out.println("VOLTDB_CAPACITY_MB:" + VOLTDB_CAPACITY_MB);
 		System.out.println("VOLTDB_COMPLETE_CONNECTION_STRING:" + VOLTDB_COMPLETE_CONNECTION_STRING);
+		System.out.println("WORKER_SELECTOR_THREADS:" + WORKER_SELECTOR_THREADS);
+		System.out.println("WORKER_QUEUE_SIZE_PER_SELECTOR:" + WORKER_QUEUE_SIZE_PER_SELECTOR);
+		System.out.println("WORKER_SERVER_THREADS:" + WORKER_SERVER_THREADS);
+	}
+
+	public static void main(String[] args) {
+		WorkerConf.getConf().print();
 	}
 }

@@ -3,15 +3,14 @@ package server;
 import newhybrid.HeartbeatExecutor;
 
 public class ServerMonitorHeartbeatExecutor implements HeartbeatExecutor {
-	final private HServer mServer;
+	private final ServerInfo mServerInfo;
 
-	public ServerMonitorHeartbeatExecutor(HServer server) {
-		mServer = server;
+	public ServerMonitorHeartbeatExecutor(ServerInfo serverInfo) {
+		mServerInfo = serverInfo;
 	}
 
 	@Override
 	public void heartbeat() {
-		mServer.updateWorkloadLimitInMysql();
 	}
 
 }

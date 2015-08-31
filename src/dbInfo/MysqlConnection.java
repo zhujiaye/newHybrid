@@ -13,7 +13,6 @@ import org.apache.log4j.Logger;
 
 import config.Constants;
 import newhybrid.NoHConnectionException;
-import newhybrid.Tenant;
 import thrift.ColumnInfo;
 import thrift.DType;
 import thrift.DbmsInfo;
@@ -177,7 +176,7 @@ public class MysqlConnection extends HConnection {
 	}
 
 	private String getRealTableName(Table table) {
-		return table.getName() + "_" + table.getTenant().getID();
+		return table.getName() + "_" + table.getTenantID();
 	}
 
 	@Override

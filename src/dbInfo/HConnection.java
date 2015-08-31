@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import newhybrid.NoHConnectionException;
-import newhybrid.Tenant;
 import thrift.ColumnInfo;
 import thrift.DType;
 import thrift.DbmsInfo;
@@ -150,7 +149,7 @@ public abstract class HConnection {
 		info2 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.31/newhybrid", "remote", "remote", 0);
 		info3 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.30", null, null, 2000);
 		info4 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.31", null, null, 2000);
-		HConnection hConnection = pool.getConnectionByDbmsInfo(info1);
+		HConnection hConnection = pool.getConnectionByDbmsInfo(info3);
 		List<ColumnInfo> columns = new ArrayList<>();
 		List<Integer> primary_key_pos = new ArrayList<>();
 		columns.add(new ColumnInfo("id", DType.INT));
@@ -159,7 +158,7 @@ public abstract class HConnection {
 		columns.add(new ColumnInfo("value3", DType.VARCHAR));
 		primary_key_pos.add(0);
 		TableInfo tableInfo = new TableInfo("stock", columns, primary_key_pos);
-		Table table = new Table(new Tenant(new TenantInfo(1)), tableInfo);
+		Table table = new Table(1, tableInfo);
 		ArrayList<String> names = hConnection.getAllTableNames();
 		for (int j = 0; j < names.size(); j++)
 			System.out.println(names.get(j));

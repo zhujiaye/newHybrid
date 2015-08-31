@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import newhybrid.NoHConnectionException;
-import newhybrid.Tenant;
 import thrift.ColumnInfo;
 import thrift.DType;
 import thrift.DbmsInfo;

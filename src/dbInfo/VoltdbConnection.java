@@ -60,7 +60,7 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	private String getRealTableName(Table table) {
-		return table.getName() + "_" + table.getTenant().getID();
+		return table.getName() + "_" + table.getTenantID();
 	}
 
 	@Override
@@ -190,7 +190,7 @@ public class VoltdbConnection extends HConnection {
 
 	@Override
 	public HResult doSql(String sqlString) {
-		System.out.println(sqlString);
+		//System.out.println(sqlString);
 		ClientResponse response = null;
 		try {
 			response = mVoltdbConnection.callProcedure("@AdHoc", sqlString);

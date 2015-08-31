@@ -8,7 +8,6 @@ import java.util.StringTokenizer;
 import org.omg.Messaging.SYNC_WITH_TRANSPORT;
 
 import newhybrid.Pair;
-import newhybrid.Tenant;
 import thrift.ColumnInfo;
 import thrift.DType;
 import thrift.TableInfo;
@@ -71,20 +70,20 @@ public class Table {
 		return res.toString();
 	}
 
-	protected final Tenant TENANT;
+	protected final int TENANT_ID;
 	protected final String NAME;
 	protected final List<ColumnInfo> COLUMNS;
 	protected final List<Integer> PRIMARY_KEY_POS;
 
-	protected Table(Tenant tenant, TableInfo tableInfo) {
-		TENANT = tenant;
+	public Table(int tenant_id, TableInfo tableInfo) {
+		TENANT_ID = tenant_id;
 		NAME = tableInfo.mName;
 		COLUMNS = tableInfo.mColumns;
 		PRIMARY_KEY_POS = tableInfo.mPrimaryKeyPos;
 	}
 
-	public Tenant getTenant() {
-		return TENANT;
+	public int getTenantID() {
+		return TENANT_ID;
 	}
 
 	public String getName() {

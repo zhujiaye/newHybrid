@@ -9,7 +9,7 @@ import org.apache.log4j.Logger;
 
 import thrift.TenantResult;
 import utillity.WorkloadLoader;
-import client.HTenantClient;
+import client.TenantClient;
 import config.Constants;
 
 public class TestConsolidation {
@@ -55,7 +55,7 @@ public class TestConsolidation {
 			boolean[] good = new boolean[end - start + 1];
 			for (int i = start; i <= end; i++) {
 				if (workloadLoader.getWorkloadForTenant(i) != null) {
-					HTenantClient htc = new HTenantClient(i);
+					TenantClient htc = new TenantClient(i);
 					htc.connect();
 					clientThreads[i - start] = new ClientThread(htc,
 							workloadLoader.getWorkloadForTenant(i).getWH());

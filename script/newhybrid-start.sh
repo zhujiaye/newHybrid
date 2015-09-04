@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-USAGE="Usage: newhybrid-start.sh [-h] WHAT
+USAGE="Usage: newhybrid-start.sh [-h] WHAT [port]
 where WHAT is one of:
 \tserver\t\t start a server
 \tmysql_worker\t\t start a mysql worker
 \tvoltdb_worker\t\t start a voltdb worker
+\tcommand_line\t\t start a CLI mode to interact with server 
+
+if port does not defined,default port will be used
 
 -h to display help information
 "
@@ -11,13 +14,32 @@ get_env(){
 	. $home/conf/newhybrid-env.sh
 }
 start_server(){
-    java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_SERVER_JAVA_OPTS server.HServer 
+    if [ -z "${1}"]; then 
+        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_SERVER_JAVA_OPTS server.HServer 
+    else
+        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_SERVER_JAVA_OPTS -Dnewhybrid.server.port=$1 server.HServer 
+    fi
 }
 start_mysql_worker(){
-    java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=mysql worker.HWorker 
+    if [ -z "${1}"]; then 
+        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=mysql worker.HWorker 
+    else        
+        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=mysql -Dnewhybrid.worker.port=$1 worker.HWorker 
+    fi
 }
 start_voltdb_worker(){
-    java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=voltdb worker.HWorker 
+    if [ -z "${1}"]; then 
+        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=voltdb worker.HWorker 
+    else        
+        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=voltdb -Dnewhybrid.worker.port=$1 worker.HWorker 
+    fi
+}
+start_cli(){
+    if [ -z "${1}"]; then
+        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_CLIENT_JAVA_OPTS client.Command
+    else
+        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_CLIENT_JAVA_OPTS -Dnewhybrid.server.port=$1 client.Command
+    fi
 }
 home=`cd "$(dirname "$0")";cd ..;pwd`
 get_env
@@ -35,20 +57,22 @@ while getopts "h" o; do
 done
 shift $((OPTIND-1))
 WHAT=$1
-
 if [ -z "${WHAT}" ]; then echo "Error: no WHAT specified"
 	echo -e "${USAGE}"
 	exit 1
 fi
 case "${WHAT}" in
     server)
-        start_server
+        start_server $2
         ;;
     mysql_worker)
-        start_mysql_worker 
+        start_mysql_worker $2
         ;;
     voltdb_worker)
-        start_voltdb_worker 
+        start_voltdb_worker $2 
+        ;;
+    command_line)
+        start_cli $2
         ;;
     *)
         echo -e "${USAGE}"

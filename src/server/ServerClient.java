@@ -11,8 +11,11 @@ import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransportException;
 
+import thrift.NoTenantException;
+import thrift.NoWorkerException;
 import thrift.ServerService;
 import thrift.ServerWorkerInfo;
+import thrift.TableInfo;
 import config.Constants;
 
 /**
@@ -110,6 +113,16 @@ public class ServerClient {
 		return mLastAccessTime;
 	}
 
+	public boolean serverExist() throws ClientShutdownException {
+		try {
+			connect();
+			cleanConnect();
+		} catch (NoServerConnectionException e) {
+			return false;
+		}
+		return true;
+	}
+
 	/**
 	 * register a worker from server
 	 * 
@@ -122,6 +135,41 @@ public class ServerClient {
 			try {
 				connect();
 				return mClient.worker_register(workerInfo);
+			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
+
+	/**
+	 * create a new tenant
+	 * 
+	 * @return the ID for the created new tenant
+	 * @throws ClientShutdownException
+	 */
+	public int tenant_createTenant() throws ClientShutdownException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				return mClient.tenant_createTenant();
+			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
+
+	public boolean tenant_createTable(int ID, TableInfo tableInfo)
+			throws ClientShutdownException, NoWorkerException, NoTenantException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				return mClient.tenant_createTable(ID, tableInfo);
+			} catch (NoWorkerException | NoTenantException e) {
+				throw e;
 			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;

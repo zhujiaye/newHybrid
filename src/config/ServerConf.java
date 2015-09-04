@@ -13,6 +13,7 @@ public class ServerConf {
 	public final int SERVER_QUEUE_SIZE_PER_SELECTOR;
 	public final int SERVER_SERVER_THREADS;
 	public final long SERVER_WORKER_CLIENT_CONNECT_TIMEOUT_S;
+	public final String SERVER_IMAGE_PATH;
 
 	public synchronized static ServerConf getConf() {
 		if (conf == null) {
@@ -40,6 +41,7 @@ public class ServerConf {
 				System.getProperty("newhybrid.thrift.server.threads", Constants.DEFAULT_THRIFT_SERVER_THREADS + ""));
 		SERVER_WORKER_CLIENT_CONNECT_TIMEOUT_S = Long.valueOf(System.getProperty(
 				"newhybrid.worker.client.connect.timeout.s", Constants.DEFAULT_WORKER_CLIENT_CONNECT_TIMEOUT_S + ""));
+		SERVER_IMAGE_PATH = System.getProperty("newhybrid.server.image.path", "image");
 	}
 
 	/**
@@ -54,5 +56,6 @@ public class ServerConf {
 		System.out.println("SERVER_QUEUE_SIZE_PER_SELECTOR:" + SERVER_QUEUE_SIZE_PER_SELECTOR);
 		System.out.println("SERVER_SERVER_THREADS:" + SERVER_SERVER_THREADS);
 		System.out.println("SERVER_WORKER_CLIENT_CONNECT_TIMEOUT_S:" + SERVER_WORKER_CLIENT_CONNECT_TIMEOUT_S);
+		System.out.println("SERVER_IMAGE_PATH:" + SERVER_IMAGE_PATH);
 	}
 }

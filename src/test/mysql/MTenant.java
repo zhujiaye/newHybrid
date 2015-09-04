@@ -4,7 +4,7 @@ import java.util.Random;
 
 import utillity.MysqlConnectionPool;
 import utillity.VoltdbConnectionPool;
-import client.HTenantClient;
+import client.TenantClient;
 import dbInfo.HResult;
 import dbInfo.HSQLTimeOutException;
 
@@ -58,13 +58,13 @@ public class MTenant extends Thread {
 	}
 
 	public void init() {
-		htc = new HTenantClient(id);
+		htc = new TenantClient(id);
 		htc.login();
 		htc.start();
 	}
 
 	public void init_pool() {
-		htc = new HTenantClient(id);
+		htc = new TenantClient(id);
 		htc.login();
 		htc.start();
 	}
@@ -75,7 +75,7 @@ public class MTenant extends Thread {
 		htc.shutdown();
 	}
 
-	public HTenantClient htc;
+	public TenantClient htc;
 
 	public void run() {
 

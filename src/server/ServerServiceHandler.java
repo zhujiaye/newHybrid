@@ -4,8 +4,11 @@ import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 
 import config.Constants;
+import thrift.NoTenantException;
+import thrift.NoWorkerException;
 import thrift.ServerService;
 import thrift.ServerWorkerInfo;
+import thrift.TableInfo;
 import thrift.TenantResult;
 
 public class ServerServiceHandler implements ServerService.Iface {
@@ -18,8 +21,23 @@ public class ServerServiceHandler implements ServerService.Iface {
 
 	@Override
 	public boolean worker_register(ServerWorkerInfo workerInfo) throws TException {
-		// TODO Auto-generated method stub
-		return false;
+		return mServerInfo.registerWorker(workerInfo);
+	}
+
+	@Override
+	public int tenant_createTenant() throws TException {
+		int ID = mServerInfo.createTenant();
+		mServerInfo.writeToImage();
+		return ID;
+	}
+
+	@Override
+	public boolean tenant_createTable(int ID, TableInfo tableInfo)
+			throws NoWorkerException, NoTenantException, TException {
+		boolean success = mServerInfo.createTableForTenant(ID, tableInfo);
+		if (success)
+			mServerInfo.writeToImage();
+		return success;
 	}
 
 }

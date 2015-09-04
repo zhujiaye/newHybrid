@@ -9,3 +9,4 @@ MTest.txt
 *.log
 /logs/*
 /workloads/*.txt
+/journal/*

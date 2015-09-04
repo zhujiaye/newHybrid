@@ -12,7 +12,7 @@ import server.ServerClient;
 
 import org.apache.log4j.Logger;
 
-import client.HTenantClient;
+import client.TenantClient;
 import config.Constants;
 import dbInfo.HResult;
 import thrift.SplitResult;
@@ -63,7 +63,7 @@ public class TestMain {
 			boolean[] good = new boolean[end - start + 1];
 			for (int i = start; i <= end; i++) {
 				if (workloadLoader.getWorkloadForTenant(i) != null) {
-					HTenantClient htc = new HTenantClient(i);
+					TenantClient htc = new TenantClient(i);
 					htc.connect();
 					clientThreads[i - start] = new ClientThread(htc,
 							workloadLoader.getWorkloadForTenant(i).getWH());
@@ -236,7 +236,7 @@ class ClientWorkloadAdderHeartbeatExecutor implements HeartbeatExecutor {
 
 class ClientThread extends Thread {
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
-	final private HTenantClient HTC;
+	final private TenantClient HTC;
 	final private int mWH;
 
 	private int mTotSuccessQueries;
@@ -251,7 +251,7 @@ class ClientThread extends Thread {
 	private ArrayList<SplitResult> mSplitResults = null;
 	private ArrayList<SuccessQueryResult> mSuccessQueryResults = null;
 
-	public ClientThread(HTenantClient htc, int WH) {
+	public ClientThread(TenantClient htc, int WH) {
 		HTC = htc;
 		mWH = WH;
 		mTotSuccessQueries = 0;

@@ -36,16 +36,16 @@ public class HServer {
 
 	private volatile boolean mIsStarted = false;
 
-	public HServer(String address, int port, int selector_threads, int queue_size_per_selector, int server_threads) {
+	public HServer(String address, int port, int selector_threads, int queue_size_per_selector, int server_threads,
+			boolean use_memmonitor, boolean model_deterministic, String imagePath) {
 		ADDRESS = address;
 		PORT = port;
 		SELECTOR_THREADS = selector_threads;
 		QUEUE_SIZE_PER_SELECTOR = queue_size_per_selector;
 		SERVER_THREADS = server_threads;
-		ServerConf conf = ServerConf.getConf();
-		USE_MEMMONITOR = conf.SERVER_USE_MEMMONITOR;
-		MODEL_DETERMINISTIC = conf.MODEL_DETERMINISTIC;
-		mServerInfo = new ServerInfo(ADDRESS, PORT);
+		USE_MEMMONITOR = use_memmonitor;
+		MODEL_DETERMINISTIC = model_deterministic;
+		mServerInfo = new ServerInfo(ADDRESS, PORT, imagePath);
 	}
 
 	public void start() throws TTransportException {
@@ -111,7 +111,8 @@ public class HServer {
 	public static void main(String[] args) throws TTransportException {
 		ServerConf conf = ServerConf.getConf();
 		HServer server = new HServer(conf.SERVER_ADDRESS, conf.SERVER_PORT, conf.SERVER_SELECTOR_THREADS,
-				conf.SERVER_QUEUE_SIZE_PER_SELECTOR, conf.SERVER_SERVER_THREADS);
+				conf.SERVER_QUEUE_SIZE_PER_SELECTOR, conf.SERVER_SERVER_THREADS, conf.SERVER_USE_MEMMONITOR,
+				conf.MODEL_DETERMINISTIC, conf.SERVER_IMAGE_PATH);
 		server.start();
 	}
 }

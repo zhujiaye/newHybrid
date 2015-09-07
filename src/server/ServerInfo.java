@@ -175,16 +175,18 @@ public class ServerInfo {
 
 	public void init() {
 		try {
-			ObjectInputStream ois = new ObjectInputStream(new FileInputStream(IMAGE_PATH));
-			int tenantsNumber = ois.readInt();
-			for (int i = 0; i < tenantsNumber; i++) {
-				TenantInfo tenantInfo = (TenantInfo) ois.readObject();
-				ArrayList<TableInfo> tablesInfo = (ArrayList<TableInfo>) ois.readObject();
-				DbmsInfo dbmsInfo = (DbmsInfo) ois.readObject();
-				ServerTenant tenant = new ServerTenant(tenantInfo, tablesInfo, dbmsInfo);
-				mTenants.put(tenantInfo.mId, tenant);
+			synchronized (mTenants) {
+				ObjectInputStream ois = new ObjectInputStream(new FileInputStream(IMAGE_PATH));
+				int tenantsNumber = ois.readInt();
+				for (int i = 0; i < tenantsNumber; i++) {
+					TenantInfo tenantInfo = (TenantInfo) ois.readObject();
+					ArrayList<TableInfo> tablesInfo = (ArrayList<TableInfo>) ois.readObject();
+					DbmsInfo dbmsInfo = (DbmsInfo) ois.readObject();
+					ServerTenant tenant = new ServerTenant(tenantInfo, tablesInfo, dbmsInfo);
+					mTenants.put(tenantInfo.mId, tenant);
+				}
+				ois.close();
 			}
-			ois.close();
 		} catch (FileNotFoundException e) {
 			LOG.warn("image file can not be opened for reading:" + e.getMessage());
 		} catch (IOException e) {
@@ -200,14 +202,16 @@ public class ServerInfo {
 			File parentFile = file.getParentFile();
 			parentFile.mkdirs();
 			ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file));
-			oos.writeInt(mTenants.size());
-			for (ServerTenant tenant : mTenants.values()) {
-				oos.writeObject(tenant.generateTenantInfo());
-				oos.writeObject(tenant.generateTablesInfo());
-				oos.writeObject(tenant.getDbmsInfo());
+			synchronized (mTenants) {
+				oos.writeInt(mTenants.size());
+				for (ServerTenant tenant : mTenants.values()) {
+					oos.writeObject(tenant.generateTenantInfo());
+					oos.writeObject(tenant.generateTablesInfo());
+					oos.writeObject(tenant.getDbmsInfo());
+				}
+				oos.flush();
+				oos.close();
 			}
-			oos.flush();
-			oos.close();
 		} catch (FileNotFoundException e) {
 			LOG.error("image file can not be opened for writing:" + e.getMessage());
 		} catch (IOException e) {

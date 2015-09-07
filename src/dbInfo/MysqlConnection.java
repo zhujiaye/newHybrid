@@ -8,6 +8,7 @@ import java.sql.SQLTimeoutException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 
@@ -90,7 +91,7 @@ public class MysqlConnection extends HConnection {
 			ResultSet tables = mMysqlConnection.getMetaData().getTables(null, null, null, null);
 			while (tables.next()) {
 				String tableName = tables.getString("TABLE_NAME");
-				HResult result = doSql("drop table if exists " + tableName);
+				HResult result = _sql("drop table if exists " + tableName);
 				if (!result.isSuccess()) {
 					throw new HSQLException("failed to drop table " + tableName + ":" + result.getMessage());
 				}
@@ -100,10 +101,9 @@ public class MysqlConnection extends HConnection {
 		}
 	}
 
-	@Override
-	public HResult doSql(String sqlString) {
+	private HResult _sql(String sqlString) {
+		System.out.println(sqlString);
 		Statement stmt;
-		// System.out.println(sqlString);
 		try {
 			stmt = mMysqlConnection.createStatement();
 			if (stmt.execute(sqlString)) {
@@ -120,7 +120,7 @@ public class MysqlConnection extends HConnection {
 	@Override
 	public void dropTable(Table table) throws HSQLException {
 		String realTableName = getRealTableName(table);
-		HResult result = doSql("drop table if exists " + realTableName);
+		HResult result = _sql("drop table if exists " + realTableName);
 		if (!result.isSuccess())
 			throw new HSQLException("failed to drop table " + realTableName + ":" + result.getMessage());
 	}
@@ -146,7 +146,7 @@ public class MysqlConnection extends HConnection {
 			createString.append(definitions.get(i));
 		}
 		createString.append(")");
-		HResult result = doSql(createString.toString());
+		HResult result = _sql(createString.toString());
 		if (!result.isSuccess())
 			throw new HSQLException(result.getMessage());
 		return true;
@@ -179,16 +179,20 @@ public class MysqlConnection extends HConnection {
 		return table.getName() + "_" + table.getTenantID();
 	}
 
+	private String getRealTableName(String name, int tenantID) {
+		return name + "_" + tenantID;
+	}
+
 	@Override
 	public HResult doRandomSelect(Table table) {
 		String realTableName = getRealTableName(table);
-		return doSql("select * from " + realTableName + " where " + table.generateWhereClause(true));
+		return _sql("select * from " + realTableName + " where " + table.generateWhereClause(true));
 	}
 
 	@Override
 	public HResult doRandomUpdate(Table table) {
 		String realTableName = getRealTableName(table);
-		return doSql("update " + realTableName + " set " + table.generateSetClause() + " where "
+		return _sql("update " + realTableName + " set " + table.generateSetClause() + " where "
 				+ table.generateWhereClause(true));
 	}
 
@@ -196,12 +200,42 @@ public class MysqlConnection extends HConnection {
 	public HResult doRandomInsert(Table table) {
 		String realTableName = getRealTableName(table);
 		String valueString = Table.convertValues(table.generateOneRow());
-		return doSql("insert ignore into " + realTableName + " value " + valueString);
+		return _sql("insert ignore into " + realTableName + " value " + valueString);
 	}
 
 	@Override
 	public HResult doRandomDelete(Table table) {
 		String realTableName = getRealTableName(table);
-		return doSql("delete from " + realTableName + " where " + table.generateWhereClause(true));
+		return _sql("delete from " + realTableName + " where " + table.generateWhereClause(true));
+	}
+
+	@Override
+	public HResult executeSql(int tenantID, String sqlString) {
+		StringTokenizer tokenizer = new StringTokenizer(sqlString);
+		StringBuilder builder = new StringBuilder();
+		String current = null, pre = null;
+		QueryType type = null;
+		int cnt = 0;
+		for (; tokenizer.hasMoreTokens();) {
+			pre = current;
+			current = tokenizer.nextToken();
+			cnt++;
+			if (cnt == 1) {
+				type = QueryType.getByString(current);
+				if (type == QueryType.INSERT)
+					current = "insert ignore";
+			}
+			if (pre != null && pre.equals("from") && (type == QueryType.SELECT || type == QueryType.DELETE)) {
+				current = getRealTableName(current, tenantID);
+			}
+			if (pre != null && pre.equals("update") && cnt == 2 && type == QueryType.UPDATE) {
+				current = getRealTableName(current, tenantID);
+			}
+			if (pre != null && pre.equals("into") && cnt == 3 && type == QueryType.INSERT) {
+				current = getRealTableName(current, tenantID);
+			}
+			builder.append(current + " ");
+		}
+		return _sql(builder.toString());
 	}
 }

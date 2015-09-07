@@ -114,7 +114,7 @@ public abstract class HResult {
 		info4 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.31", null, null, 2000);
 		MysqlConnection hConnection = (MysqlConnection) MysqlConnection.getConnection(info1);
 		HResult result = null;
-		result = hConnection.doSql("show tables");
+		result = hConnection.executeSql(1, "select * from customer");
 		if (result != null) {
 			if (result.isSuccess()) {
 				if (result.getType().isRead()) {

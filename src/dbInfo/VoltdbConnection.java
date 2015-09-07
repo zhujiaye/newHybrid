@@ -63,6 +63,10 @@ public class VoltdbConnection extends HConnection {
 		return table.getName() + "_" + table.getTenantID();
 	}
 
+	private String getRealTableName(String name, int tenantID) {
+		return name + "_" + tenantID;
+	}
+
 	@Override
 	public boolean isUseful() {
 		if (mVoltdbConnection == null)
@@ -90,7 +94,7 @@ public class VoltdbConnection extends HConnection {
 		ArrayList<String> allNames = getAllTableNames();
 		for (int i = 0; i < allNames.size(); i++) {
 			String name = allNames.get(i);
-			HResult result = doSql("drop table " + name + " if exists cascade");
+			HResult result = _sql("drop table " + name + " if exists cascade");
 			if (!result.isSuccess())
 				throw new HSQLException("failed to drop table " + name + ":" + result.getMessage());
 		}
@@ -99,7 +103,7 @@ public class VoltdbConnection extends HConnection {
 	@Override
 	public void dropTable(Table table) throws HSQLException {
 		String realTableName = getRealTableName(table);
-		HResult result = doSql("drop table " + realTableName + " if exists cascade");
+		HResult result = _sql("drop table " + realTableName + " if exists cascade");
 		if (!result.isSuccess())
 			throw new HSQLException("failed to drop table " + realTableName + ":" + result.getMessage());
 	}
@@ -125,10 +129,10 @@ public class VoltdbConnection extends HConnection {
 			createString.append(definitions.get(i));
 		}
 		createString.append(")");
-		HResult result = doSql(createString.toString());
+		HResult result = _sql(createString.toString());
 		if (!result.isSuccess())
 			throw new HSQLException(result.getMessage());
-		result = doSql("partition table " + realTableName + " on column "
+		result = _sql("partition table " + realTableName + " on column "
 				+ table.getColumns().get(table.getPrimaryKeyPos().get(0)).mName);
 		if (!result.isSuccess())
 			throw new HSQLException("failed to partition table " + realTableName + ":" + result.getMessage());
@@ -158,13 +162,13 @@ public class VoltdbConnection extends HConnection {
 	@Override
 	public HResult doRandomSelect(Table table) {
 		String realTableName = getRealTableName(table);
-		return doSql("select * from " + realTableName + " where " + table.generateWhereClause(true));
+		return _sql("select * from " + realTableName + " where " + table.generateWhereClause(true));
 	}
 
 	@Override
 	public HResult doRandomUpdate(Table table) {
 		String realTableName = getRealTableName(table);
-		return doSql("update " + realTableName + " set " + table.generateSetClause() + " where "
+		return _sql("update " + realTableName + " set " + table.generateSetClause() + " where "
 				+ table.generateWhereClause(true));
 	}
 
@@ -172,13 +176,13 @@ public class VoltdbConnection extends HConnection {
 	public HResult doRandomInsert(Table table) {
 		String realTableName = getRealTableName(table);
 		String valueString = Table.convertValues(table.generateOneRow());
-		return doSql("upsert into " + realTableName + " values " + valueString);
+		return _sql("upsert into " + realTableName + " values " + valueString);
 	}
 
 	@Override
 	public HResult doRandomDelete(Table table) {
 		String realTableName = getRealTableName(table);
-		return doSql("delete from " + realTableName + " where " + table.generateWhereClause(true));
+		return _sql("delete from " + realTableName + " where " + table.generateWhereClause(true));
 	}
 
 	@Override
@@ -188,9 +192,8 @@ public class VoltdbConnection extends HConnection {
 		return allNames.contains(realTableName.toLowerCase()) || allNames.contains(realTableName.toUpperCase());
 	}
 
-	@Override
-	public HResult doSql(String sqlString) {
-		//System.out.println(sqlString);
+	private HResult _sql(String sqlString) {
+		System.out.println(sqlString);
 		ClientResponse response = null;
 		try {
 			response = mVoltdbConnection.callProcedure("@AdHoc", sqlString);
@@ -201,7 +204,8 @@ public class VoltdbConnection extends HConnection {
 					return new VoltdbResult(QueryType.UNKNOWN, true, "success", -1);
 				} else {
 					VoltTable result = results[0];
-					if (result.advanceRow() && result.getColumnName(0).equals("modified_tuples")) {
+					if (result.getColumnName(0).equals("modified_tuples")) {
+						result.advanceRow();
 						return new VoltdbResult(QueryType.WRITE, true, "success", (int) result.getLong(0));
 					} else
 						return new VoltdbResult(QueryType.READ, true, "success", result);
@@ -212,6 +216,36 @@ public class VoltdbConnection extends HConnection {
 		} catch (IOException | ProcCallException e) {
 			return new VoltdbResult(QueryType.FAILED, false, e.getMessage(), -1);
 		}
+	}
+
+	@Override
+	public HResult executeSql(int tenantID, String sqlString) {
+		StringTokenizer tokenizer = new StringTokenizer(sqlString);
+		StringBuilder builder = new StringBuilder();
+		String current = null, pre = null;
+		QueryType type = null;
+		int cnt = 0;
+		for (; tokenizer.hasMoreTokens();) {
+			pre = current;
+			current = tokenizer.nextToken();
+			cnt++;
+			if (cnt == 1) {
+				type = QueryType.getByString(current);
+				if (type == QueryType.INSERT)
+					current = "upsert";
+			}
+			if (pre != null && pre.equals("from") && (type == QueryType.SELECT || type == QueryType.DELETE)) {
+				current = getRealTableName(current, tenantID);
+			}
+			if (pre != null && pre.equals("update") && cnt == 2 && type == QueryType.UPDATE) {
+				current = getRealTableName(current, tenantID);
+			}
+			if (pre != null && pre.equals("into") && cnt == 3 && type == QueryType.INSERT) {
+				current = getRealTableName(current, tenantID);
+			}
+			builder.append(current + " ");
+		}
+		return _sql(builder.toString());
 	}
 
 }

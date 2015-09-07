@@ -5,6 +5,18 @@ public enum QueryType {
 
 	private final int mValue;
 
+	static public QueryType getByString(String str){
+		if (str.equals("select"))
+			return SELECT;
+		if (str.equals("update"))
+			return UPDATE;
+		if (str.equals("insert"))
+			return INSERT;
+		if (str.equals("delete"))
+			return DELETE;
+		return UNKNOWN;
+	}
+
 	private QueryType(int value) {
 		mValue = value;
 	}

@@ -56,12 +56,15 @@ public abstract class HConnection {
 	public abstract void dropAll() throws HSQLException;
 
 	/**
-	 * do whatever the sqlString says,only return the first result
+	 * do whatever the sqlString says,the sqlString only support
+	 * select/insert/update/delete operations now
 	 * 
+	 * @param tenantID
+	 *            the ID of the tenant who issues this request
 	 * @param sqlString
 	 * @return
 	 */
-	public abstract HResult doSql(String sqlString);
+	public abstract HResult executeSql(int tenantID, String sqlString);
 
 	/**
 	 * drop a table if it exists
@@ -159,12 +162,19 @@ public abstract class HConnection {
 		primary_key_pos.add(0);
 		TableInfo tableInfo = new TableInfo("stock", columns, primary_key_pos);
 		Table table = new Table(1, tableInfo);
+		hConnection.createTable(table);
 		ArrayList<String> names = hConnection.getAllTableNames();
 		for (int j = 0; j < names.size(); j++)
 			System.out.println(names.get(j));
-		for (int cnt = 1; cnt <= 100; cnt++) {
+		for (int cnt = 1; cnt <= 1; cnt++) {
 			HResult result = null;
-			result = hConnection.doRandomInsert(table);
+			// result = hConnection.executeSql(1, "delete from stock where
+			// id=1");
+			// result = hConnection.executeSql(1, "update stock set
+			// value1=2,value2=5.5,value3='X X' where id=1");
+			// result = hConnection.executeSql(1, "insert into stock
+			// values(1,1,2.5,'T T')");
+			result = hConnection.executeSql(1, "select * from stock");
 			if (result != null) {
 				if (result.isSuccess()) {
 					if (result.getType().isRead()) {

@@ -67,6 +67,8 @@ exception NoTenantException{
 }
 service ServerService{
 	i32 tenant_createTenant();
+	bool tenant_login(1:i32 ID) throws (1:NoTenantException e);
+	bool tenant_logout(1:i32 ID) throws (1:NoTenantException e);
 	bool tenant_createTable(1:i32 ID, 2:TableInfo tableInfo) throws (1:NoWorkerException eA, 2:NoTenantException eB);
 	bool worker_register(1:ServerWorkerInfo workerInfo);
 }

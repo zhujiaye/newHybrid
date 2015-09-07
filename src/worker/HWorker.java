@@ -116,7 +116,7 @@ public class HWorker {
 			if (serverClient.worker_register(serverWorkerInfo)) {
 				LOG.info("register succeeded!");
 			} else {
-				LOG.error("faild to register this worker");
+				LOG.warn("faild to register this worker: worker already exists");
 				return;
 			}
 			serverClient.shutdown();

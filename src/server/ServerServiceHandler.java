@@ -40,4 +40,14 @@ public class ServerServiceHandler implements ServerService.Iface {
 		return success;
 	}
 
+	@Override
+	public boolean tenant_login(int ID) throws NoTenantException, TException {
+		return mServerInfo.loginForTenant(ID);
+	}
+
+	@Override
+	public boolean tenant_logout(int ID) throws NoTenantException, TException {
+		return mServerInfo.logoutForTenant(ID);
+	}
+
 }

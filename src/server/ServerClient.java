@@ -177,4 +177,33 @@ public class ServerClient {
 		}
 		throw new ClientShutdownException("server client is already shut down");
 	}
+
+	public boolean tenant_login(int ID) throws NoTenantException, ClientShutdownException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				return mClient.tenant_login(ID);
+			} catch (NoTenantException e) {
+				throw e;
+			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
+	public boolean tenant_logout(int ID) throws NoTenantException, ClientShutdownException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				return mClient.tenant_logout(ID);
+			} catch (NoTenantException e) {
+				throw e;
+			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
 }

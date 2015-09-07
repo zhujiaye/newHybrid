@@ -6,6 +6,7 @@ import config.ClientConf;
 import config.Constants;
 import newhybrid.ClientShutdownException;
 import server.ServerClient;
+import thrift.NoTenantException;
 
 /**
  * newhybrid client API
@@ -26,6 +27,11 @@ public class Newhybrid {
 		mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
 	}
 
+	/**
+	 * create a new tenant
+	 * 
+	 * @return <b>ID</b> of the new created tenant
+	 */
 	public int createTenant() {
 		try {
 			return mClient.tenant_createTenant();
@@ -36,6 +42,11 @@ public class Newhybrid {
 		}
 	}
 
+	/**
+	 * check wherther server is started or not
+	 * 
+	 * @return <b>true</b> if server is started, <b>false</b> otherwise
+	 */
 	public boolean serverExist() {
 		try {
 			return mClient.serverExist();
@@ -44,9 +55,5 @@ public class Newhybrid {
 			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
 			return serverExist();
 		}
-	}
-
-	public void shutdown() {
-		mClient.shutdown();
 	}
 }

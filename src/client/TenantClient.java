@@ -37,6 +37,22 @@ public class TenantClient {
 		mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
 	}
 
+	public int getID() {
+		return ID;
+	}
+
+	/**
+	 * create a table for this tenant
+	 * 
+	 * @param tableInfo
+	 *            the table information of the table which will be created
+	 * @return <b>true</b> if succeeded, <b>false</b> if the table already
+	 *         exists
+	 * @throws NoWorkerException
+	 *             if there is no worker where the table can be created
+	 * @throws NoTenantException
+	 *             if this tenant does not exist
+	 */
 	public boolean createTable(TableInfo tableInfo) throws NoWorkerException, NoTenantException {
 		try {
 			return mClient.tenant_createTable(ID, tableInfo);
@@ -44,6 +60,42 @@ public class TenantClient {
 			LOG.error(e.getMessage());
 			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
 			return createTable(tableInfo);
+		}
+	}
+
+	/**
+	 * log in this tenant
+	 * 
+	 * @return <b>true</b> if succeeded, <b>false</b> if the tenant is already
+	 *         logged in
+	 * @throws NoTenantException
+	 *             if this tenant does not exist
+	 */
+	public boolean login() throws NoTenantException {
+		try {
+			return mClient.tenant_login(ID);
+		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			return login();
+		}
+	}
+
+	/**
+	 * log out this tenant
+	 * 
+	 * @return <b>true</b> if succeeded, <b>false</b> if the tenant is already
+	 *         logged out
+	 * @throws NoTenantException
+	 *             if this tenant does not exist
+	 */
+	public boolean logout() throws NoTenantException {
+		try {
+			return mClient.tenant_logout(ID);
+		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			return logout();
 		}
 	}
 }

@@ -12,6 +12,7 @@ public class ServerTenant {
 
 	private ArrayList<Table> mTables;
 	private DbmsInfo mDbmsInfo;
+	private boolean mLoggedIn = false;
 
 	public ServerTenant(TenantInfo tenantInfo, ArrayList<TableInfo> tablesInfo, DbmsInfo dbmsInfo) {
 		ID = tenantInfo.mId;
@@ -51,5 +52,19 @@ public class ServerTenant {
 
 	public void setDbms(DbmsInfo dbmsInfo) {
 		mDbmsInfo = dbmsInfo;
+	}
+
+	public boolean login() {
+		if (mLoggedIn)
+			return false;
+		mLoggedIn = true;
+		return true;
+	}
+
+	public boolean logout() {
+		if (!mLoggedIn)
+			return false;
+		mLoggedIn = false;
+		return true;
 	}
 }

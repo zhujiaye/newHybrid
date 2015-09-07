@@ -122,7 +122,8 @@ public class ServerInfo {
 		}
 	}
 
-	public boolean createTableForTenant(int ID, TableInfo tableInfo) throws NoTenantException, NoWorkerException {
+	public boolean createTableForTenant(int ID, TableInfo tableInfo)
+			throws NoTenantException, NoWorkerException, NoHConnectionException, HSQLException {
 		ServerTenant tenant;
 		synchronized (mTenants) {
 			checkTenantExist(ID);
@@ -142,11 +143,9 @@ public class ServerInfo {
 				} else
 					return false;
 			} catch (NoHConnectionException e) {
-				LOG.error(e.getMessage());
-				return false;
+				throw e;
 			} catch (HSQLException e) {
-				LOG.error(e.getMessage());
-				return false;
+				throw e;
 			}
 		}
 	}
@@ -216,6 +215,67 @@ public class ServerInfo {
 			LOG.error("image file can not be opened for writing:" + e.getMessage());
 		} catch (IOException e) {
 			LOG.error(e.getMessage());
+		}
+	}
+
+	public ArrayList<TableInfo> getTablesForTenant(int ID) throws NoTenantException {
+		ServerTenant tenant;
+		synchronized (mTenants) {
+			checkTenantExist(ID);
+			tenant = mTenants.get(ID);
+		}
+		synchronized (tenant) {
+			return tenant.generateTablesInfo();
+		}
+	}
+
+	public TableInfo getTableForTenant(int ID, String tableName) throws NoTenantException {
+		ArrayList<TableInfo> tablesInfo = getTablesForTenant(ID);
+		for (int i = 0; i < tablesInfo.size(); i++) {
+			TableInfo current = tablesInfo.get(i);
+			if (current.mName.equals(tableName))
+				return current;
+		}
+		return null;
+	}
+
+	public void dropAllTablesForTenant(int ID)
+			throws NoTenantException, NoWorkerException, NoHConnectionException, HSQLException {
+		ServerTenant tenant;
+		synchronized (mTenants) {
+			checkTenantExist(ID);
+			tenant = mTenants.get(ID);
+		}
+		synchronized (tenant) {
+			checkTenantWorker(tenant);
+			ArrayList<TableInfo> tablesInfo = tenant.generateTablesInfo();
+			for (int i = 0; i < tablesInfo.size(); i++) {
+				dropTableForTenant(ID, tablesInfo.get(i));
+			}
+		}
+	}
+
+	public void dropTableForTenant(int ID, TableInfo tableInfo)
+			throws NoTenantException, NoWorkerException, NoHConnectionException, HSQLException {
+		ServerTenant tenant;
+		synchronized (mTenants) {
+			checkTenantExist(ID);
+			tenant = mTenants.get(ID);
+		}
+		synchronized (tenant) {
+			checkTenantWorker(tenant);
+			DbmsInfo dbmsInfo = tenant.getDbmsInfo();
+			try {
+				HConnectionPool pool = HConnectionPool.getPool();
+				HConnection hConnection = pool.getConnectionByDbmsInfo(dbmsInfo);
+				hConnection.dropTable(new Table(ID, tableInfo));
+				pool.putConnection(hConnection);
+				tenant.dropTable(tableInfo.mName);
+			} catch (NoHConnectionException e) {
+				throw e;
+			} catch (HSQLException e) {
+				throw e;
+			}
 		}
 	}
 

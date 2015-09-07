@@ -45,16 +45,13 @@ public class Command {
 			try {
 				if (tokenizer.hasMoreTokens()) {
 					command = tokenizer.nextToken();
-					if (command.startsWith("quit") || command.startsWith("exit")) {
+					if (command.equals("quit") || command.equals("exit")) {
 						return;
-					}
-					if (command.startsWith("help")) {
+					} else if (command.equals("help")) {
 						help();
-					}
-					if (command.startsWith("register")) {
+					} else if (command.equals("register")) {
 						System.out.println(CLIENT.createTenant());
-					}
-					if (command.startsWith("login")) {
+					} else if (command.equals("login")) {
 						int ID = Integer.parseInt(tokenizer.nextToken());
 						if (TCLIENT != null) {
 							System.out.println("already logged in as tenant with ID=" + TCLIENT.getID());
@@ -67,8 +64,7 @@ public class Command {
 								TCLIENT = null;
 							}
 						}
-					}
-					if (command.startsWith("logout")) {
+					} else if (command.equals("logout")) {
 						if (TCLIENT == null) {
 							System.out.println("no tenant logged in!");
 						} else {
@@ -80,8 +76,7 @@ public class Command {
 								TCLIENT = null;
 							}
 						}
-					}
-					if (command.startsWith("createTable")) {
+					} else if (command.equals("createTable")) {
 						if (TCLIENT == null) {
 							System.out.println("no tenant logged in!");
 						} else {
@@ -100,6 +95,62 @@ public class Command {
 								LOG.error(e.getMessage());
 							}
 						}
+					} else if (command.equals("showTables")) {
+						if (TCLIENT == null) {
+							System.out.println("no tenant logged in!");
+						} else {
+							try {
+								List<TableInfo> tables = TCLIENT.getTables();
+								for (int i = 0; i < tables.size(); i++) {
+									TableInfo current = tables.get(i);
+									System.out.println(current.mName);
+								}
+							} catch (NoTenantException e) {
+								LOG.error(e.getMessage());
+							}
+						}
+					} else if (command.equals("showTable")) {
+						if (TCLIENT == null) {
+							System.out.println("no tenant logged in!");
+						} else {
+							try {
+								String tableName = tokenizer.nextToken();
+								List<TableInfo> tables;
+								tables = TCLIENT.getTable(tableName);
+								for (int i = 0; i < tables.size(); i++) {
+									TableInfo current = tables.get(i);
+									System.out.println(current.mName);
+								}
+							} catch (NoTenantException e) {
+								LOG.error(e.getMessage());
+							}
+						}
+					} else if (command.equals("dropAllTables")) {
+						if (TCLIENT == null) {
+							System.out.println("no tenant logged in!");
+						} else {
+							try {
+								TCLIENT.dropAllTables();
+								System.out.println("success");
+							} catch (NoTenantException | NoWorkerException e) {
+								LOG.error(e.getMessage());
+							}
+						}
+					} else if (command.equals("dropTable")) {
+						if (TCLIENT == null) {
+							System.out.println("no tenant logged in!");
+						} else {
+							try {
+								String tableName = tokenizer.nextToken();
+								TCLIENT.dropTable(tableName);
+								System.out.println("success");
+							} catch (NoTenantException | NoWorkerException e) {
+								LOG.error(e.getMessage());
+							}
+						}
+					} else {
+						System.out.println("please input correct commands!");
+						help();
 					}
 				} else {
 					help();

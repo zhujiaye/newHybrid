@@ -1,9 +1,14 @@
 package server;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 
 import config.Constants;
+import dbInfo.HSQLException;
+import newhybrid.NoHConnectionException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
 import thrift.ServerService;
@@ -34,10 +39,16 @@ public class ServerServiceHandler implements ServerService.Iface {
 	@Override
 	public boolean tenant_createTable(int ID, TableInfo tableInfo)
 			throws NoWorkerException, NoTenantException, TException {
-		boolean success = mServerInfo.createTableForTenant(ID, tableInfo);
-		if (success)
-			mServerInfo.writeToImage();
-		return success;
+		try {
+			boolean success = mServerInfo.createTableForTenant(ID, tableInfo);
+			if (success)
+				mServerInfo.writeToImage();
+			return success;
+		} catch (HSQLException e) {
+			throw new TException(e);
+		} catch (NoHConnectionException e) {
+			throw new TException(e);
+		}
 	}
 
 	@Override
@@ -48,6 +59,44 @@ public class ServerServiceHandler implements ServerService.Iface {
 	@Override
 	public boolean tenant_logout(int ID) throws NoTenantException, TException {
 		return mServerInfo.logoutForTenant(ID);
+	}
+
+	@Override
+	public List<TableInfo> tenant_getTables(int ID) throws NoTenantException, TException {
+		return mServerInfo.getTablesForTenant(ID);
+	}
+
+	@Override
+	public List<TableInfo> tenant_getTable(int ID, String tableName) throws NoTenantException, TException {
+		List<TableInfo> result = new ArrayList();
+		TableInfo tableInfo = mServerInfo.getTableForTenant(ID, tableName);
+		if (tableInfo != null)
+			result.add(tableInfo);
+		return result;
+	}
+
+	@Override
+	public void tenant_dropAllTables(int ID) throws NoTenantException, NoWorkerException, TException {
+		try {
+			mServerInfo.dropAllTablesForTenant(ID);
+			mServerInfo.writeToImage();
+		} catch (NoHConnectionException | HSQLException e) {
+			throw new TException(e);
+		}
+	}
+
+	@Override
+	public void tenant_dropTable(int ID, String tableName) throws NoTenantException, NoWorkerException, TException {
+		TableInfo tableInfo = mServerInfo.getTableForTenant(ID, tableName);
+		if (tableInfo == null)
+			return;
+		try {
+			mServerInfo.dropTableForTenant(ID, tableInfo);
+			mServerInfo.writeToImage();
+		} catch (NoHConnectionException | HSQLException e) {
+			throw new TException(e);
+		}
+
 	}
 
 }

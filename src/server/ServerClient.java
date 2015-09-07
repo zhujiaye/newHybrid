@@ -3,6 +3,8 @@ package server;
 import newhybrid.ClientShutdownException;
 import newhybrid.NoServerConnectionException;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -192,12 +194,76 @@ public class ServerClient {
 		}
 		throw new ClientShutdownException("server client is already shut down");
 	}
+
 	public boolean tenant_logout(int ID) throws NoTenantException, ClientShutdownException {
 		while (!mIsShutdown) {
 			try {
 				connect();
 				return mClient.tenant_logout(ID);
 			} catch (NoTenantException e) {
+				throw e;
+			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
+
+	public List<TableInfo> tenant_getTables(int ID) throws NoTenantException, ClientShutdownException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				return mClient.tenant_getTables(ID);
+			} catch (NoTenantException e) {
+				throw e;
+			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
+
+	public List<TableInfo> tenant_getTable(int ID, String tableName) throws NoTenantException, ClientShutdownException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				return mClient.tenant_getTable(ID, tableName);
+			} catch (NoTenantException e) {
+				throw e;
+			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
+
+	public void tenant_dropAllTables(int ID) throws ClientShutdownException, NoTenantException, NoWorkerException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				mClient.tenant_dropAllTables(ID);
+				return;
+			} catch (NoTenantException | NoWorkerException e) {
+				throw e;
+			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
+
+	public void tenant_dropTable(int ID, String tableName)
+			throws ClientShutdownException, NoTenantException, NoWorkerException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				mClient.tenant_dropTable(ID, tableName);
+				return;
+			} catch (NoTenantException | NoWorkerException e) {
 				throw e;
 			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
 				LOG.error(e.getMessage());

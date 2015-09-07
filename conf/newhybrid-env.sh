@@ -33,7 +33,7 @@ export NEWHYBRID_JAVA_OPTS+="
 export NEWHYBRID_SERVER_JAVA_OPTS="
  ${NEWHYBRID_JAVA_OPTS}
  -Dnewhybrid.logname=SERVER_LOGGER
- -Dnewhybrid.server.image.path=${NEWHYBRID_JOURNALDIR}/image
+ -Dnewhybrid.server.image.path=/tmp/image
 "
 export NEWHYBRID_CLIENT_JAVA_OPTS="
  ${NEWHYBRID_JAVA_OPTS}

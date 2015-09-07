@@ -2,9 +2,9 @@
 USAGE="Usage: newhybrid-start.sh [-h] WHAT [port]
 where WHAT is one of:
 \tserver\t\t start a server
-\tmysql_worker\t\t start a mysql worker
-\tvoltdb_worker\t\t start a voltdb worker
-\tcommand_line\t\t start a CLI mode to interact with server 
+\tmysql-worker\t\t start a mysql worker
+\tvoltdb-worker\t\t start a voltdb worker
+\tcommand-line\t\t start a CLI mode to interact with server 
 
 if port does not defined,default port will be used
 
@@ -65,13 +65,13 @@ case "${WHAT}" in
     server)
         start_server $2
         ;;
-    mysql_worker)
+    mysql-worker)
         start_mysql_worker $2
         ;;
-    voltdb_worker)
+    voltdb-worker)
         start_voltdb_worker $2 
         ;;
-    command_line)
+    command-line)
         start_cli $2
         ;;
     *)

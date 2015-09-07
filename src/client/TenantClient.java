@@ -2,6 +2,7 @@ package client;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Random;
 
 import newhybrid.ClientShutdownException;
@@ -96,6 +97,46 @@ public class TenantClient {
 			LOG.error(e.getMessage());
 			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
 			return logout();
+		}
+	}
+
+	public List<TableInfo> getTables() throws NoTenantException {
+		try {
+			return mClient.tenant_getTables(ID);
+		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			return getTables();
+		}
+	}
+
+	public List<TableInfo> getTable(String tableName) throws NoTenantException {
+		try {
+			return mClient.tenant_getTable(ID, tableName);
+		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			return getTable(tableName);
+		}
+	}
+
+	public void dropAllTables() throws NoTenantException, NoWorkerException {
+		try {
+			mClient.tenant_dropAllTables(ID);
+		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			dropAllTables();
+		}
+	}
+
+	public void dropTable(String tableName) throws NoTenantException, NoWorkerException {
+		try {
+			mClient.tenant_dropTable(ID, tableName);
+		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			dropTable(tableName);
 		}
 	}
 }

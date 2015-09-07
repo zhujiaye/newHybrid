@@ -10,22 +10,31 @@ import thrift.TenantInfo;
 public class ServerTenant {
 	private final int ID;
 
-	private ArrayList<Table> mTables;
+	private ArrayList<TableInfo> mTables;
 	private DbmsInfo mDbmsInfo;
 	private boolean mLoggedIn = false;
 
 	public ServerTenant(TenantInfo tenantInfo, ArrayList<TableInfo> tablesInfo, DbmsInfo dbmsInfo) {
 		ID = tenantInfo.mId;
-		mTables = new ArrayList<>();
-		for (int i = 0; i < tablesInfo.size(); i++) {
-			TableInfo currentTableInfo = tablesInfo.get(i);
-			mTables.add(new Table(ID, currentTableInfo));
-		}
+		mTables = tablesInfo;
 		mDbmsInfo = dbmsInfo;
 	}
 
 	public void addTable(TableInfo tableInfo) {
-		mTables.add(new Table(ID, tableInfo));
+		mTables.add(tableInfo);
+	}
+
+	public void dropTable(String tableName) {
+		int drop_index = -1;
+		for (int i = 0; i < mTables.size(); i++) {
+			if (mTables.get(i).mName.equals(tableName)) {
+				drop_index = i;
+				break;
+			}
+		}
+		if (drop_index == -1)
+			return;
+		mTables.remove(drop_index);
 	}
 
 	public TenantInfo generateTenantInfo() {
@@ -33,13 +42,9 @@ public class ServerTenant {
 		return tenantInfo;
 	}
 
+	@SuppressWarnings("unchecked")
 	public ArrayList<TableInfo> generateTablesInfo() {
-		ArrayList<TableInfo> res = new ArrayList<>();
-		for (int i = 0; i < mTables.size(); i++) {
-			Table currentTable = mTables.get(i);
-			res.add(currentTable.generateTableInfo());
-		}
-		return res;
+		return (ArrayList<TableInfo>) mTables.clone();
 	}
 
 	public int getID() {

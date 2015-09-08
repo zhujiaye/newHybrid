@@ -73,18 +73,6 @@ public class HWorker {
 			return;
 		LOG.info("starting a " + (DBMSINFO.mType == DbmsType.MYSQL ? Constants.MYSQL_FLAG : Constants.VOLTDB_FLAG)
 				+ " worker@" + ADDRESS + ":" + PORT + "......");
-
-		if (DBMSINFO.mType == DbmsType.VOLTDB) {
-			LOG.info("cleaning voltdb contents......");
-			try {
-				HConnectionPool pool = HConnectionPool.getPool();
-				HConnection hConnection = pool.getConnectionByDbmsInfo(DBMSINFO);
-				hConnection.dropAll();
-				hConnection.release();
-			} catch (NoHConnectionException | HSQLException e) {
-				LOG.error(e.getMessage());
-			}
-		}
 		LOG.info("setting up server service......");
 		mWorkerServiceHandler = new WorkerServiceHandler(this);
 		WorkerService.Processor<WorkerServiceHandler> workerServiceProcessor = new WorkerService.Processor<WorkerServiceHandler>(

@@ -3,6 +3,8 @@ package server;
 import java.util.ArrayList;
 
 import dbInfo.Table;
+import thrift.DbInfo;
+import thrift.DbStatus;
 import thrift.DbmsInfo;
 import thrift.TableInfo;
 import thrift.TenantInfo;
@@ -12,12 +14,14 @@ public class ServerTenant {
 
 	private ArrayList<TableInfo> mTables;
 	private DbmsInfo mDbmsInfo;
+	private DbStatus mDbStatus;
 	private boolean mLoggedIn = false;
 
 	public ServerTenant(TenantInfo tenantInfo, ArrayList<TableInfo> tablesInfo, DbmsInfo dbmsInfo) {
 		ID = tenantInfo.mId;
 		mTables = tablesInfo;
 		mDbmsInfo = dbmsInfo;
+		mDbStatus = DbStatus.NORMAL;
 	}
 
 	public void addTable(TableInfo tableInfo) {
@@ -57,6 +61,11 @@ public class ServerTenant {
 
 	public void setDbms(DbmsInfo dbmsInfo) {
 		mDbmsInfo = dbmsInfo;
+	}
+
+	public DbInfo generateDbInfo() {
+		DbInfo res = new DbInfo(mDbStatus, mDbmsInfo);
+		return res;
 	}
 
 	public boolean login() {

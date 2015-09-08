@@ -1,8 +1,13 @@
 package dbInfo;
 
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.sql.Connection;
+import java.text.Format;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.log4j.varia.StringMatchFilter;
 
 import newhybrid.NoHConnectionException;
 import thrift.ColumnInfo;
@@ -12,6 +17,7 @@ import thrift.DbmsType;
 import thrift.TableInfo;
 import thrift.TenantInfo;
 import utillity.HConnectionPool;
+import utillity.StringFormater;
 
 /**
  * all DML(e.g select, update, insert, delete) operation results are instances
@@ -137,6 +143,32 @@ public abstract class HResult {
 				System.out.println("failed message:" + result.getMessage());
 			}
 			result.release();
+		}
+	}
+
+	public void print(PrintStream out) throws HSQLException {
+		if (TYPE.isRead()) {
+			ArrayList<String> columnNames = getColumnNames();
+			int columns = columnNames.size();
+			int maxLen = 5;
+			for (int i = 0; i < columns; i++) {
+				int currentLen = columnNames.get(i).length();
+				if (currentLen > maxLen)
+					maxLen = currentLen;
+			}
+			maxLen += 5;
+			for (int i = 0; i < columns; i++)
+				out.print(StringFormater.FormatStringToFixedLength(columnNames.get(i).toLowerCase(), maxLen, ' ', true));
+			out.println();
+			ArrayList<String> columnValues = null;
+			while (hasNext()) {
+				columnValues = getColumnValues();
+				for (int i = 0; i < columns; i++)
+					out.print(StringFormater.FormatStringToFixedLength(columnValues.get(i).toLowerCase(), maxLen, ' ', true));
+				out.println();
+			}
+		} else {
+			out.println("updated count : " + getUpdateCount());
 		}
 	}
 }

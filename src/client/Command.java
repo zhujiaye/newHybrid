@@ -10,9 +10,13 @@ import org.apache.log4j.Logger;
 
 import config.ClientConf;
 import config.Constants;
+import dbInfo.HResult;
+import dbInfo.HSQLException;
 import dbInfo.Table;
 import thrift.ColumnInfo;
 import thrift.DType;
+import thrift.DbInfo;
+import thrift.DbmsException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
 import thrift.TableInfo;
@@ -40,8 +44,9 @@ public class Command {
 			if (TCLIENT != null)
 				System.out.format("tenant" + TCLIENT.getID() + "@");
 			System.out.format("newhybrid(%s:%d) > ", CONF.SERVER_ADDRESS, CONF.SERVER_PORT);
-			String command = in.nextLine();
-			StringTokenizer tokenizer = new StringTokenizer(command);
+			String str = in.nextLine();
+			String command;
+			StringTokenizer tokenizer = new StringTokenizer(str);
 			try {
 				if (tokenizer.hasMoreTokens()) {
 					command = tokenizer.nextToken();
@@ -145,6 +150,40 @@ public class Command {
 								TCLIENT.dropTable(tableName);
 								System.out.println("success");
 							} catch (NoTenantException | NoWorkerException e) {
+								LOG.error(e.getMessage());
+							}
+						}
+					} else if (command.equals("select") || command.equals("insert") || command.equals("update")
+							|| command.equals("delete")) {
+						if (TCLIENT == null) {
+							System.out.println("no tenant logged in!");
+						} else {
+							try {
+								HResult result = TCLIENT.executeSql(str);
+								if (result != null) {
+									if (result.isSuccess()) {
+										result.print(System.out);
+									} else {
+										System.out.println("unsuccess:" + result.getMessage());
+									}
+									result.release();
+								}
+							} catch (NoWorkerException | NoTenantException | DbmsException e) {
+								LOG.error(e.getMessage());
+							} catch (HSQLException e) {
+								LOG.error(e.getMessage());
+							}
+						}
+					} else if (command.equals("status")) {
+						if (TCLIENT == null) {
+							System.out.println("no tenant logged in");
+						} else {
+							System.out.println("Tenant ID:" + TCLIENT.getID());
+							try {
+								DbInfo dbInfo = TCLIENT.getDbInfo();
+								System.out.println("DB status:" + dbInfo.mDbStatus.name());
+								System.out.println("DBMS status:" + dbInfo.mDbmsInfo.mCompleteConnectionString);
+							} catch (NoWorkerException | NoTenantException e) {
 								LOG.error(e.getMessage());
 							}
 						}

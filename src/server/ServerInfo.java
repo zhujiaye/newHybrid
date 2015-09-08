@@ -20,6 +20,7 @@ import dbInfo.HConnection;
 import dbInfo.HSQLException;
 import dbInfo.Table;
 import newhybrid.NoHConnectionException;
+import thrift.DbInfo;
 import thrift.DbmsInfo;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
@@ -279,4 +280,15 @@ public class ServerInfo {
 		}
 	}
 
+	public DbInfo getDbInfoForTenant(int ID) throws NoTenantException, NoWorkerException{
+		ServerTenant tenant;
+		synchronized (mTenants) {
+			checkTenantExist(ID);
+			tenant=mTenants.get(ID);
+		}
+		synchronized (tenant) {
+			checkTenantWorker(tenant);
+			return tenant.generateDbInfo();
+		}
+	}
 }

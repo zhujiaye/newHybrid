@@ -6,16 +6,23 @@ import java.util.List;
 import java.util.Random;
 
 import newhybrid.ClientShutdownException;
+import newhybrid.NoHConnectionException;
 import newhybrid.NoServerConnectionException;
 import server.ServerClient;
+import thrift.DbInfo;
+import thrift.DbStatus;
+import thrift.DbmsException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
 import thrift.TableInfo;
+import utillity.HConnectionPool;
 
 import org.apache.log4j.Logger;
 import org.voltdb.client.Client;
 
 import config.Constants;
+import dbInfo.HConnection;
+import dbInfo.HResult;
 
 /**
  * this class stands for a tenant,all operations that a tenant will issue can be
@@ -137,6 +144,44 @@ public class TenantClient {
 			LOG.error(e.getMessage());
 			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
 			dropTable(tableName);
+		}
+	}
+
+	public DbInfo getDbInfo() throws NoWorkerException, NoTenantException {
+		try {
+			return mClient.tenant_getDbInfo(ID);
+		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			return getDbInfo();
+		}
+	}
+
+	/**
+	 * execute a sql command for this tenant,sql command only supports
+	 * select/insert/update/delete now
+	 * 
+	 * @param sqlString
+	 * @return
+	 * @throws NoWorkerException
+	 * @throws NoTenantException
+	 * @throws DbmsException
+	 */
+	public HResult executeSql(String sqlString) throws NoWorkerException, NoTenantException, DbmsException {
+		DbInfo dbInfo = getDbInfo();
+		if (dbInfo.mDbStatus == DbStatus.NORMAL) {
+			try {
+				HConnectionPool pool = HConnectionPool.getPool();
+				HConnection hConnection;
+				hConnection = pool.getConnectionByDbmsInfo(dbInfo.mDbmsInfo);
+				HResult result = hConnection.executeSql(ID, sqlString);
+				pool.putConnection(hConnection);
+				return result;
+			} catch (NoHConnectionException e) {
+				throw new DbmsException(e.getMessage());
+			}
+		} else {
+			return null;
 		}
 	}
 }

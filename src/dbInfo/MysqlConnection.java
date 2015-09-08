@@ -102,7 +102,7 @@ public class MysqlConnection extends HConnection {
 	}
 
 	private HResult _sql(String sqlString) {
-		System.out.println(sqlString);
+		//System.out.println(sqlString);
 		Statement stmt;
 		try {
 			stmt = mMysqlConnection.createStatement();
@@ -200,7 +200,7 @@ public class MysqlConnection extends HConnection {
 	public HResult doRandomInsert(Table table) {
 		String realTableName = getRealTableName(table);
 		String valueString = Table.convertValues(table.generateOneRow());
-		return _sql("insert ignore into " + realTableName + " value " + valueString);
+		return _sql("replace into " + realTableName + " value " + valueString);
 	}
 
 	@Override
@@ -223,7 +223,7 @@ public class MysqlConnection extends HConnection {
 			if (cnt == 1) {
 				type = QueryType.getByString(current);
 				if (type == QueryType.INSERT)
-					current = "insert ignore";
+					current = "replace";
 			}
 			if (pre != null && pre.equals("from") && (type == QueryType.SELECT || type == QueryType.DELETE)) {
 				current = getRealTableName(current, tenantID);

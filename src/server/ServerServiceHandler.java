@@ -9,6 +9,8 @@ import org.apache.thrift.TException;
 import config.Constants;
 import dbInfo.HSQLException;
 import newhybrid.NoHConnectionException;
+import thrift.DbInfo;
+import thrift.DbmsException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
 import thrift.ServerService;
@@ -38,16 +40,14 @@ public class ServerServiceHandler implements ServerService.Iface {
 
 	@Override
 	public boolean tenant_createTable(int ID, TableInfo tableInfo)
-			throws NoWorkerException, NoTenantException, TException {
+			throws NoWorkerException, NoTenantException, DbmsException, TException {
 		try {
 			boolean success = mServerInfo.createTableForTenant(ID, tableInfo);
 			if (success)
 				mServerInfo.writeToImage();
 			return success;
-		} catch (HSQLException e) {
-			throw new TException(e);
-		} catch (NoHConnectionException e) {
-			throw new TException(e);
+		} catch (HSQLException | NoHConnectionException e) {
+			throw new DbmsException(e.getMessage());
 		}
 	}
 
@@ -68,7 +68,7 @@ public class ServerServiceHandler implements ServerService.Iface {
 
 	@Override
 	public List<TableInfo> tenant_getTable(int ID, String tableName) throws NoTenantException, TException {
-		List<TableInfo> result = new ArrayList();
+		List<TableInfo> result = new ArrayList<>();
 		TableInfo tableInfo = mServerInfo.getTableForTenant(ID, tableName);
 		if (tableInfo != null)
 			result.add(tableInfo);
@@ -81,7 +81,7 @@ public class ServerServiceHandler implements ServerService.Iface {
 			mServerInfo.dropAllTablesForTenant(ID);
 			mServerInfo.writeToImage();
 		} catch (NoHConnectionException | HSQLException e) {
-			throw new TException(e);
+			throw new DbmsException(e.getMessage());
 		}
 	}
 
@@ -94,9 +94,14 @@ public class ServerServiceHandler implements ServerService.Iface {
 			mServerInfo.dropTableForTenant(ID, tableInfo);
 			mServerInfo.writeToImage();
 		} catch (NoHConnectionException | HSQLException e) {
-			throw new TException(e);
+			throw new DbmsException(e.getMessage());
 		}
 
+	}
+
+	@Override
+	public DbInfo tenant_getDbInfo(int ID) throws NoTenantException, NoWorkerException, TException {
+		return mServerInfo.getDbInfoForTenant(ID);
 	}
 
 }

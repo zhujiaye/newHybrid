@@ -193,7 +193,7 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	private HResult _sql(String sqlString) {
-		System.out.println(sqlString);
+		//System.out.println(sqlString);
 		ClientResponse response = null;
 		try {
 			response = mVoltdbConnection.callProcedure("@AdHoc", sqlString);

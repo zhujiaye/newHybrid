@@ -47,6 +47,11 @@ enum DbmsType{
 	MYSQL=0,
 	VOLTDB=1,
 }
+enum DbStatus{
+	NORMAL=0,
+	BLOCKED=1,
+	MIGRATING=2,
+}
 struct DbmsInfo{
 	1: DbmsType mType;
 	2: string mCompleteConnectionString;
@@ -58,6 +63,13 @@ struct ServerWorkerInfo{
 	1: string mAddress;
 	2: i32 mPort;
 	3: DbmsInfo mDbmsInfo;
+}
+struct DbInfo{
+	1:DbStatus mDbStatus;
+	2:DbmsInfo mDbmsInfo;
+}
+exception DbmsException{
+	1:string message;
 }
 exception NoWorkerException{
 	1:string message;
@@ -74,6 +86,7 @@ service ServerService{
 	list<TableInfo> tenant_getTable(1:i32 ID, 2:string tableName) throws (1:NoTenantException e);
 	void tenant_dropAllTables(1:i32 ID) throws (1:NoTenantException eA, 2:NoWorkerException eB);
 	void tenant_dropTable(1:i32 ID, 2:string tableName) throws (1:NoTenantException eA, 2:NoWorkerException eB);
+	DbInfo tenant_getDbInfo(1:i32 ID) throws (1:NoTenantException eA, 2:NoWorkerException eB);
 	bool worker_register(1:ServerWorkerInfo workerInfo);
 }
 service WorkerService{

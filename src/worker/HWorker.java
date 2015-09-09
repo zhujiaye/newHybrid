@@ -3,9 +3,13 @@ package worker;
 import java.net.InetSocketAddress;
 
 import org.apache.log4j.Logger;
+import org.apache.thrift.server.THsHaServer;
+import org.apache.thrift.server.TNonblockingServer;
 import org.apache.thrift.server.TServer;
+import org.apache.thrift.server.TSimpleServer;
 import org.apache.thrift.server.TThreadedSelectorServer;
 import org.apache.thrift.transport.TNonblockingServerSocket;
+import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TTransportException;
 
 import config.Constants;
@@ -34,6 +38,7 @@ public class HWorker {
 	private final int SERVER_THREADS;
 	private final DbmsInfo DBMSINFO;
 
+	private WorkerInfo mWorkerInfo;
 	private WorkerServiceHandler mWorkerServiceHandler = null;
 	private TNonblockingServerSocket mWorkerTNonblockingServerSocket = null;
 	private TServer mWorkerServiceServer = null;
@@ -66,6 +71,7 @@ public class HWorker {
 		QUEUE_SIZE_PER_SELECTOR = queue_size_per_selector;
 		SERVER_THREADS = server_threads;
 		DBMSINFO = dbmsInfo;
+		mWorkerInfo = new WorkerInfo(address, port, dbmsInfo);
 	}
 
 	public void start() throws TTransportException {
@@ -74,7 +80,8 @@ public class HWorker {
 		LOG.info("starting a " + (DBMSINFO.mType == DbmsType.MYSQL ? Constants.MYSQL_FLAG : Constants.VOLTDB_FLAG)
 				+ " worker@" + ADDRESS + ":" + PORT + "......");
 		LOG.info("setting up server service......");
-		mWorkerServiceHandler = new WorkerServiceHandler(this);
+		mWorkerInfo.init();
+		mWorkerServiceHandler = new WorkerServiceHandler(mWorkerInfo);
 		WorkerService.Processor<WorkerServiceHandler> workerServiceProcessor = new WorkerService.Processor<WorkerServiceHandler>(
 				mWorkerServiceHandler);
 		mWorkerTNonblockingServerSocket = new TNonblockingServerSocket(new InetSocketAddress(ADDRESS, PORT));
@@ -113,5 +120,4 @@ public class HWorker {
 			return;
 		}
 	}
-
 }

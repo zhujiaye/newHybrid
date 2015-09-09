@@ -90,5 +90,6 @@ service ServerService{
 	bool worker_register(1:ServerWorkerInfo workerInfo);
 }
 service WorkerService{
-	
+	void async_tenant_copyDB(1:i32 ID); // async call
+	void async_tenant_moveDB(1:i32 ID, 2:DbmsInfo dbmsInfo); // async call
 }

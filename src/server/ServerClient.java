@@ -85,7 +85,7 @@ public class ServerClient {
 				// mConf.getServerClientTimeout() / 2);
 				// mHeartbeatThread.start();
 			} catch (TTransportException e) {
-				LOG.debug("Failed to connect (" + tries + ") to server:" + e.getMessage());
+				LOG.error("Failed to connect (" + tries + ") to server:" + e.getMessage());
 				// if (mHeartbeatThread != null) {
 				// mHeartbeatThread.shutdown();
 				// }

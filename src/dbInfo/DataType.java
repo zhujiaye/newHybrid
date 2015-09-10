@@ -2,7 +2,7 @@ package dbInfo;
 
 import java.util.Random;
 
-import utillity.ValueGenerator;
+import utility.ValueGenerator;
 
 /**
  * this class must be the same as the DType class in package thrift,except this

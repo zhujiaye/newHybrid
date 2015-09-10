@@ -15,13 +15,13 @@ import thrift.DbmsException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
 import thrift.TableInfo;
-import utillity.HConnectionPool;
 
 import org.apache.log4j.Logger;
 import org.voltdb.client.Client;
 
 import config.Constants;
 import dbInfo.HConnection;
+import dbInfo.HConnectionPool;
 import dbInfo.HResult;
 
 /**

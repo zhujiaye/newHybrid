@@ -16,8 +16,7 @@ import thrift.DbmsInfo;
 import thrift.DbmsType;
 import thrift.TableInfo;
 import thrift.TenantInfo;
-import utillity.HConnectionPool;
-import utillity.StringFormater;
+import utility.Utils;
 
 /**
  * all DML(e.g select, update, insert, delete) operation results are instances
@@ -158,13 +157,13 @@ public abstract class HResult {
 			}
 			maxLen += 5;
 			for (int i = 0; i < columns; i++)
-				out.print(StringFormater.FormatStringToFixedLength(columnNames.get(i).toLowerCase(), maxLen, ' ', true));
+				out.print(Utils.FormatStringToFixedLength(columnNames.get(i).toLowerCase(), maxLen, ' ', true));
 			out.println();
 			ArrayList<String> columnValues = null;
 			while (hasNext()) {
 				columnValues = getColumnValues();
 				for (int i = 0; i < columns; i++)
-					out.print(StringFormater.FormatStringToFixedLength(columnValues.get(i).toLowerCase(), maxLen, ' ', true));
+					out.print(Utils.FormatStringToFixedLength(columnValues.get(i).toLowerCase(), maxLen, ' ', true));
 				out.println();
 			}
 		} else {

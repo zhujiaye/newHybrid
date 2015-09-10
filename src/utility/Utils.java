@@ -1,6 +1,8 @@
-package utillity;
+package utility;
 
-public class StringFormater {
+import java.nio.ByteBuffer;
+
+public class Utils {
 	/**
 	 * format a string to fixed length, if old string's length is less than
 	 * <b>length</b> then remain space will fill with char <b>c</b>, also you
@@ -29,6 +31,20 @@ public class StringFormater {
 		if (alignRight)
 			builder.append(old);
 		return builder.toString();
+	}
+
+	/**
+	 * generate corrent bytebuffer from thrift results
+	 * 
+	 * @param data
+	 *            the thrift bytebuffer result
+	 * @return the correct byte buffer
+	 */
+	static public ByteBuffer generateNewByteBufferFromThriftRPCResults(ByteBuffer data) {
+		ByteBuffer correctData = ByteBuffer.allocate(data.limit() - data.position());
+		correctData.put(data);
+		correctData.flip();
+		return correctData;
 	}
 
 	static public void main(String[] args) {

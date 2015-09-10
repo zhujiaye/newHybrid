@@ -1,14 +1,10 @@
-package utillity;
+package dbInfo;
 
 import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 
 import config.Constants;
-import dbInfo.HConnection;
-import dbInfo.HSQLException;
-import dbInfo.MysqlConnection;
-import dbInfo.VoltdbConnection;
 import newhybrid.NoHConnectionException;
 import thrift.DbmsInfo;
 import thrift.DbmsType;

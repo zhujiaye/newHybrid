@@ -1,4 +1,4 @@
-package utillity;
+package utility;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;

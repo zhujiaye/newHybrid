@@ -1,4 +1,4 @@
-package utillity;
+package utility;
 
 public class PossionDistribution {
 	final public static int NUMBER_OF_ITERATIONS = 1;

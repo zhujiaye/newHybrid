@@ -8,7 +8,7 @@ import server.ServerClient;
 import org.apache.log4j.Logger;
 
 import thrift.TenantResult;
-import utillity.WorkloadLoader;
+import utility.WorkloadLoader;
 import client.TenantClient;
 import config.Constants;
 

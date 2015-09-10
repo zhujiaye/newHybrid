@@ -2,11 +2,11 @@ package test.mysql;
 
 import java.util.Random;
 
-import utillity.MysqlConnectionPool;
-import utillity.VoltdbConnectionPool;
 import client.TenantClient;
 import dbInfo.HResult;
 import dbInfo.HSQLTimeOutException;
+import utility.MysqlConnectionPool;
+import utility.VoltdbConnectionPool;
 
 public class MTenant extends Thread {
 	public static MysqlConnectionPool mPool;

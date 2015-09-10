@@ -3,7 +3,7 @@ package config;
 import org.apache.log4j.Logger;
 
 import thrift.DbmsType;
-import utillity.NetWorkUtils;
+import utility.NetWorkUtils;
 
 public class WorkerConf {
 	private static Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);

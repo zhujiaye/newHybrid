@@ -18,7 +18,7 @@ import dbInfo.HResult;
 import thrift.SplitResult;
 import thrift.SuccessQueryResult;
 import thrift.TenantResult;
-import utillity.WorkloadLoader;
+import utility.WorkloadLoader;
 
 public class TestMain {
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);

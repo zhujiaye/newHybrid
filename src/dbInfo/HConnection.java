@@ -10,7 +10,6 @@ import thrift.DbmsInfo;
 import thrift.DbmsType;
 import thrift.TableInfo;
 import thrift.TenantInfo;
-import utillity.HConnectionPool;
 
 /**
  * This class behaves like a DBMS and all database operations should be done by

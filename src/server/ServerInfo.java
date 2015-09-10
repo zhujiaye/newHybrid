@@ -17,6 +17,7 @@ import com.mysql.fabric.Server;
 
 import config.Constants;
 import dbInfo.HConnection;
+import dbInfo.HConnectionPool;
 import dbInfo.HSQLException;
 import dbInfo.Table;
 import newhybrid.NoHConnectionException;
@@ -27,7 +28,6 @@ import thrift.NoWorkerException;
 import thrift.ServerWorkerInfo;
 import thrift.TableInfo;
 import thrift.TenantInfo;
-import utillity.HConnectionPool;
 
 public class ServerInfo {
 	static private final Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);

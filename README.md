@@ -13,3 +13,7 @@
 >2.2 *PRIMARY KEY* is the only table constraint now
 
 >2.3 Every column in table must be *not null*
+
+>2.4 make sure the temp directory in every worker has *ALL* rwx rights for anyone
+
+>2.5 all names in the DDL must not contain whitespace

@@ -163,7 +163,7 @@ public abstract class HResult {
 			while (hasNext()) {
 				columnValues = getColumnValues();
 				for (int i = 0; i < columns; i++)
-					out.print(Utils.FormatStringToFixedLength(columnValues.get(i).toLowerCase(), maxLen, ' ', true));
+					out.print(Utils.FormatStringToFixedLength(columnValues.get(i), maxLen, ' ', true));
 				out.println();
 			}
 		} else {

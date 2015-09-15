@@ -6,9 +6,11 @@ import java.util.List;
 import newhybrid.NoHConnectionException;
 import thrift.ColumnInfo;
 import thrift.DType;
+import thrift.DbmsException;
 import thrift.DbmsInfo;
 import thrift.DbmsType;
 import thrift.TableInfo;
+import thrift.TempTableInfo;
 import thrift.TenantInfo;
 
 /**
@@ -119,6 +121,34 @@ public abstract class HConnection {
 
 	public abstract HResult doRandomDelete(Table table);
 
+	/**
+	 * export the tenant's table to a file in temporary path using CSV format
+	 * <b>locally</b>
+	 * 
+	 * @param tenantID
+	 *            ID of the tenant
+	 * @param tableInfo
+	 *            table information about the table which will be exported
+	 * @param tempPath
+	 *            temporary path where the table data will be placed
+	 * @throws DbmsException
+	 */
+	public abstract void exportTempTable(int tenantID, TableInfo tableInfo, String tempPath) throws DbmsException;
+
+	/**
+	 * import the tenant's table from a file in temporary path using CSV format
+	 * <b>locally</b>
+	 * 
+	 * @param tenantID
+	 *            ID of the tenant
+	 * @param tableInfo
+	 *            table information about the table which will be imported
+	 * @param tempPath
+	 *            temporary path where the table data placed
+	 * @throws DbmsException
+	 */
+	public abstract void importTempTable(int tenantID, TableInfo tableInfo, String tempPath) throws DbmsException;
+
 	public boolean match(DbmsInfo dbmsInfo) {
 		if (DBMSINFO == null || dbmsInfo == null)
 			return false;
@@ -143,15 +173,16 @@ public abstract class HConnection {
 	 * @param args
 	 * @throws NoHConnectionException
 	 * @throws HSQLException
+	 * @throws DbmsException
 	 */
-	public static void main(String[] args) throws NoHConnectionException, HSQLException {
+	public static void main(String[] args) throws NoHConnectionException, HSQLException, DbmsException {
 		DbmsInfo info1, info2, info3, info4;
 		HConnectionPool pool = HConnectionPool.getPool();
 		info1 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.30/newhybrid", "remote", "remote", 0);
 		info2 = new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.31/newhybrid", "remote", "remote", 0);
 		info3 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.30", null, null, 2000);
 		info4 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.31", null, null, 2000);
-		HConnection hConnection = pool.getConnectionByDbmsInfo(info3);
+		HConnection hConnection = pool.getConnectionByDbmsInfo(info1);
 		List<ColumnInfo> columns = new ArrayList<>();
 		List<Integer> primary_key_pos = new ArrayList<>();
 		columns.add(new ColumnInfo("id", DType.INT));
@@ -160,40 +191,16 @@ public abstract class HConnection {
 		columns.add(new ColumnInfo("value3", DType.VARCHAR));
 		primary_key_pos.add(0);
 		TableInfo tableInfo = new TableInfo("stock", columns, primary_key_pos);
-		Table table = new Table(1, tableInfo);
-		hConnection.createTable(table);
+		Table table = new Table(3, tableInfo);
+		// hConnection.createTable(table);
 		ArrayList<String> names = hConnection.getAllTableNames();
 		for (int j = 0; j < names.size(); j++)
 			System.out.println(names.get(j));
 		for (int cnt = 1; cnt <= 1; cnt++) {
 			HResult result = null;
-			// result = hConnection.executeSql(1, "delete from stock where
-			// id=1");
-			// result = hConnection.executeSql(1, "update stock set
-			// value1=2,value2=5.5,value3='X X' where id=1");
-			// result = hConnection.executeSql(1, "insert into stock
-			// values(1,1,2.5,'T T')");
-			result = hConnection.executeSql(1, "select * from stock");
-			if (result != null) {
-				if (result.isSuccess()) {
-					if (result.getType().isRead()) {
-						ArrayList<String> columnnames = result.getColumnNames();
-						for (int i = 0; i < columnnames.size(); i++)
-							System.out.print(columnnames.get(i) + " ");
-						System.out.println();
-						while (result.hasNext()) {
-							ArrayList<String> values = result.getColumnValues();
-							for (int i = 0; i < values.size(); i++)
-								System.out.print(values.get(i) + " ");
-							System.out.println();
-						}
-					} else {
-						System.out.println("write operation:updated count " + result.getUpdateCount());
-					}
-				} else {
-					System.out.println(result.getMessage());
-				}
-			}
+			// hConnection.exportTempTable(3, tableInfo,
+			// "/home/zhujiaye/tmpDBs/stock_3.csv");
+			hConnection.importTempTable(3, tableInfo, "/home/zhujiaye/tmpDBs/item_1.csv");
 		}
 	}
 }

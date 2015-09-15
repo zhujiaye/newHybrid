@@ -21,7 +21,7 @@ import dbInfo.HConnectionPool;
 import dbInfo.HSQLException;
 import dbInfo.Table;
 import newhybrid.NoHConnectionException;
-import thrift.DbInfo;
+import thrift.DbStatusInfo;
 import thrift.DbmsInfo;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
@@ -280,7 +280,7 @@ public class ServerInfo {
 		}
 	}
 
-	public DbInfo getDbInfoForTenant(int ID) throws NoTenantException, NoWorkerException{
+	public DbStatusInfo getDbStatusInfoForTenant(int ID) throws NoTenantException, NoWorkerException{
 		ServerTenant tenant;
 		synchronized (mTenants) {
 			checkTenantExist(ID);
@@ -288,7 +288,7 @@ public class ServerInfo {
 		}
 		synchronized (tenant) {
 			checkTenantWorker(tenant);
-			return tenant.generateDbInfo();
+			return tenant.generateDbStatusInfo();
 		}
 	}
 }

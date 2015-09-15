@@ -1,9 +1,15 @@
 package worker;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -20,14 +26,21 @@ import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 
+import client.TenantClient;
 import config.Constants;
 import newhybrid.ClientShutdownException;
 import newhybrid.NoServerConnectionException;
 import newhybrid.Pair;
+import thrift.DbmsInfo;
+import thrift.DbmsType;
+import thrift.NoTenantException;
 import thrift.ServerService;
+import thrift.ServerWorkerInfo;
+import thrift.TableInfo;
+import thrift.TempDbInfo;
+import thrift.TempTableInfo;
 import thrift.WorkerService;
 import thrift.WorkerService.AsyncClient;
-import thrift.WorkerService.AsyncClient.async_tenant_copyDB_call;
 
 public class WorkerClient {
 	static private final Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
@@ -55,13 +68,14 @@ public class WorkerClient {
 		if (mProtocol != null) {
 			mProtocol.getTransport().close();
 		}
-		if (!mAsyncClientStatus.isEmpty()) {
-			mAsyncClientStatus.clear();
-			for (TNonblockingTransport transport : mAsyncClientTransport.values()) {
-				transport.close();
-			}
-			mAsyncClientTransport.clear();
-		}
+		// if (!mAsyncClientStatus.isEmpty()) {
+		// mAsyncClientStatus.clear();
+		// for (TNonblockingTransport transport :
+		// mAsyncClientTransport.values()) {
+		// transport.close();
+		// }
+		// mAsyncClientTransport.clear();
+		// }
 	}
 
 	private synchronized void connect() throws ClientShutdownException, NoServerConnectionException {
@@ -112,28 +126,29 @@ public class WorkerClient {
 				return result;
 			}
 		}
-		System.out.println(mAsyncClientStatus.size() + " creating new ");
+		// System.out.println(mAsyncClientStatus.size() + " creating new ");
 		TNonblockingTransport asyncTransport = new TNonblockingSocket(WORKER_ADDRESS, WORKER_PORT);
 		WorkerService.AsyncClient asyncClient = new WorkerService.AsyncClient(new TBinaryProtocol.Factory(),
 				new TAsyncClientManager(), asyncTransport);
 		mAsyncClientStatus.put(asyncClient, true);
 		mAsyncClientTransport.put(asyncClient, asyncTransport);
-		System.out.println("create complete " + mAsyncClientStatus.size());
+		// System.out.println("create complete " + mAsyncClientStatus.size());
 		return asyncClient;
 	}
 
 	public synchronized void setAsyncClientUseful(WorkerService.AsyncClient asyncClient) {
 		mAsyncClientStatus.replace(asyncClient, false);
-		System.out.println("set async client useful:" + asyncClient.toString());
+		// System.out.println("set async client useful:" +
+		// asyncClient.toString());
 	}
 
-	public void async_tenant_copyDB(int ID,
-			AsyncMethodCallback<WorkerService.AsyncClient.async_tenant_copyDB_call> resultHandler)
+	public void async_tenant_exportTempDb(int ID, TempDbInfo tempDbInfo,
+			AsyncMethodCallback<WorkerService.AsyncClient.tenant_exportTempDb_call> resultHandler)
 					throws ClientShutdownException {
 		while (!mIsShutdown) {
 			try {
 				WorkerService.AsyncClient asyncClient = getUsefulAsyncClient();
-				asyncClient.async_tenant_copyDB(ID, resultHandler);
+				asyncClient.tenant_exportTempDb(ID, tempDbInfo, resultHandler);
 				return;
 			} catch (TException | IOException e) {
 				LOG.error(e.getMessage());
@@ -142,28 +157,42 @@ public class WorkerClient {
 		throw new ClientShutdownException("worker client is already shut down");
 	}
 
-	public static void main(String[] args) throws InterruptedException {
-
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				WorkerClient client = new WorkerClient("10.0.2.15", 54321);
-				for (int i = 1; i <= 20; i++) {
-					System.out.println("start " + i);
-					try {
-						client.async_tenant_copyDB(i, new CopyDBResultHandler(client, i));
-					} catch (ClientShutdownException e) {
-						LOG.error(e.getMessage());
-					}
-					try {
-						Thread.sleep(500);
-					} catch (InterruptedException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+	public void async_tenant_moveTempDb(int ID, TempDbInfo tempDbInfo, ServerWorkerInfo workerInfo,
+			AsyncMethodCallback<WorkerService.AsyncClient.tenant_moveTempDb_call> resultHandler)
+					throws ClientShutdownException {
+		while (!mIsShutdown) {
+			try {
+				WorkerService.AsyncClient asyncClient = getUsefulAsyncClient();
+				asyncClient.tenant_moveTempDb(ID, tempDbInfo, workerInfo, resultHandler);
+				return;
+			} catch (TException | IOException e) {
+				LOG.error(e.getMessage());
 			}
-		}).start();
-		Thread.sleep(100000);
+		}
+		throw new ClientShutdownException("worker client is already shut down");
+	}
+
+	public static void main(String[] args) throws InterruptedException, NoTenantException, ClientShutdownException {
+		WorkerClient wclient = new WorkerClient("192.168.0.30", 54322);
+		ServerWorkerInfo mysqlWorker = new ServerWorkerInfo("192.168.0.30", 54321,
+				new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.30/newhybrid", "remote", "remote", 2000));
+		ServerWorkerInfo voltdbWorker = new ServerWorkerInfo("192.168.0.30", 54322,
+				new DbmsInfo(DbmsType.VOLTDB, "192.168.0.30", "remote", "remote", 2000));
+		TenantClient tclient = new TenantClient(1, "192.168.0.35", 12345);
+		List<TableInfo> tablesInfo = tclient.getTables();
+		List<TempTableInfo> tempTablesInfo = new ArrayList<>();
+		for (int i = 0; i < tablesInfo.size(); i++) {
+			tempTablesInfo.add(new TempTableInfo(tablesInfo.get(i), "tenant1_" + tablesInfo.get(i).mName));
+		}
+		TempDbInfo tempDbInfo = new TempDbInfo(tempTablesInfo);
+		wclient.async_tenant_exportTempDb(1, tempDbInfo, new ExportTempDbResultHandler(wclient));
+		Thread.sleep(5000);
+		wclient.async_tenant_moveTempDb(1, tempDbInfo, voltdbWorker, new MoveTempDbResultHandler(wclient));
+		wclient.shutdown();
+		System.out.println("-------------");
+		Object obj = new Object();
+		synchronized (obj) {
+			obj.wait();
+		}
 	}
 }

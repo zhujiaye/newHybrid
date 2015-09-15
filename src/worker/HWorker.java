@@ -3,11 +3,13 @@ package worker;
 import java.net.InetSocketAddress;
 
 import org.apache.log4j.Logger;
+import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.server.THsHaServer;
 import org.apache.thrift.server.TNonblockingServer;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TSimpleServer;
 import org.apache.thrift.server.TThreadedSelectorServer;
+import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TNonblockingServerSocket;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TTransportException;
@@ -15,6 +17,7 @@ import org.apache.thrift.transport.TTransportException;
 import config.Constants;
 import config.WorkerConf;
 import dbInfo.HConnection;
+import dbInfo.HConnectionPool;
 import dbInfo.HSQLException;
 import newhybrid.ClientShutdownException;
 import newhybrid.NoHConnectionException;
@@ -25,7 +28,6 @@ import thrift.DbmsType;
 import thrift.ServerService;
 import thrift.ServerWorkerInfo;
 import thrift.WorkerService;
-import utillity.HConnectionPool;
 
 public class HWorker {
 	static private final Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
@@ -57,12 +59,12 @@ public class HWorker {
 
 		HWorker worker = new HWorker(conf.WORKER_ADDRESS, conf.WORKER_PORT, conf.WORKER_SELECTOR_THREADS,
 				conf.WORKER_QUEUE_SIZE_PER_SELECTOR, conf.WORKER_SERVER_THREADS, conf.SERVER_ADDRESS, conf.SERVER_PORT,
-				dbmsInfo);
+				dbmsInfo, conf.WORKER_TEMP_FOLDER);
 		worker.start();
 	}
 
 	public HWorker(String address, int port, int selector_threads, int queue_size_per_selector, int server_threads,
-			String server_address, int server_port, DbmsInfo dbmsInfo) {
+			String server_address, int server_port, DbmsInfo dbmsInfo, String tempFolder) {
 		SERVER_ADDRESS = server_address;
 		SERVER_PORT = server_port;
 		ADDRESS = address;
@@ -71,7 +73,7 @@ public class HWorker {
 		QUEUE_SIZE_PER_SELECTOR = queue_size_per_selector;
 		SERVER_THREADS = server_threads;
 		DBMSINFO = dbmsInfo;
-		mWorkerInfo = new WorkerInfo(address, port, dbmsInfo);
+		mWorkerInfo = new WorkerInfo(address, port, dbmsInfo, tempFolder);
 	}
 
 	public void start() throws TTransportException {
@@ -89,6 +91,9 @@ public class HWorker {
 				new TThreadedSelectorServer.Args(mWorkerTNonblockingServerSocket).processor(workerServiceProcessor)
 						.selectorThreads(SELECTOR_THREADS).acceptQueueSizePerThread(QUEUE_SIZE_PER_SELECTOR)
 						.workerThreads(SERVER_THREADS));
+//		mWorkerServiceServer = new TNonblockingServer(new TNonblockingServer.Args(mWorkerTNonblockingServerSocket)
+//				.processor(workerServiceProcessor).transportFactory(new TFramedTransport.Factory())
+//				.protocolFactory(new TBinaryProtocol.Factory()));
 		new Thread(new Runnable() {
 
 			@Override

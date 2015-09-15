@@ -1,7 +1,11 @@
 package client;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -9,8 +13,8 @@ import newhybrid.ClientShutdownException;
 import newhybrid.NoHConnectionException;
 import newhybrid.NoServerConnectionException;
 import server.ServerClient;
-import thrift.DbInfo;
 import thrift.DbStatus;
+import thrift.DbStatusInfo;
 import thrift.DbmsException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
@@ -23,6 +27,7 @@ import config.Constants;
 import dbInfo.HConnection;
 import dbInfo.HConnectionPool;
 import dbInfo.HResult;
+import dbInfo.HSQLException;
 
 /**
  * this class stands for a tenant,all operations that a tenant will issue can be
@@ -147,13 +152,13 @@ public class TenantClient {
 		}
 	}
 
-	public DbInfo getDbInfo() throws NoWorkerException, NoTenantException {
+	public DbStatusInfo getDbStatusInfo() throws NoWorkerException, NoTenantException {
 		try {
 			return mClient.tenant_getDbInfo(ID);
 		} catch (ClientShutdownException e) {
 			LOG.error(e.getMessage());
 			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
-			return getDbInfo();
+			return getDbStatusInfo();
 		}
 	}
 
@@ -168,7 +173,7 @@ public class TenantClient {
 	 * @throws DbmsException
 	 */
 	public HResult executeSql(String sqlString) throws NoWorkerException, NoTenantException, DbmsException {
-		DbInfo dbInfo = getDbInfo();
+		DbStatusInfo dbInfo = getDbStatusInfo();
 		if (dbInfo.mDbStatus == DbStatus.NORMAL) {
 			try {
 				HConnectionPool pool = HConnectionPool.getPool();
@@ -183,5 +188,26 @@ public class TenantClient {
 		} else {
 			return null;
 		}
+	}
+
+	static public void main(String[] args) throws NoWorkerException, NoTenantException, DbmsException, HSQLException,
+			IOException, InterruptedException {
+		TenantClient client = new TenantClient(1, "192.168.0.35", 12345);
+		HResult result = client.executeSql("select * from item");
+		if (result.isSuccess()) {
+			long t1, t2;
+			t1 = System.nanoTime();
+			FileOutputStream out = new FileOutputStream("/tmp/xx");
+			while (result.hasNext()) {
+				ArrayList<String> list = result.getColumnValues();
+				for (int i = 0; i < list.size(); i++)
+					out.write((list.get(i) + " ").getBytes());
+				out.write("\n".getBytes());
+			}
+			out.close();
+			t2 = System.nanoTime();
+			System.out.println((t2 - t1) / 1000000000.0);
+		} else
+			System.out.println(result.getMessage());
 	}
 }

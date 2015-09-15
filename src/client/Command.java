@@ -15,7 +15,7 @@ import dbInfo.HSQLException;
 import dbInfo.Table;
 import thrift.ColumnInfo;
 import thrift.DType;
-import thrift.DbInfo;
+import thrift.DbStatusInfo;
 import thrift.DbmsException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
@@ -180,7 +180,7 @@ public class Command {
 						} else {
 							System.out.println("Tenant ID:" + TCLIENT.getID());
 							try {
-								DbInfo dbInfo = TCLIENT.getDbInfo();
+								DbStatusInfo dbInfo = TCLIENT.getDbStatusInfo();
 								System.out.println("DB status:" + dbInfo.mDbStatus.name());
 								System.out.println("DBMS status:" + dbInfo.mDbmsInfo.mCompleteConnectionString);
 							} catch (NoWorkerException | NoTenantException e) {

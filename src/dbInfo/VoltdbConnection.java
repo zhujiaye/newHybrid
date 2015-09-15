@@ -1,21 +1,34 @@
 package dbInfo;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.LineNumberReader;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 import org.apache.log4j.Logger;
 import org.voltdb.VoltTable;
+import org.voltdb.VoltType;
 import org.voltdb.client.Client;
 import org.voltdb.client.ClientConfig;
 import org.voltdb.client.ClientFactory;
 import org.voltdb.client.ClientResponse;
 import org.voltdb.client.NoConnectionsException;
 import org.voltdb.client.ProcCallException;
+import org.voltdb.client.ProcedureCallback;
 
 import config.Constants;
 import newhybrid.NoHConnectionException;
+import thrift.DbmsException;
 import thrift.DbmsInfo;
+import thrift.TableInfo;
+import thrift.TempTableInfo;
 
 public class VoltdbConnection extends HConnection {
 	static private final Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
@@ -193,7 +206,7 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	private HResult _sql(String sqlString) {
-		//System.out.println(sqlString);
+		// System.out.println(sqlString);
 		ClientResponse response = null;
 		try {
 			response = mVoltdbConnection.callProcedure("@AdHoc", sqlString);
@@ -248,4 +261,121 @@ public class VoltdbConnection extends HConnection {
 		return _sql(builder.toString());
 	}
 
+	@Override
+	public void exportTempTable(int tenantID, TableInfo tableInfo, String tempPath) throws DbmsException {
+		String realTableName = getRealTableName(tableInfo.mName, tenantID);
+		HResult result = _sql("select * from " + realTableName);
+		if (result.isSuccess()) {
+			FileOutputStream out = null;
+			try {
+				File file = new File(tempPath);
+				if (!file.exists()) {
+					file.createNewFile();
+				}
+				out = new FileOutputStream(file);
+				while (result.hasNext()) {
+					ArrayList<String> list = result.getColumnValues();
+					for (int i = 0; i < list.size(); i++) {
+						if (i > 0)
+							out.write(",".getBytes());
+						out.write(("\"" + list.get(i) + "\"").getBytes());
+					}
+					out.write("\n".getBytes());
+				}
+			} catch (FileNotFoundException e) {
+				throw new DbmsException(e.getMessage());
+			} catch (IOException e) {
+				throw new DbmsException(e.getMessage());
+			} catch (HSQLException e) {
+				throw new DbmsException(e.getMessage());
+			} finally {
+				try {
+					if (out != null)
+						out.close();
+				} catch (IOException e) {
+					throw new DbmsException(e.getMessage());
+				}
+			}
+		} else
+			throw new DbmsException(result.getMessage());
+	}
+
+	@Override
+	public void importTempTable(int tenantID, TableInfo tableInfo, String tempPath) throws DbmsException {
+		String realTableName = getRealTableName(tableInfo.mName, tenantID);
+		InetSocketAddress host = mVoltdbConnection.getConnectedHostList().get(0);
+		Table table = new Table(tenantID, tableInfo);
+		try {
+			dropTable(table);
+			createTable(table);
+		} catch (HSQLException e) {
+			throw new DbmsException(e.getMessage());
+		}
+		try {
+			// long t1, t2;
+			// t1 = System.nanoTime();
+			BufferedReader reader = new BufferedReader(new FileReader(tempPath));
+			ArrayList<String> lines = new ArrayList<>();
+			String line;
+			while ((line = reader.readLine()) != null) {
+				lines.add(line);
+			}
+			int totLines = lines.size();
+			Object lock = new Object();
+			reader.close();
+			CountProcedureCallback procedureCallback = new CountProcedureCallback(totLines, lock);
+			for (int i = 0; i < lines.size(); i++) {
+				line = lines.get(i);
+				String[] values = line.split(",");
+				for (int j = 0; j < values.length; j++) {
+					int len = values[j].length();
+					values[j] = values[j].substring(1, len - 1);
+				}
+				mVoltdbConnection.callProcedure(procedureCallback, realTableName + ".upsert", (Object[]) values);
+			}
+			synchronized (lock) {
+				while (procedureCallback.getCount() < totLines) {
+					try {
+						lock.wait();
+					} catch (InterruptedException e) {
+						LOG.error(e.getMessage());
+					}
+				}
+			}
+			// t2 = System.nanoTime();
+			// System.out.println("one row one time:" + (t2 - t1) /
+			// 1000000000.0);
+		} catch (FileNotFoundException e) {
+			throw new DbmsException(e.getMessage());
+		} catch (IOException e) {
+			throw new DbmsException(e.getMessage());
+		}
+	}
+
+	static private class CountProcedureCallback implements ProcedureCallback {
+		private final int COUNT;
+		private final Object LOCK;
+		private int mCount = 0;
+
+		public CountProcedureCallback(int count, Object lock) {
+			COUNT = count;
+			LOCK = lock;
+		}
+
+		@Override
+		public void clientCallback(ClientResponse clientResponse) throws Exception {
+			synchronized (LOCK) {
+				mCount++;
+				if (mCount >= COUNT) {
+					LOCK.notify();
+				}
+			}
+		}
+
+		public int getCount() {
+			synchronized (LOCK) {
+				return mCount;
+			}
+		}
+	}
 }

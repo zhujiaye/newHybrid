@@ -64,9 +64,16 @@ struct ServerWorkerInfo{
 	2: i32 mPort;
 	3: DbmsInfo mDbmsInfo;
 }
-struct DbInfo{
+struct DbStatusInfo{
 	1:DbStatus mDbStatus;
 	2:DbmsInfo mDbmsInfo;
+}
+struct TempTableInfo{
+	1:TableInfo mTableInfo;
+	2:string mTablePath;
+}
+struct TempDbInfo{
+	1:list<TempTableInfo> mTempTablesInfo;
 }
 exception DbmsException{
 	1:string message;
@@ -86,10 +93,10 @@ service ServerService{
 	list<TableInfo> tenant_getTable(1:i32 ID, 2:string tableName) throws (1:NoTenantException e);
 	void tenant_dropAllTables(1:i32 ID) throws (1:NoTenantException eA, 2:NoWorkerException eB);
 	void tenant_dropTable(1:i32 ID, 2:string tableName) throws (1:NoTenantException eA, 2:NoWorkerException eB);
-	DbInfo tenant_getDbInfo(1:i32 ID) throws (1:NoTenantException eA, 2:NoWorkerException eB);
+	DbStatusInfo tenant_getDbStatusInfo(1:i32 ID) throws (1:NoTenantException eA, 2:NoWorkerException eB);
 	bool worker_register(1:ServerWorkerInfo workerInfo);
 }
 service WorkerService{
-	void async_tenant_copyDB(1:i32 ID); // async call
-	void async_tenant_moveDB(1:i32 ID, 2:DbmsInfo dbmsInfo); // async call
+	void tenant_exportTempDb(1:i32 ID, 2:TempDbInfo tempDbInfo) throws (1:DbmsException e); 
+	void tenant_moveTempDb(1:i32 ID, 2:TempDbInfo tempDbInfo, 3:ServerWorkerInfo workerInfo) throws (1:DbmsException e); 
 }

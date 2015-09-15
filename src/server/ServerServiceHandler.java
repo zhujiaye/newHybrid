@@ -9,7 +9,7 @@ import org.apache.thrift.TException;
 import config.Constants;
 import dbInfo.HSQLException;
 import newhybrid.NoHConnectionException;
-import thrift.DbInfo;
+import thrift.DbStatusInfo;
 import thrift.DbmsException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
@@ -100,8 +100,8 @@ public class ServerServiceHandler implements ServerService.Iface {
 	}
 
 	@Override
-	public DbInfo tenant_getDbInfo(int ID) throws NoTenantException, NoWorkerException, TException {
-		return mServerInfo.getDbInfoForTenant(ID);
+	public DbStatusInfo tenant_getDbStatusInfo(int ID) throws NoTenantException, NoWorkerException, TException {
+		return mServerInfo.getDbStatusInfoForTenant(ID);
 	}
 
 }

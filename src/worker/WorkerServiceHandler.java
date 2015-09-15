@@ -1,9 +1,19 @@
 package worker;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+
 import org.apache.thrift.TException;
 
+import thrift.DbmsException;
 import thrift.DbmsInfo;
+import thrift.ServerWorkerInfo;
+import thrift.TempDbInfo;
 import thrift.WorkerService;
+import utility.Utils;
 
 public class WorkerServiceHandler implements WorkerService.Iface {
 	private final WorkerInfo mWorkerInfo;
@@ -13,17 +23,15 @@ public class WorkerServiceHandler implements WorkerService.Iface {
 	}
 
 	@Override
-	public void async_tenant_copyDB(int ID) throws TException {
-		mWorkerInfo.copyDBForTenant(ID);
+	public void tenant_exportTempDb(int ID, TempDbInfo tempDbInfo) throws DbmsException, TException {
+		mWorkerInfo.exportTempDbForTenant(ID, tempDbInfo);
+
 	}
 
 	@Override
-	public void async_tenant_moveDB(int ID, DbmsInfo dbmsInfo) throws TException {
-		try {
-			Thread.sleep(5000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-
+	public void tenant_moveTempDb(int ID, TempDbInfo tempDbInfo, ServerWorkerInfo workerInfo)
+			throws DbmsException, TException {
+		mWorkerInfo.moveTempDbForTenant(ID, tempDbInfo, workerInfo);
 	}
+
 }

@@ -1,5 +1,9 @@
 package dbInfo;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -14,9 +18,13 @@ import org.apache.log4j.Logger;
 
 import config.Constants;
 import newhybrid.NoHConnectionException;
+import test.mysql.MTestMain;
 import thrift.ColumnInfo;
 import thrift.DType;
+import thrift.DbmsException;
 import thrift.DbmsInfo;
+import thrift.TableInfo;
+import thrift.TempTableInfo;
 
 public class MysqlConnection extends HConnection {
 	static private final int MAX_RETRY = 5;
@@ -102,7 +110,7 @@ public class MysqlConnection extends HConnection {
 	}
 
 	private HResult _sql(String sqlString) {
-		//System.out.println(sqlString);
+		// System.out.println(sqlString);
 		Statement stmt;
 		try {
 			stmt = mMysqlConnection.createStatement();
@@ -237,5 +245,62 @@ public class MysqlConnection extends HConnection {
 			builder.append(current + " ");
 		}
 		return _sql(builder.toString());
+	}
+
+	@Override
+	public void exportTempTable(int tenantID, TableInfo tableInfo, String tempPath) throws DbmsException {
+		String realTableName = getRealTableName(tableInfo.mName, tenantID);
+		HResult result = _sql("select * from " + realTableName);
+		if (result.isSuccess()) {
+			FileOutputStream out = null;
+			try {
+				File file = new File(tempPath);
+				if (!file.exists()) {
+					file.createNewFile();
+				}
+				out = new FileOutputStream(file);
+				while (result.hasNext()) {
+					ArrayList<String> list = result.getColumnValues();
+					for (int i = 0; i < list.size(); i++) {
+						if (i > 0)
+							out.write(",".getBytes());
+						out.write(("\"" + list.get(i) + "\"").getBytes());
+					}
+					out.write("\n".getBytes());
+				}
+			} catch (FileNotFoundException e) {
+				throw new DbmsException(e.getMessage());
+			} catch (IOException e) {
+				throw new DbmsException(e.getMessage());
+			} catch (HSQLException e) {
+				throw new DbmsException(e.getMessage());
+			} finally {
+				try {
+					if (out != null)
+						out.close();
+				} catch (IOException e) {
+					throw new DbmsException(e.getMessage());
+				}
+			}
+		} else
+			throw new DbmsException(result.getMessage());
+	}
+
+	@Override
+	public void importTempTable(int tenantID, TableInfo tableInfo, String tempPath) throws DbmsException {
+		String realTableName = getRealTableName(tableInfo.mName, tenantID);
+		Table table = new Table(tenantID, tableInfo);
+		try {
+			dropTable(table);
+			createTable(table);
+		} catch (HSQLException e) {
+			throw new DbmsException(e.getMessage());
+		}
+		HResult result = _sql("load data local infile " + "'" + tempPath + "'" + " into table " + realTableName
+				+ " fields terminated by ',' enclosed by '\"'");
+		if (result.isSuccess())
+			return;
+		else
+			throw new DbmsException(result.getMessage());
 	}
 }

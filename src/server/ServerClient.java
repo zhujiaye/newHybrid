@@ -13,7 +13,7 @@ import org.apache.thrift.transport.TFramedTransport;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransportException;
 
-import thrift.DbInfo;
+import thrift.DbStatusInfo;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
 import thrift.ServerService;
@@ -274,11 +274,11 @@ public class ServerClient {
 		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public DbInfo tenant_getDbInfo(int ID) throws NoWorkerException, NoTenantException, ClientShutdownException {
+	public DbStatusInfo tenant_getDbInfo(int ID) throws NoWorkerException, NoTenantException, ClientShutdownException {
 		while (!mIsShutdown) {
 			try {
 				connect();
-				return mClient.tenant_getDbInfo(ID);
+				return mClient.tenant_getDbStatusInfo(ID);
 			} catch (NoTenantException | NoWorkerException e) {
 				throw e;
 			} catch (TException | ClientShutdownException | NoServerConnectionException e) {

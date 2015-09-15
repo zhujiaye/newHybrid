@@ -3,8 +3,8 @@ package server;
 import java.util.ArrayList;
 
 import dbInfo.Table;
-import thrift.DbInfo;
 import thrift.DbStatus;
+import thrift.DbStatusInfo;
 import thrift.DbmsInfo;
 import thrift.TableInfo;
 import thrift.TenantInfo;
@@ -63,8 +63,8 @@ public class ServerTenant {
 		mDbmsInfo = dbmsInfo;
 	}
 
-	public DbInfo generateDbInfo() {
-		DbInfo res = new DbInfo(mDbStatus, mDbmsInfo);
+	public DbStatusInfo generateDbStatusInfo() {
+		DbStatusInfo res = new DbStatusInfo(mDbStatus, mDbmsInfo);
 		return res;
 	}
 

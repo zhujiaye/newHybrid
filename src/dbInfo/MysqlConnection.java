@@ -18,7 +18,6 @@ import org.apache.log4j.Logger;
 
 import config.Constants;
 import newhybrid.NoHConnectionException;
-import test.mysql.MTestMain;
 import thrift.ColumnInfo;
 import thrift.DType;
 import thrift.DbmsException;

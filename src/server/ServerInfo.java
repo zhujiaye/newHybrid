@@ -74,23 +74,20 @@ public class ServerInfo {
 	}
 
 	private void checkTenantWorker(ServerTenant tenant) throws NoWorkerException {
-		synchronized (tenant) {
-			DbmsInfo dbmsInfo = tenant.getDbmsInfo();
-			if (dbmsInfo == null) {
-				ServerWorkerInfo workerInfo = findWorkerForTenant(tenant.getID());
-				if (workerInfo == null)
-					throw new NoWorkerException(
-							"no dbms and can not find a worker for tenant with ID=" + tenant.getID());
-				else {
-					dbmsInfo = workerInfo.mDbmsInfo;
-					tenant.setDbms(dbmsInfo);
-				}
+		DbmsInfo dbmsInfo = tenant.getDbmsInfo();
+		if (dbmsInfo == null) {
+			ServerWorkerInfo workerInfo = findWorkerForTenant(tenant.getID());
+			if (workerInfo == null)
+				throw new NoWorkerException("no dbms and can not find a worker for tenant with ID=" + tenant.getID());
+			else {
+				dbmsInfo = workerInfo.mDbmsInfo;
+				tenant.setDbms(dbmsInfo);
 			}
-			if (haveWorkerForDbms(dbmsInfo))
-				return;
-			else
-				throw new NoWorkerException("no worker is registered for tenant's dbms,tenant ID is " + tenant.getID());
 		}
+		if (haveWorkerForDbms(dbmsInfo))
+			return;
+		else
+			throw new NoWorkerException("no worker is registered for tenant's dbms,tenant ID is " + tenant.getID());
 	}
 
 	public boolean registerWorker(ServerWorkerInfo workerInfo) {
@@ -130,24 +127,22 @@ public class ServerInfo {
 			checkTenantExist(ID);
 			tenant = mTenants.get(ID);
 		}
-		synchronized (tenant) {
-			checkTenantWorker(tenant);
-			DbmsInfo dbmsInfo = tenant.getDbmsInfo();
-			try {
-				HConnectionPool pool = HConnectionPool.getPool();
-				HConnection hConnection = pool.getConnectionByDbmsInfo(dbmsInfo);
-				boolean success = hConnection.createTable(new Table(ID, tableInfo));
-				pool.putConnection(hConnection);
-				if (success) {
-					tenant.addTable(tableInfo);
-					return true;
-				} else
-					return false;
-			} catch (NoHConnectionException e) {
-				throw e;
-			} catch (HSQLException e) {
-				throw e;
-			}
+		checkTenantWorker(tenant);
+		DbmsInfo dbmsInfo = tenant.getDbmsInfo();
+		try {
+			HConnectionPool pool = HConnectionPool.getPool();
+			HConnection hConnection = pool.getConnectionByDbmsInfo(dbmsInfo);
+			boolean success = hConnection.createTable(new Table(ID, tableInfo));
+			pool.putConnection(hConnection);
+			if (success) {
+				tenant.addTable(tableInfo);
+				return true;
+			} else
+				return false;
+		} catch (NoHConnectionException e) {
+			throw e;
+		} catch (HSQLException e) {
+			throw e;
 		}
 	}
 
@@ -157,9 +152,7 @@ public class ServerInfo {
 			checkTenantExist(ID);
 			tenant = mTenants.get(ID);
 		}
-		synchronized (tenant) {
-			return tenant.login();
-		}
+		return tenant.login();
 	}
 
 	public boolean logoutForTenant(int ID) throws NoTenantException, NoWorkerException {
@@ -168,9 +161,7 @@ public class ServerInfo {
 			checkTenantExist(ID);
 			tenant = mTenants.get(ID);
 		}
-		synchronized (tenant) {
-			return tenant.logout();
-		}
+		return tenant.logout();
 	}
 
 	public void init() {
@@ -225,9 +216,7 @@ public class ServerInfo {
 			checkTenantExist(ID);
 			tenant = mTenants.get(ID);
 		}
-		synchronized (tenant) {
-			return tenant.generateTablesInfo();
-		}
+		return tenant.generateTablesInfo();
 	}
 
 	public TableInfo getTableForTenant(int ID, String tableName) throws NoTenantException {
@@ -247,12 +236,10 @@ public class ServerInfo {
 			checkTenantExist(ID);
 			tenant = mTenants.get(ID);
 		}
-		synchronized (tenant) {
-			checkTenantWorker(tenant);
-			ArrayList<TableInfo> tablesInfo = tenant.generateTablesInfo();
-			for (int i = 0; i < tablesInfo.size(); i++) {
-				dropTableForTenant(ID, tablesInfo.get(i));
-			}
+		checkTenantWorker(tenant);
+		ArrayList<TableInfo> tablesInfo = tenant.generateTablesInfo();
+		for (int i = 0; i < tablesInfo.size(); i++) {
+			dropTableForTenant(ID, tablesInfo.get(i));
 		}
 	}
 
@@ -263,32 +250,46 @@ public class ServerInfo {
 			checkTenantExist(ID);
 			tenant = mTenants.get(ID);
 		}
-		synchronized (tenant) {
-			checkTenantWorker(tenant);
-			DbmsInfo dbmsInfo = tenant.getDbmsInfo();
-			try {
-				HConnectionPool pool = HConnectionPool.getPool();
-				HConnection hConnection = pool.getConnectionByDbmsInfo(dbmsInfo);
-				hConnection.dropTable(new Table(ID, tableInfo));
-				pool.putConnection(hConnection);
-				tenant.dropTable(tableInfo.mName);
-			} catch (NoHConnectionException e) {
-				throw e;
-			} catch (HSQLException e) {
-				throw e;
-			}
+		checkTenantWorker(tenant);
+		DbmsInfo dbmsInfo = tenant.getDbmsInfo();
+		try {
+			HConnectionPool pool = HConnectionPool.getPool();
+			HConnection hConnection = pool.getConnectionByDbmsInfo(dbmsInfo);
+			hConnection.dropTable(new Table(ID, tableInfo));
+			pool.putConnection(hConnection);
+			tenant.dropTable(tableInfo.mName);
+		} catch (NoHConnectionException e) {
+			throw e;
+		} catch (HSQLException e) {
+			throw e;
 		}
 	}
 
-	public DbStatusInfo getDbStatusInfoForTenant(int ID) throws NoTenantException, NoWorkerException{
+	public DbStatusInfo getDbStatusInfoForTenant(int ID) throws NoTenantException, NoWorkerException {
 		ServerTenant tenant;
 		synchronized (mTenants) {
 			checkTenantExist(ID);
-			tenant=mTenants.get(ID);
+			tenant = mTenants.get(ID);
 		}
-		synchronized (tenant) {
-			checkTenantWorker(tenant);
-			return tenant.generateDbStatusInfo();
+		checkTenantWorker(tenant);
+		return tenant.generateDbStatusInfo();
+	}
+
+	public void lockLockForTenant(int ID) throws NoTenantException, InterruptedException {
+		ServerTenant tenant;
+		synchronized (mTenants) {
+			checkTenantExist(ID);
+			tenant = mTenants.get(ID);
 		}
+		tenant.getLock().lock();
+	}
+
+	public void releaseLockForTenant(int ID) throws NoTenantException {
+		ServerTenant tenant;
+		synchronized (mTenants) {
+			checkTenantExist(ID);
+			tenant = mTenants.get(ID);
+		}
+		tenant.getLock().release();
 	}
 }

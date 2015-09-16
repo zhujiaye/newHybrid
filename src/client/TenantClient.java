@@ -16,6 +16,7 @@ import server.ServerClient;
 import thrift.DbStatus;
 import thrift.DbStatusInfo;
 import thrift.DbmsException;
+import thrift.LockException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
 import thrift.TableInfo;
@@ -190,24 +191,66 @@ public class TenantClient {
 		}
 	}
 
+	public void lock_lock() throws NoTenantException, LockException {
+		try {
+			mClient.tenant_lock_lock(ID);
+		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			lock_lock();
+		}
+	}
+
+	public void lock_release() throws NoTenantException, LockException {
+		try {
+			mClient.tenant_lock_release(ID);
+		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			lock_release();
+		}
+	}
+
 	static public void main(String[] args) throws NoWorkerException, NoTenantException, DbmsException, HSQLException,
 			IOException, InterruptedException {
-		TenantClient client = new TenantClient(1, "192.168.0.35", 12345);
-		HResult result = client.executeSql("select * from item");
-		if (result.isSuccess()) {
-			long t1, t2;
-			t1 = System.nanoTime();
-			FileOutputStream out = new FileOutputStream("/tmp/xx");
-			while (result.hasNext()) {
-				ArrayList<String> list = result.getColumnValues();
-				for (int i = 0; i < list.size(); i++)
-					out.write((list.get(i) + " ").getBytes());
-				out.write("\n".getBytes());
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					TenantClient client = new TenantClient(3, "192.168.0.35", 12345);
+					client.lock_lock();
+					HResult result = client.executeSql("select * from stock");
+					if (result.isSuccess()) {
+						result.print(System.out);
+					} else
+						System.out.println(result.getMessage());
+					Thread.sleep(5000);
+					client.lock_release();
+				} catch (NoWorkerException | NoTenantException | DbmsException | HSQLException | InterruptedException
+						| LockException e) {
+					LOG.error(e.getMessage());
+				}
 			}
-			out.close();
-			t2 = System.nanoTime();
-			System.out.println((t2 - t1) / 1000000000.0);
-		} else
-			System.out.println(result.getMessage());
+		}).start();
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					TenantClient client = new TenantClient(3, "192.168.0.35", 12345);
+					client.lock_lock();
+					HResult result = client.executeSql("select * from stock");
+					client.lock_release();
+					if (result.isSuccess()) {
+						result.print(System.out);
+					} else
+						System.out.println(result.getMessage());
+					Thread.sleep(5000);
+					client.lock_release();
+				} catch (NoWorkerException | NoTenantException | DbmsException | HSQLException | InterruptedException
+						| LockException e) {
+					LOG.error(e.getMessage());
+				}
+			}
+		}).start();
 	}
 }

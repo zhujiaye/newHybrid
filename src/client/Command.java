@@ -17,6 +17,7 @@ import thrift.ColumnInfo;
 import thrift.DType;
 import thrift.DbStatusInfo;
 import thrift.DbmsException;
+import thrift.LockException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
 import thrift.TableInfo;
@@ -74,8 +75,10 @@ public class Command {
 							System.out.println("no tenant logged in!");
 						} else {
 							try {
+								TCLIENT.lock_lock();
 								System.out.println(TCLIENT.logout());
-							} catch (NoTenantException e) {
+								TCLIENT.lock_release();
+							} catch (NoTenantException | LockException e) {
 								LOG.error(e.getMessage());
 							} finally {
 								TCLIENT = null;
@@ -95,8 +98,10 @@ public class Command {
 							primary_key_pos.add(0);
 							TableInfo tableInfo = new TableInfo(tableName, columns, primary_key_pos);
 							try {
+								TCLIENT.lock_lock();
 								System.out.println(TCLIENT.createTable(tableInfo));
-							} catch (NoWorkerException | NoTenantException e) {
+								TCLIENT.lock_release();
+							} catch (NoWorkerException | NoTenantException | LockException e) {
 								LOG.error(e.getMessage());
 							}
 						}
@@ -105,12 +110,14 @@ public class Command {
 							System.out.println("no tenant logged in!");
 						} else {
 							try {
+								TCLIENT.lock_lock();
 								List<TableInfo> tables = TCLIENT.getTables();
+								TCLIENT.lock_release();
 								for (int i = 0; i < tables.size(); i++) {
 									TableInfo current = tables.get(i);
 									System.out.println(current.mName);
 								}
-							} catch (NoTenantException e) {
+							} catch (NoTenantException | LockException e) {
 								LOG.error(e.getMessage());
 							}
 						}
@@ -121,12 +128,14 @@ public class Command {
 							try {
 								String tableName = tokenizer.nextToken();
 								List<TableInfo> tables;
+								TCLIENT.lock_lock();
 								tables = TCLIENT.getTable(tableName);
 								for (int i = 0; i < tables.size(); i++) {
 									TableInfo current = tables.get(i);
 									System.out.println(current.mName);
 								}
-							} catch (NoTenantException e) {
+								TCLIENT.lock_release();
+							} catch (NoTenantException | LockException e) {
 								LOG.error(e.getMessage());
 							}
 						}
@@ -135,9 +144,11 @@ public class Command {
 							System.out.println("no tenant logged in!");
 						} else {
 							try {
+								TCLIENT.lock_lock();
 								TCLIENT.dropAllTables();
+								TCLIENT.lock_release();
 								System.out.println("success");
-							} catch (NoTenantException | NoWorkerException e) {
+							} catch (NoTenantException | NoWorkerException | LockException e) {
 								LOG.error(e.getMessage());
 							}
 						}
@@ -147,9 +158,11 @@ public class Command {
 						} else {
 							try {
 								String tableName = tokenizer.nextToken();
+								TCLIENT.lock_lock();
 								TCLIENT.dropTable(tableName);
+								TCLIENT.lock_release();
 								System.out.println("success");
-							} catch (NoTenantException | NoWorkerException e) {
+							} catch (NoTenantException | NoWorkerException | LockException e) {
 								LOG.error(e.getMessage());
 							}
 						}
@@ -159,7 +172,9 @@ public class Command {
 							System.out.println("no tenant logged in!");
 						} else {
 							try {
+								TCLIENT.lock_lock();
 								HResult result = TCLIENT.executeSql(str);
+								TCLIENT.lock_release();
 								if (result != null) {
 									if (result.isSuccess()) {
 										result.print(System.out);
@@ -172,6 +187,8 @@ public class Command {
 								LOG.error(e.getMessage());
 							} catch (HSQLException e) {
 								LOG.error(e.getMessage());
+							} catch (LockException e) {
+								LOG.error(e.getMessage());
 							}
 						}
 					} else if (command.equals("status")) {
@@ -180,10 +197,12 @@ public class Command {
 						} else {
 							System.out.println("Tenant ID:" + TCLIENT.getID());
 							try {
+								TCLIENT.lock_lock();
 								DbStatusInfo dbInfo = TCLIENT.getDbStatusInfo();
+								TCLIENT.lock_release();
 								System.out.println("DB status:" + dbInfo.mDbStatus.name());
 								System.out.println("DBMS status:" + dbInfo.mDbmsInfo.mCompleteConnectionString);
-							} catch (NoWorkerException | NoTenantException e) {
+							} catch (NoWorkerException | NoTenantException | LockException e) {
 								LOG.error(e.getMessage());
 							}
 						}

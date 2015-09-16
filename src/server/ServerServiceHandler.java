@@ -11,6 +11,7 @@ import dbInfo.HSQLException;
 import newhybrid.NoHConnectionException;
 import thrift.DbStatusInfo;
 import thrift.DbmsException;
+import thrift.LockException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
 import thrift.ServerService;
@@ -102,6 +103,20 @@ public class ServerServiceHandler implements ServerService.Iface {
 	@Override
 	public DbStatusInfo tenant_getDbStatusInfo(int ID) throws NoTenantException, NoWorkerException, TException {
 		return mServerInfo.getDbStatusInfoForTenant(ID);
+	}
+
+	@Override
+	public void tenant_lock_lock(int ID) throws LockException, NoTenantException, TException {
+		try {
+			mServerInfo.lockLockForTenant(ID);
+		} catch (InterruptedException e) {
+			throw new LockException("require lock for tenant with ID=" + ID + " while being interrupted");
+		}
+	}
+
+	@Override
+	public void tenant_lock_release(int ID) throws LockException, NoTenantException, TException {
+		mServerInfo.releaseLockForTenant(ID);
 	}
 
 }

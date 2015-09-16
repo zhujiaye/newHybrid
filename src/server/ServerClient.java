@@ -14,6 +14,7 @@ import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransportException;
 
 import thrift.DbStatusInfo;
+import thrift.LockException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
 import thrift.ServerService;
@@ -280,6 +281,38 @@ public class ServerClient {
 				connect();
 				return mClient.tenant_getDbStatusInfo(ID);
 			} catch (NoTenantException | NoWorkerException e) {
+				throw e;
+			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
+
+	public void tenant_lock_lock(int ID) throws NoTenantException, LockException, ClientShutdownException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				mClient.tenant_lock_lock(ID);
+				return;
+			} catch (NoTenantException | LockException e) {
+				throw e;
+			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+		throw new ClientShutdownException("server client is already shut down");
+	}
+
+	public void tenant_lock_release(int ID) throws NoTenantException, LockException, ClientShutdownException {
+		while (!mIsShutdown) {
+			try {
+				connect();
+				mClient.tenant_lock_release(ID);
+				return;
+			} catch (NoTenantException | LockException e) {
 				throw e;
 			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
 				LOG.error(e.getMessage());

@@ -84,6 +84,9 @@ exception NoWorkerException{
 exception NoTenantException{
 	1:string message;
 }
+exception LockException{
+	1:string message;
+}
 service ServerService{
 	i32 tenant_createTenant();
 	bool tenant_login(1:i32 ID) throws (1:NoTenantException e);
@@ -95,6 +98,8 @@ service ServerService{
 	void tenant_dropTable(1:i32 ID, 2:string tableName) throws (1:NoTenantException eA, 2:NoWorkerException eB);
 	DbStatusInfo tenant_getDbStatusInfo(1:i32 ID) throws (1:NoTenantException eA, 2:NoWorkerException eB);
 	bool worker_register(1:ServerWorkerInfo workerInfo);
+	void tenant_lock_lock(1:i32 ID) throws (1:LockException eA, 2:NoTenantException eB);
+	void tenant_lock_release(1:i32 ID) throws (1:LockException eA, 2:NoTenantException eB);
 }
 service WorkerService{
 	void tenant_exportTempDb(1:i32 ID, 2:TempDbInfo tempDbInfo) throws (1:DbmsException e); 

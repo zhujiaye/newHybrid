@@ -16,12 +16,14 @@ public class ServerTenant {
 	private DbmsInfo mDbmsInfo;
 	private DbStatus mDbStatus;
 	private boolean mLoggedIn = false;
+	private Lock mLock;
 
 	public ServerTenant(TenantInfo tenantInfo, ArrayList<TableInfo> tablesInfo, DbmsInfo dbmsInfo) {
 		ID = tenantInfo.mId;
 		mTables = tablesInfo;
 		mDbmsInfo = dbmsInfo;
 		mDbStatus = DbStatus.NORMAL;
+		mLock = new Lock();
 	}
 
 	public void addTable(TableInfo tableInfo) {
@@ -80,5 +82,9 @@ public class ServerTenant {
 			return false;
 		mLoggedIn = false;
 		return true;
+	}
+
+	public Lock getLock() {
+		return mLock;
 	}
 }

@@ -13,6 +13,7 @@ import config.Constants;
 import dbInfo.HResult;
 import dbInfo.HSQLException;
 import dbInfo.Table;
+import newhybrid.NoServerConnectionException;
 import thrift.ColumnInfo;
 import thrift.DType;
 import thrift.DbStatusInfo;
@@ -77,10 +78,10 @@ public class Command {
 							try {
 								TCLIENT.lock_lock();
 								System.out.println(TCLIENT.logout());
-								TCLIENT.lock_release();
 							} catch (NoTenantException | LockException e) {
 								LOG.error(e.getMessage());
 							} finally {
+								TCLIENT.lock_release();
 								TCLIENT = null;
 							}
 						}
@@ -100,9 +101,10 @@ public class Command {
 							try {
 								TCLIENT.lock_lock();
 								System.out.println(TCLIENT.createTable(tableInfo));
-								TCLIENT.lock_release();
 							} catch (NoWorkerException | NoTenantException | LockException e) {
 								LOG.error(e.getMessage());
+							} finally {
+								TCLIENT.lock_release();
 							}
 						}
 					} else if (command.equals("showTables")) {
@@ -112,13 +114,14 @@ public class Command {
 							try {
 								TCLIENT.lock_lock();
 								List<TableInfo> tables = TCLIENT.getTables();
-								TCLIENT.lock_release();
 								for (int i = 0; i < tables.size(); i++) {
 									TableInfo current = tables.get(i);
 									System.out.println(current.mName);
 								}
 							} catch (NoTenantException | LockException e) {
 								LOG.error(e.getMessage());
+							} finally {
+								TCLIENT.lock_release();
 							}
 						}
 					} else if (command.equals("showTable")) {
@@ -134,9 +137,10 @@ public class Command {
 									TableInfo current = tables.get(i);
 									System.out.println(current.mName);
 								}
-								TCLIENT.lock_release();
 							} catch (NoTenantException | LockException e) {
 								LOG.error(e.getMessage());
+							} finally {
+								TCLIENT.lock_release();
 							}
 						}
 					} else if (command.equals("dropAllTables")) {
@@ -146,10 +150,11 @@ public class Command {
 							try {
 								TCLIENT.lock_lock();
 								TCLIENT.dropAllTables();
-								TCLIENT.lock_release();
 								System.out.println("success");
 							} catch (NoTenantException | NoWorkerException | LockException e) {
 								LOG.error(e.getMessage());
+							} finally {
+								TCLIENT.lock_release();
 							}
 						}
 					} else if (command.equals("dropTable")) {
@@ -160,10 +165,11 @@ public class Command {
 								String tableName = tokenizer.nextToken();
 								TCLIENT.lock_lock();
 								TCLIENT.dropTable(tableName);
-								TCLIENT.lock_release();
 								System.out.println("success");
 							} catch (NoTenantException | NoWorkerException | LockException e) {
 								LOG.error(e.getMessage());
+							} finally {
+								TCLIENT.lock_release();
 							}
 						}
 					} else if (command.equals("select") || command.equals("insert") || command.equals("update")
@@ -174,7 +180,6 @@ public class Command {
 							try {
 								TCLIENT.lock_lock();
 								HResult result = TCLIENT.executeSql(str);
-								TCLIENT.lock_release();
 								if (result != null) {
 									if (result.isSuccess()) {
 										result.print(System.out);
@@ -189,6 +194,8 @@ public class Command {
 								LOG.error(e.getMessage());
 							} catch (LockException e) {
 								LOG.error(e.getMessage());
+							} finally {
+								TCLIENT.lock_release();
 							}
 						}
 					} else if (command.equals("status")) {
@@ -199,11 +206,12 @@ public class Command {
 							try {
 								TCLIENT.lock_lock();
 								DbStatusInfo dbInfo = TCLIENT.getDbStatusInfo();
-								TCLIENT.lock_release();
 								System.out.println("DB status:" + dbInfo.mDbStatus.name());
 								System.out.println("DBMS status:" + dbInfo.mDbmsInfo.mCompleteConnectionString);
 							} catch (NoWorkerException | NoTenantException | LockException e) {
 								LOG.error(e.getMessage());
+							} finally {
+								TCLIENT.lock_release();
 							}
 						}
 					} else {
@@ -216,6 +224,8 @@ public class Command {
 			} catch (NoSuchElementException e) {
 				System.out.println("wrong command syntax");
 				help();
+			} catch (NoServerConnectionException e) {
+				System.out.println("server is shutdown!");
 			}
 		}
 	}

@@ -13,8 +13,7 @@ import org.apache.thrift.TEnum;
 
 public enum DbStatus implements org.apache.thrift.TEnum {
   NORMAL(0),
-  BLOCKED(1),
-  MIGRATING(2);
+  MIGRATING(1);
 
   private final int value;
 
@@ -38,8 +37,6 @@ public enum DbStatus implements org.apache.thrift.TEnum {
       case 0:
         return NORMAL;
       case 1:
-        return BLOCKED;
-      case 2:
         return MIGRATING;
       default:
         return null;

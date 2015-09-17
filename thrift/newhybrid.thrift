@@ -49,8 +49,7 @@ enum DbmsType{
 }
 enum DbStatus{
 	NORMAL=0,
-	BLOCKED=1,
-	MIGRATING=2,
+	MIGRATING=1,
 }
 struct DbmsInfo{
 	1: DbmsType mType;
@@ -99,7 +98,7 @@ service ServerService{
 	DbStatusInfo tenant_getDbStatusInfo(1:i32 ID) throws (1:NoTenantException eA, 2:NoWorkerException eB);
 	bool worker_register(1:ServerWorkerInfo workerInfo);
 	void tenant_lock_lock(1:i32 ID) throws (1:LockException eA, 2:NoTenantException eB);
-	void tenant_lock_release(1:i32 ID) throws (1:LockException eA, 2:NoTenantException eB);
+	void tenant_lock_release(1:i32 ID);
 }
 service WorkerService{
 	void tenant_exportTempDb(1:i32 ID, 2:TempDbInfo tempDbInfo) throws (1:DbmsException e); 

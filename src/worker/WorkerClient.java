@@ -31,6 +31,8 @@ import config.Constants;
 import newhybrid.ClientShutdownException;
 import newhybrid.NoServerConnectionException;
 import newhybrid.Pair;
+import server.ExportTempDbResultHandler;
+import server.MoveTempDbResultHandler;
 import thrift.DbmsInfo;
 import thrift.DbmsType;
 import thrift.NoTenantException;
@@ -62,20 +64,18 @@ public class WorkerClient {
 
 	private synchronized void cleanConnect() {
 		if (mIsConnected) {
-			LOG.debug("worker-client disconnecting from worker@" + WORKER_ADDRESS + ":" + WORKER_PORT);
 			mIsConnected = false;
 		}
 		if (mProtocol != null) {
 			mProtocol.getTransport().close();
 		}
-		// if (!mAsyncClientStatus.isEmpty()) {
-		// mAsyncClientStatus.clear();
-		// for (TNonblockingTransport transport :
-		// mAsyncClientTransport.values()) {
-		// transport.close();
-		// }
-		// mAsyncClientTransport.clear();
-		// }
+		if (!mAsyncClientStatus.isEmpty()) {
+			mAsyncClientStatus.clear();
+			for (TNonblockingTransport transport : mAsyncClientTransport.values()) {
+				transport.close();
+			}
+			mAsyncClientTransport.clear();
+		}
 	}
 
 	private synchronized void connect() throws ClientShutdownException, NoServerConnectionException {
@@ -144,35 +144,38 @@ public class WorkerClient {
 
 	public void async_tenant_exportTempDb(int ID, TempDbInfo tempDbInfo,
 			AsyncMethodCallback<WorkerService.AsyncClient.tenant_exportTempDb_call> resultHandler)
-					throws ClientShutdownException {
-		while (!mIsShutdown) {
+					throws ClientShutdownException, NoServerConnectionException {
+		while (true) {
 			try {
+				connect();
 				WorkerService.AsyncClient asyncClient = getUsefulAsyncClient();
 				asyncClient.tenant_exportTempDb(ID, tempDbInfo, resultHandler);
 				return;
 			} catch (TException | IOException e) {
 				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("worker client is already shut down");
 	}
 
 	public void async_tenant_moveTempDb(int ID, TempDbInfo tempDbInfo, ServerWorkerInfo workerInfo,
 			AsyncMethodCallback<WorkerService.AsyncClient.tenant_moveTempDb_call> resultHandler)
-					throws ClientShutdownException {
-		while (!mIsShutdown) {
+					throws ClientShutdownException, NoServerConnectionException {
+		while (true) {
 			try {
+				connect();
 				WorkerService.AsyncClient asyncClient = getUsefulAsyncClient();
 				asyncClient.tenant_moveTempDb(ID, tempDbInfo, workerInfo, resultHandler);
 				return;
 			} catch (TException | IOException e) {
 				LOG.error(e.getMessage());
+				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("worker client is already shut down");
 	}
 
-	public static void main(String[] args) throws InterruptedException, NoTenantException, ClientShutdownException {
+	public static void main(String[] args)
+			throws InterruptedException, NoTenantException, ClientShutdownException, NoServerConnectionException {
 		WorkerClient wclient = new WorkerClient("192.168.0.30", 54322);
 		ServerWorkerInfo mysqlWorker = new ServerWorkerInfo("192.168.0.30", 54321,
 				new DbmsInfo(DbmsType.MYSQL, "jdbc:mysql://192.168.0.30/newhybrid", "remote", "remote", 2000));
@@ -185,9 +188,9 @@ public class WorkerClient {
 			tempTablesInfo.add(new TempTableInfo(tablesInfo.get(i), "tenant1_" + tablesInfo.get(i).mName));
 		}
 		TempDbInfo tempDbInfo = new TempDbInfo(tempTablesInfo);
-		wclient.async_tenant_exportTempDb(1, tempDbInfo, new ExportTempDbResultHandler(wclient));
+		wclient.async_tenant_exportTempDb(1, tempDbInfo, new ExportTempDbResultHandler(wclient, null));
 		Thread.sleep(5000);
-		wclient.async_tenant_moveTempDb(1, tempDbInfo, voltdbWorker, new MoveTempDbResultHandler(wclient));
+		wclient.async_tenant_moveTempDb(1, tempDbInfo, voltdbWorker, new MoveTempDbResultHandler(wclient, null));
 		wclient.shutdown();
 		System.out.println("-------------");
 		Object obj = new Object();

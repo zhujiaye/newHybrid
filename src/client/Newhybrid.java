@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import config.ClientConf;
 import config.Constants;
 import newhybrid.ClientShutdownException;
+import newhybrid.NoServerConnectionException;
 import server.ServerClient;
 import thrift.NoTenantException;
 
@@ -31,8 +32,9 @@ public class Newhybrid {
 	 * create a new tenant
 	 * 
 	 * @return <b>ID</b> of the new created tenant
+	 * @throws NoServerConnectionException
 	 */
-	public int createTenant() {
+	public int createTenant() throws NoServerConnectionException {
 		try {
 			return mClient.tenant_createTenant();
 		} catch (ClientShutdownException e) {

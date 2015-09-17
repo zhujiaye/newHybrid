@@ -52,7 +52,6 @@ public class ServerClient {
 	 */
 	private synchronized void cleanConnect() {
 		if (mIsConnected) {
-			LOG.debug("serverclient disconnecting from server@" + mServerAddress + ":" + mServerPort);
 			mIsConnected = false;
 		}
 		if (mProtocol != null) {
@@ -119,8 +118,8 @@ public class ServerClient {
 
 	public boolean serverExist() throws ClientShutdownException {
 		try {
-			connect();
 			cleanConnect();
+			connect();
 		} catch (NoServerConnectionException e) {
 			return false;
 		}
@@ -128,23 +127,24 @@ public class ServerClient {
 	}
 
 	/**
-	 * register a worker from server
+	 * register a worker to server
 	 * 
 	 * @param workerInfo
 	 * @return true if succeeded, false if the worker already exists
 	 * @throws ClientShutdownException
+	 * @throws NoServerConnectionException
 	 */
-	public boolean worker_register(ServerWorkerInfo workerInfo) throws ClientShutdownException {
-		while (!mIsShutdown) {
+	public boolean worker_register(ServerWorkerInfo workerInfo)
+			throws ClientShutdownException, NoServerConnectionException {
+		while (true) {
 			try {
 				connect();
 				return mClient.worker_register(workerInfo);
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 
 	/**
@@ -152,173 +152,167 @@ public class ServerClient {
 	 * 
 	 * @return the ID for the created new tenant
 	 * @throws ClientShutdownException
+	 * @throws NoServerConnectionException
 	 */
-	public int tenant_createTenant() throws ClientShutdownException {
-		while (!mIsShutdown) {
+	public int tenant_createTenant() throws ClientShutdownException, NoServerConnectionException {
+		while (true) {
 			try {
 				connect();
 				return mClient.tenant_createTenant();
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 
 	public boolean tenant_createTable(int ID, TableInfo tableInfo)
-			throws ClientShutdownException, NoWorkerException, NoTenantException {
-		while (!mIsShutdown) {
+			throws ClientShutdownException, NoServerConnectionException, NoWorkerException, NoTenantException {
+		while (true) {
 			try {
 				connect();
 				return mClient.tenant_createTable(ID, tableInfo);
-			} catch (NoWorkerException | NoTenantException e) {
+			} catch (NoTenantException | NoWorkerException e) {
 				throw e;
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean tenant_login(int ID) throws NoTenantException, ClientShutdownException {
-		while (!mIsShutdown) {
+	public boolean tenant_login(int ID) throws NoTenantException, ClientShutdownException, NoServerConnectionException {
+		while (true) {
 			try {
 				connect();
 				return mClient.tenant_login(ID);
 			} catch (NoTenantException e) {
 				throw e;
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public boolean tenant_logout(int ID) throws NoTenantException, ClientShutdownException {
-		while (!mIsShutdown) {
+	public boolean tenant_logout(int ID)
+			throws NoTenantException, ClientShutdownException, NoServerConnectionException {
+		while (true) {
 			try {
 				connect();
 				return mClient.tenant_logout(ID);
 			} catch (NoTenantException e) {
 				throw e;
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public List<TableInfo> tenant_getTables(int ID) throws NoTenantException, ClientShutdownException {
-		while (!mIsShutdown) {
+	public List<TableInfo> tenant_getTables(int ID)
+			throws NoTenantException, ClientShutdownException, NoServerConnectionException {
+		while (true) {
 			try {
 				connect();
 				return mClient.tenant_getTables(ID);
 			} catch (NoTenantException e) {
 				throw e;
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public List<TableInfo> tenant_getTable(int ID, String tableName) throws NoTenantException, ClientShutdownException {
-		while (!mIsShutdown) {
+	public List<TableInfo> tenant_getTable(int ID, String tableName)
+			throws NoTenantException, ClientShutdownException, NoServerConnectionException {
+		while (true) {
 			try {
 				connect();
 				return mClient.tenant_getTable(ID, tableName);
 			} catch (NoTenantException e) {
 				throw e;
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public void tenant_dropAllTables(int ID) throws ClientShutdownException, NoTenantException, NoWorkerException {
-		while (!mIsShutdown) {
+	public void tenant_dropAllTables(int ID)
+			throws ClientShutdownException, NoTenantException, NoWorkerException, NoServerConnectionException {
+		while (true) {
 			try {
 				connect();
 				mClient.tenant_dropAllTables(ID);
 				return;
 			} catch (NoTenantException | NoWorkerException e) {
 				throw e;
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 
 	public void tenant_dropTable(int ID, String tableName)
-			throws ClientShutdownException, NoTenantException, NoWorkerException {
-		while (!mIsShutdown) {
+			throws ClientShutdownException, NoTenantException, NoWorkerException, NoServerConnectionException {
+		while (true) {
 			try {
 				connect();
 				mClient.tenant_dropTable(ID, tableName);
 				return;
 			} catch (NoTenantException | NoWorkerException e) {
 				throw e;
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public DbStatusInfo tenant_getDbInfo(int ID) throws NoWorkerException, NoTenantException, ClientShutdownException {
-		while (!mIsShutdown) {
+	public DbStatusInfo tenant_getDbInfo(int ID)
+			throws NoWorkerException, NoTenantException, ClientShutdownException, NoServerConnectionException {
+		while (true) {
 			try {
 				connect();
 				return mClient.tenant_getDbStatusInfo(ID);
 			} catch (NoTenantException | NoWorkerException e) {
 				throw e;
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public void tenant_lock_lock(int ID) throws NoTenantException, LockException, ClientShutdownException {
-		while (!mIsShutdown) {
+	public void tenant_lock_lock(int ID)
+			throws NoTenantException, LockException, ClientShutdownException, NoServerConnectionException {
+		while (true) {
 			try {
 				connect();
 				mClient.tenant_lock_lock(ID);
 				return;
 			} catch (NoTenantException | LockException e) {
 				throw e;
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 
-	public void tenant_lock_release(int ID) throws NoTenantException, LockException, ClientShutdownException {
-		while (!mIsShutdown) {
+	public void tenant_lock_release(int ID) throws ClientShutdownException, NoServerConnectionException {
+		while (true) {
 			try {
 				connect();
 				mClient.tenant_lock_release(ID);
 				return;
-			} catch (NoTenantException | LockException e) {
-				throw e;
-			} catch (TException | ClientShutdownException | NoServerConnectionException e) {
+			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;
 			}
 		}
-		throw new ClientShutdownException("server client is already shut down");
 	}
 }

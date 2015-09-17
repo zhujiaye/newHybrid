@@ -12,6 +12,7 @@ import java.util.Random;
 import newhybrid.ClientShutdownException;
 import newhybrid.NoHConnectionException;
 import newhybrid.NoServerConnectionException;
+import newhybrid.Pair;
 import server.ServerClient;
 import thrift.DbStatus;
 import thrift.DbStatusInfo;
@@ -24,11 +25,14 @@ import thrift.TableInfo;
 import org.apache.log4j.Logger;
 import org.voltdb.client.Client;
 
+import com.google_voltpatches.common.base.CaseFormat;
+
 import config.Constants;
 import dbInfo.HConnection;
 import dbInfo.HConnectionPool;
 import dbInfo.HResult;
 import dbInfo.HSQLException;
+import dbInfo.QueryType;
 
 /**
  * this class stands for a tenant,all operations that a tenant will issue can be
@@ -66,8 +70,10 @@ public class TenantClient {
 	 *             if there is no worker where the table can be created
 	 * @throws NoTenantException
 	 *             if this tenant does not exist
+	 * @throws NoServerConnectionException
 	 */
-	public boolean createTable(TableInfo tableInfo) throws NoWorkerException, NoTenantException {
+	public boolean createTable(TableInfo tableInfo)
+			throws NoWorkerException, NoTenantException, NoServerConnectionException {
 		try {
 			return mClient.tenant_createTable(ID, tableInfo);
 		} catch (ClientShutdownException e) {
@@ -84,8 +90,9 @@ public class TenantClient {
 	 *         logged in
 	 * @throws NoTenantException
 	 *             if this tenant does not exist
+	 * @throws NoServerConnectionException
 	 */
-	public boolean login() throws NoTenantException {
+	public boolean login() throws NoTenantException, NoServerConnectionException {
 		try {
 			return mClient.tenant_login(ID);
 		} catch (ClientShutdownException e) {
@@ -102,8 +109,9 @@ public class TenantClient {
 	 *         logged out
 	 * @throws NoTenantException
 	 *             if this tenant does not exist
+	 * @throws NoServerConnectionException
 	 */
-	public boolean logout() throws NoTenantException {
+	public boolean logout() throws NoTenantException, NoServerConnectionException {
 		try {
 			return mClient.tenant_logout(ID);
 		} catch (ClientShutdownException e) {
@@ -113,7 +121,7 @@ public class TenantClient {
 		}
 	}
 
-	public List<TableInfo> getTables() throws NoTenantException {
+	public List<TableInfo> getTables() throws NoTenantException, NoServerConnectionException {
 		try {
 			return mClient.tenant_getTables(ID);
 		} catch (ClientShutdownException e) {
@@ -123,7 +131,7 @@ public class TenantClient {
 		}
 	}
 
-	public List<TableInfo> getTable(String tableName) throws NoTenantException {
+	public List<TableInfo> getTable(String tableName) throws NoTenantException, NoServerConnectionException {
 		try {
 			return mClient.tenant_getTable(ID, tableName);
 		} catch (ClientShutdownException e) {
@@ -133,7 +141,7 @@ public class TenantClient {
 		}
 	}
 
-	public void dropAllTables() throws NoTenantException, NoWorkerException {
+	public void dropAllTables() throws NoTenantException, NoWorkerException, NoServerConnectionException {
 		try {
 			mClient.tenant_dropAllTables(ID);
 		} catch (ClientShutdownException e) {
@@ -143,7 +151,7 @@ public class TenantClient {
 		}
 	}
 
-	public void dropTable(String tableName) throws NoTenantException, NoWorkerException {
+	public void dropTable(String tableName) throws NoTenantException, NoWorkerException, NoServerConnectionException {
 		try {
 			mClient.tenant_dropTable(ID, tableName);
 		} catch (ClientShutdownException e) {
@@ -153,7 +161,7 @@ public class TenantClient {
 		}
 	}
 
-	public DbStatusInfo getDbStatusInfo() throws NoWorkerException, NoTenantException {
+	public DbStatusInfo getDbStatusInfo() throws NoWorkerException, NoTenantException, NoServerConnectionException {
 		try {
 			return mClient.tenant_getDbInfo(ID);
 		} catch (ClientShutdownException e) {
@@ -172,26 +180,32 @@ public class TenantClient {
 	 * @throws NoWorkerException
 	 * @throws NoTenantException
 	 * @throws DbmsException
+	 * @throws NoServerConnectionException
 	 */
-	public HResult executeSql(String sqlString) throws NoWorkerException, NoTenantException, DbmsException {
+
+	public HResult executeSql(String sqlString)
+			throws NoWorkerException, NoTenantException, DbmsException, NoServerConnectionException {
 		DbStatusInfo dbInfo = getDbStatusInfo();
+		HResult result = null;
 		if (dbInfo.mDbStatus == DbStatus.NORMAL) {
 			try {
 				HConnectionPool pool = HConnectionPool.getPool();
 				HConnection hConnection;
 				hConnection = pool.getConnectionByDbmsInfo(dbInfo.mDbmsInfo);
-				HResult result = hConnection.executeSql(ID, sqlString);
+				result = hConnection.executeSql(ID, sqlString);
 				pool.putConnection(hConnection);
-				return result;
 			} catch (NoHConnectionException e) {
 				throw new DbmsException(e.getMessage());
 			}
+		} else if (dbInfo.mDbStatus == DbStatus.MIGRATING) {
+			// TODO
 		} else {
-			return null;
+			result = null;
 		}
+		return result;
 	}
 
-	public void lock_lock() throws NoTenantException, LockException {
+	public void lock_lock() throws NoTenantException, LockException, NoServerConnectionException {
 		try {
 			mClient.tenant_lock_lock(ID);
 		} catch (ClientShutdownException e) {
@@ -201,7 +215,7 @@ public class TenantClient {
 		}
 	}
 
-	public void lock_release() throws NoTenantException, LockException {
+	public void lock_release() throws NoServerConnectionException {
 		try {
 			mClient.tenant_lock_release(ID);
 		} catch (ClientShutdownException e) {
@@ -227,7 +241,7 @@ public class TenantClient {
 					Thread.sleep(5000);
 					client.lock_release();
 				} catch (NoWorkerException | NoTenantException | DbmsException | HSQLException | InterruptedException
-						| LockException e) {
+						| LockException | NoServerConnectionException e) {
 					LOG.error(e.getMessage());
 				}
 			}
@@ -247,7 +261,7 @@ public class TenantClient {
 					Thread.sleep(5000);
 					client.lock_release();
 				} catch (NoWorkerException | NoTenantException | DbmsException | HSQLException | InterruptedException
-						| LockException e) {
+						| LockException | NoServerConnectionException e) {
 					LOG.error(e.getMessage());
 				}
 			}

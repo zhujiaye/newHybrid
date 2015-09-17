@@ -187,6 +187,8 @@ public class Command {
 										System.out.println("unsuccess:" + result.getMessage());
 									}
 									result.release();
+								} else {
+									System.out.println("ERROR:no results!");
 								}
 							} catch (NoWorkerException | NoTenantException | DbmsException e) {
 								LOG.error(e.getMessage());
@@ -209,6 +211,42 @@ public class Command {
 								System.out.println("DB status:" + dbInfo.mDbStatus.name());
 								System.out.println("DBMS status:" + dbInfo.mDbmsInfo.mCompleteConnectionString);
 							} catch (NoWorkerException | NoTenantException | LockException e) {
+								LOG.error(e.getMessage());
+							} finally {
+								TCLIENT.lock_release();
+							}
+						}
+					} else if (command.equals("random")) {
+						if (TCLIENT == null) {
+							System.out.println("no tenant logged in!");
+						} else {
+							String operation = tokenizer.nextToken();
+							try {
+								TCLIENT.lock_lock();
+								HResult result = null;
+								if (operation.equals("select"))
+									result = TCLIENT.selectRandomly();
+								else if (operation.equals("update"))
+									result = TCLIENT.updateRandomly();
+								else if (operation.equals("insert"))
+									result = TCLIENT.insertRandomly();
+								else
+									result = TCLIENT.deleteRandomly();
+								if (result != null) {
+									if (result.isSuccess()) {
+										result.print(System.out);
+									} else {
+										System.out.println("unsuccess:" + result.getMessage());
+									}
+									result.release();
+								} else {
+									System.out.println("ERROR:no results!");
+								}
+							} catch (NoWorkerException | NoTenantException | DbmsException e) {
+								LOG.error(e.getMessage());
+							} catch (HSQLException e) {
+								LOG.error(e.getMessage());
+							} catch (LockException e) {
 								LOG.error(e.getMessage());
 							} finally {
 								TCLIENT.lock_release();

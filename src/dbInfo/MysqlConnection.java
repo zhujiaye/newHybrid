@@ -92,22 +92,6 @@ public class MysqlConnection extends HConnection {
 		}
 	}
 
-	@Override
-	public void dropAll() throws HSQLException {
-		try {
-			ResultSet tables = mMysqlConnection.getMetaData().getTables(null, null, null, null);
-			while (tables.next()) {
-				String tableName = tables.getString("TABLE_NAME");
-				HResult result = _sql("drop table if exists " + tableName);
-				if (!result.isSuccess()) {
-					throw new HSQLException("failed to drop table " + tableName + ":" + result.getMessage());
-				}
-			}
-		} catch (SQLException e) {
-			throw new HSQLException("database access error or called on a closed connection:" + e.getMessage());
-		}
-	}
-
 	private HResult _sql(String sqlString) {
 		// System.out.println(sqlString);
 		Statement stmt;
@@ -125,18 +109,19 @@ public class MysqlConnection extends HConnection {
 	}
 
 	@Override
-	public void dropTable(Table table) throws HSQLException {
-		String realTableName = getRealTableName(table);
+	public void dropTable(int tenantID, TableInfo tableInfo) throws HSQLException {
+		String realTableName = getRealTableName(tenantID, tableInfo);
 		HResult result = _sql("drop table if exists " + realTableName);
 		if (!result.isSuccess())
 			throw new HSQLException("failed to drop table " + realTableName + ":" + result.getMessage());
 	}
 
 	@Override
-	public boolean createTable(Table table) throws HSQLException {
-		if (tableExist(table))
+	public boolean createTable(int tenantID, TableInfo tableInfo) throws HSQLException {
+		if (tableExist(tenantID, tableInfo))
 			return false;
-		String realTableName = getRealTableName(table);
+		String realTableName = getRealTableName(tenantID, tableInfo);
+		Table table = new Table(tableInfo);
 		StringBuffer createString = new StringBuffer("create table ");
 		ArrayList<String> definitions;
 		createString.append(realTableName);
@@ -159,8 +144,7 @@ public class MysqlConnection extends HConnection {
 		return true;
 	}
 
-	@Override
-	public ArrayList<String> getAllTableNames() throws HSQLException {
+	private ArrayList<String> getAllTableNames() throws HSQLException {
 		ArrayList<String> res = new ArrayList<>();
 		try {
 			ResultSet tables = mMysqlConnection.getMetaData().getTables(null, null, null, null);
@@ -176,44 +160,18 @@ public class MysqlConnection extends HConnection {
 	}
 
 	@Override
-	public boolean tableExist(Table table) throws HSQLException {
-		String realTableName = getRealTableName(table);
+	public boolean tableExist(int tenantID, TableInfo tableInfo) throws HSQLException {
+		String realTableName = getRealTableName(tenantID, tableInfo);
 		ArrayList<String> allNames = getAllTableNames();
 		return allNames.contains(realTableName.toLowerCase()) || allNames.contains(realTableName.toUpperCase());
 	}
 
-	private String getRealTableName(Table table) {
-		return table.getName() + "_" + table.getTenantID();
+	private String getRealTableName(int tenantID, TableInfo tableInfo) {
+		return tableInfo.mName + "_" + tenantID;
 	}
 
-	private String getRealTableName(String name, int tenantID) {
-		return name + "_" + tenantID;
-	}
-
-	@Override
-	public HResult doRandomSelect(Table table) {
-		String realTableName = getRealTableName(table);
-		return _sql("select * from " + realTableName + " where " + table.generateWhereClause(true));
-	}
-
-	@Override
-	public HResult doRandomUpdate(Table table) {
-		String realTableName = getRealTableName(table);
-		return _sql("update " + realTableName + " set " + table.generateSetClause() + " where "
-				+ table.generateWhereClause(true));
-	}
-
-	@Override
-	public HResult doRandomInsert(Table table) {
-		String realTableName = getRealTableName(table);
-		String valueString = Table.convertValues(table.generateOneRow());
-		return _sql("replace into " + realTableName + " value " + valueString);
-	}
-
-	@Override
-	public HResult doRandomDelete(Table table) {
-		String realTableName = getRealTableName(table);
-		return _sql("delete from " + realTableName + " where " + table.generateWhereClause(true));
+	private String getRealTableName(String tableName, int tenantID) {
+		return tableName + "_" + tenantID;
 	}
 
 	@Override
@@ -288,10 +246,9 @@ public class MysqlConnection extends HConnection {
 	@Override
 	public void importTempTable(int tenantID, TableInfo tableInfo, String tempPath) throws DbmsException {
 		String realTableName = getRealTableName(tableInfo.mName, tenantID);
-		Table table = new Table(tenantID, tableInfo);
 		try {
-			dropTable(table);
-			createTable(table);
+			dropTable(tenantID, tableInfo);
+			createTable(tenantID, tableInfo);
 		} catch (HSQLException e) {
 			throw new DbmsException(e.getMessage());
 		}

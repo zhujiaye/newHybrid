@@ -70,13 +70,11 @@ public class Table {
 		return res.toString();
 	}
 
-	protected final int TENANT_ID;
 	protected final String NAME;
 	protected final List<ColumnInfo> COLUMNS;
 	protected final List<Integer> PRIMARY_KEY_POS;
 
-	public Table(int tenant_id, TableInfo tableInfo) {
-		TENANT_ID = tenant_id;
+	public Table(TableInfo tableInfo) {
 		NAME = tableInfo.mName;
 		COLUMNS = tableInfo.mColumns;
 		PRIMARY_KEY_POS = tableInfo.mPrimaryKeyPos;
@@ -84,10 +82,6 @@ public class Table {
 
 	public TableInfo generateTableInfo() {
 		return new TableInfo(NAME, COLUMNS, PRIMARY_KEY_POS);
-	}
-
-	public int getTenantID() {
-		return TENANT_ID;
 	}
 
 	public String getName() {
@@ -107,7 +101,7 @@ public class Table {
 	 * 
 	 * @return a string list contain every column value of the generated row
 	 */
-	public ArrayList<Data> generateOneRow() {
+	private ArrayList<Data> generateOneRow() {
 		ArrayList<Data> res = new ArrayList<>();
 		for (int i = 0; i < COLUMNS.size(); i++) {
 			ColumnInfo nowColumn = COLUMNS.get(i);
@@ -145,7 +139,7 @@ public class Table {
 	 *            whether the where condition comes from primary key
 	 * @return <b>a where clause</b>
 	 */
-	public String generateWhereClause(boolean primary) {
+	private String generateWhereClause(boolean primary) {
 		if (primary) {
 			return convertPairs(generatePairs(PRIMARY_KEY_POS), "and");
 		} else {
@@ -163,7 +157,7 @@ public class Table {
 	 * 
 	 * @return
 	 */
-	public String generateSetClause() {
+	private String generateSetClause() {
 		List<Integer> pos = new ArrayList<>();
 		for (int i = 0; i < COLUMNS.size(); i++) {
 			if (PRIMARY_KEY_POS.contains(i))
@@ -213,5 +207,22 @@ public class Table {
 		stringBuilder.append(")");
 		res.add(stringBuilder.toString());
 		return res;
+	}
+
+	public String generateRandomSelectString() {
+		return "select * from " + NAME + " where " + generateWhereClause(true);
+	}
+
+	public String generateRandomUpdateString() {
+		return "update " + NAME + " set " + generateSetClause() + " where " + generateWhereClause(true);
+	}
+
+	public String generateRandomInsertString() {
+		String valueString = convertValues(generateOneRow());
+		return "insert into " + NAME + " values " + valueString;
+	}
+
+	public String generateRandomDeleteString() {
+		return "delete from " + NAME + " where " + generateWhereClause(true);
 	}
 }

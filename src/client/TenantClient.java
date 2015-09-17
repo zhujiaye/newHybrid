@@ -33,6 +33,7 @@ import dbInfo.HConnectionPool;
 import dbInfo.HResult;
 import dbInfo.HSQLException;
 import dbInfo.QueryType;
+import dbInfo.Table;
 
 /**
  * this class stands for a tenant,all operations that a tenant will issue can be
@@ -187,22 +188,60 @@ public class TenantClient {
 			throws NoWorkerException, NoTenantException, DbmsException, NoServerConnectionException {
 		DbStatusInfo dbInfo = getDbStatusInfo();
 		HResult result = null;
-		if (dbInfo.mDbStatus == DbStatus.NORMAL) {
+		if (dbInfo.mDbStatus == DbStatus.NORMAL || dbInfo.mDbStatus == DbStatus.MIGRATING) {
+			HConnectionPool pool = HConnectionPool.getPool();
+			HConnection hConnection = null;
 			try {
-				HConnectionPool pool = HConnectionPool.getPool();
-				HConnection hConnection;
 				hConnection = pool.getConnectionByDbmsInfo(dbInfo.mDbmsInfo);
 				result = hConnection.executeSql(ID, sqlString);
-				pool.putConnection(hConnection);
+				if (result.isSuccess() && dbInfo.mDbStatus == DbStatus.MIGRATING){
+					
+				}
 			} catch (NoHConnectionException e) {
 				throw new DbmsException(e.getMessage());
+			} finally {
+				pool.putConnection(hConnection);
 			}
-		} else if (dbInfo.mDbStatus == DbStatus.MIGRATING) {
-			// TODO
 		} else {
 			result = null;
 		}
 		return result;
+	}
+
+	public HResult selectRandomly()
+			throws NoTenantException, NoServerConnectionException, NoWorkerException, DbmsException {
+		List<TableInfo> tablesInfo = getTables();
+		Random random = new Random(System.nanoTime());
+		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo.size()));
+		Table randomTable = new Table(randomTableInfo);
+		return executeSql(randomTable.generateRandomSelectString());
+	}
+
+	public HResult updateRandomly()
+			throws NoTenantException, NoServerConnectionException, NoWorkerException, DbmsException {
+		List<TableInfo> tablesInfo = getTables();
+		Random random = new Random(System.nanoTime());
+		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo.size()));
+		Table randomTable = new Table(randomTableInfo);
+		return executeSql(randomTable.generateRandomUpdateString());
+	}
+
+	public HResult insertRandomly()
+			throws NoTenantException, NoServerConnectionException, NoWorkerException, DbmsException {
+		List<TableInfo> tablesInfo = getTables();
+		Random random = new Random(System.nanoTime());
+		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo.size()));
+		Table randomTable = new Table(randomTableInfo);
+		return executeSql(randomTable.generateRandomInsertString());
+	}
+
+	public HResult deleteRandomly()
+			throws NoTenantException, NoServerConnectionException, NoWorkerException, DbmsException {
+		List<TableInfo> tablesInfo = getTables();
+		Random random = new Random(System.nanoTime());
+		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo.size()));
+		Table randomTable = new Table(randomTableInfo);
+		return executeSql(randomTable.generateRandomDeleteString());
 	}
 
 	public void lock_lock() throws NoTenantException, LockException, NoServerConnectionException {

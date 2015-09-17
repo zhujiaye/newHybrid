@@ -46,80 +46,48 @@ public abstract class HConnection {
 	public abstract void release() throws HSQLException;
 
 	/**
-	 * drop all tenants' tables if they exist,this will remove all the data,be
-	 * careful to use it
-	 * 
-	 * 
-	 * @throws HSQLException
-	 *             if database access error or called on a closed connection or
-	 *             only a part of tables were dropped
-	 */
-	public abstract void dropAll() throws HSQLException;
-
-	/**
 	 * do whatever the sqlString says,the sqlString only support
 	 * select/insert/update/delete operations now
 	 * 
 	 * @param tenantID
 	 *            the ID of the tenant who issues this request
 	 * @param sqlString
-	 * @return
+	 * @return HResult never null
 	 */
 	public abstract HResult executeSql(int tenantID, String sqlString);
 
 	/**
 	 * drop a table if it exists
 	 * 
-	 * @param table
+	 * @param tenantID
+	 * @param tableInfo
 	 * @throws HSQLException
 	 *             if database access error or other reasons
 	 */
-	public abstract void dropTable(Table table) throws HSQLException;
-
-	/**
-	 * get all tables' name in the dbms
-	 * 
-	 * @return a string list containing all the tables' name
-	 * @throws HSQLException
-	 *             if a database access error occurs
-	 */
-	public abstract ArrayList<String> getAllTableNames() throws HSQLException;
+	public abstract void dropTable(int tenantID, TableInfo tableInfo) throws HSQLException;
 
 	/**
 	 * return whether the corresponding table exists
 	 * 
-	 * @param table
+	 * @param tenantID
+	 * @param tableInfo
 	 * @return <b>true</b> if exists,<b>false</b> otherwise
 	 * @throws HSQLException
 	 *             if a database access error occurs
 	 */
-	public abstract boolean tableExist(Table table) throws HSQLException;
+	public abstract boolean tableExist(int tenantID, TableInfo tableInfo) throws HSQLException;
 
 	/**
 	 * create a table if it doesn't exist
 	 * 
-	 * @param table
-	 *            all information the new created table needed
+	 * @param tenantID
+	 * @param tableInfo
 	 * @return <b>true</b> if the table doesn't exist and was successfully
 	 *         created,<b>false</b> if the table already exists
 	 * @throws HSQLException
 	 *             if a database access error occurs
 	 */
-	public abstract boolean createTable(Table table) throws HSQLException;
-
-	/**
-	 * execute a select operation randomly from a table
-	 * 
-	 * @param table
-	 * @return HResult
-	 */
-	public abstract HResult doRandomSelect(Table table);
-
-	public abstract HResult doRandomUpdate(Table table);
-
-	public abstract HResult doRandomInsert(Table table);
-
-	public abstract HResult doRandomDelete(Table table);
+	public abstract boolean createTable(int tenantID, TableInfo tableInfo) throws HSQLException;
 
 	/**
 	 * export the tenant's table to a file in temporary path using CSV format
@@ -191,16 +159,5 @@ public abstract class HConnection {
 		columns.add(new ColumnInfo("value3", DType.VARCHAR));
 		primary_key_pos.add(0);
 		TableInfo tableInfo = new TableInfo("stock", columns, primary_key_pos);
-		Table table = new Table(3, tableInfo);
-		// hConnection.createTable(table);
-		ArrayList<String> names = hConnection.getAllTableNames();
-		for (int j = 0; j < names.size(); j++)
-			System.out.println(names.get(j));
-		for (int cnt = 1; cnt <= 1; cnt++) {
-			HResult result = null;
-			// hConnection.exportTempTable(3, tableInfo,
-			// "/home/zhujiaye/tmpDBs/stock_3.csv");
-			hConnection.importTempTable(3, tableInfo, "/home/zhujiaye/tmpDBs/item_1.csv");
-		}
 	}
 }

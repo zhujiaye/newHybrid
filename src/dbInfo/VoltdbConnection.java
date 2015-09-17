@@ -72,12 +72,12 @@ public class VoltdbConnection extends HConnection {
 		mVoltdbConnection = voltdbConnection;
 	}
 
-	private String getRealTableName(Table table) {
-		return table.getName() + "_" + table.getTenantID();
+	private String getRealTableName(int tenantID, TableInfo tableInfo) {
+		return tableInfo.mName + "_" + tenantID;
 	}
 
-	private String getRealTableName(String name, int tenantID) {
-		return name + "_" + tenantID;
+	private String getRealTableName(String tableName, int tenantID) {
+		return tableName + "_" + tenantID;
 	}
 
 	@Override
@@ -103,30 +103,20 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	@Override
-	public void dropAll() throws HSQLException {
-		ArrayList<String> allNames = getAllTableNames();
-		for (int i = 0; i < allNames.size(); i++) {
-			String name = allNames.get(i);
-			HResult result = _sql("drop table " + name + " if exists cascade");
-			if (!result.isSuccess())
-				throw new HSQLException("failed to drop table " + name + ":" + result.getMessage());
-		}
-	}
-
-	@Override
-	public void dropTable(Table table) throws HSQLException {
-		String realTableName = getRealTableName(table);
+	public void dropTable(int tenantID, TableInfo tableInfo) throws HSQLException {
+		String realTableName = getRealTableName(tenantID, tableInfo);
 		HResult result = _sql("drop table " + realTableName + " if exists cascade");
 		if (!result.isSuccess())
 			throw new HSQLException("failed to drop table " + realTableName + ":" + result.getMessage());
 	}
 
 	@Override
-	public boolean createTable(Table table) throws HSQLException {
-		if (tableExist(table))
+	public boolean createTable(int tenantID, TableInfo tableInfo) throws HSQLException {
+		if (tableExist(tenantID, tableInfo))
 			return false;
-		String realTableName = getRealTableName(table);
+		String realTableName = getRealTableName(tenantID, tableInfo);
 		StringBuffer createString = new StringBuffer("create table ");
+		Table table = new Table(tableInfo);
 		ArrayList<String> definitions;
 		createString.append(realTableName);
 		createString.append("(");
@@ -152,8 +142,7 @@ public class VoltdbConnection extends HConnection {
 		return true;
 	}
 
-	@Override
-	public ArrayList<String> getAllTableNames() throws HSQLException {
+	private ArrayList<String> getAllTableNames() throws HSQLException {
 		ArrayList<String> res = new ArrayList<>();
 		try {
 			ClientResponse response = mVoltdbConnection.callProcedure("@SystemCatalog", "TABLES");
@@ -173,34 +162,8 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	@Override
-	public HResult doRandomSelect(Table table) {
-		String realTableName = getRealTableName(table);
-		return _sql("select * from " + realTableName + " where " + table.generateWhereClause(true));
-	}
-
-	@Override
-	public HResult doRandomUpdate(Table table) {
-		String realTableName = getRealTableName(table);
-		return _sql("update " + realTableName + " set " + table.generateSetClause() + " where "
-				+ table.generateWhereClause(true));
-	}
-
-	@Override
-	public HResult doRandomInsert(Table table) {
-		String realTableName = getRealTableName(table);
-		String valueString = Table.convertValues(table.generateOneRow());
-		return _sql("upsert into " + realTableName + " values " + valueString);
-	}
-
-	@Override
-	public HResult doRandomDelete(Table table) {
-		String realTableName = getRealTableName(table);
-		return _sql("delete from " + realTableName + " where " + table.generateWhereClause(true));
-	}
-
-	@Override
-	public boolean tableExist(Table table) throws HSQLException {
-		String realTableName = getRealTableName(table);
+	public boolean tableExist(int tenantID, TableInfo tableInfo) throws HSQLException {
+		String realTableName = getRealTableName(tenantID, tableInfo);
 		ArrayList<String> allNames = getAllTableNames();
 		return allNames.contains(realTableName.toLowerCase()) || allNames.contains(realTableName.toUpperCase());
 	}
@@ -304,10 +267,9 @@ public class VoltdbConnection extends HConnection {
 	public void importTempTable(int tenantID, TableInfo tableInfo, String tempPath) throws DbmsException {
 		String realTableName = getRealTableName(tableInfo.mName, tenantID);
 		InetSocketAddress host = mVoltdbConnection.getConnectedHostList().get(0);
-		Table table = new Table(tenantID, tableInfo);
 		try {
-			dropTable(table);
-			createTable(table);
+			dropTable(tenantID, tableInfo);
+			createTable(tenantID, tableInfo);
 		} catch (HSQLException e) {
 			throw new DbmsException(e.getMessage());
 		}

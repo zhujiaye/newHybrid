@@ -20,7 +20,10 @@ import dbInfo.HConnection;
 import dbInfo.HConnectionPool;
 import dbInfo.HSQLException;
 import newhybrid.ClientShutdownException;
+import newhybrid.HeartbeatExecutor;
+import newhybrid.HeartbeatThread;
 import newhybrid.NoHConnectionException;
+import newhybrid.NoServerConnectionException;
 import server.ServerClient;
 import server.ServerServiceHandler;
 import thrift.DbmsInfo;
@@ -29,7 +32,7 @@ import thrift.ServerService;
 import thrift.ServerWorkerInfo;
 import thrift.WorkerService;
 
-public class HWorker {
+public class HWorker implements HeartbeatExecutor {
 	static private final Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
 	private final String SERVER_ADDRESS;
 	private final int SERVER_PORT;
@@ -44,8 +47,11 @@ public class HWorker {
 	private WorkerServiceHandler mWorkerServiceHandler = null;
 	private TNonblockingServerSocket mWorkerTNonblockingServerSocket = null;
 	private TServer mWorkerServiceServer = null;
+	private ServerClient mServerClient = null;
+	private HeartbeatThread mHeartbeatThread = null;
 
-	private volatile boolean mIsStarted = false;
+	private boolean mIsStarted = false;
+	private boolean mIsRegistered = false;
 
 	public static void main(String[] args) throws TTransportException {
 		WorkerConf conf = WorkerConf.getConf();
@@ -74,6 +80,7 @@ public class HWorker {
 		SERVER_THREADS = server_threads;
 		DBMSINFO = dbmsInfo;
 		mWorkerInfo = new WorkerInfo(address, port, dbmsInfo, tempFolder);
+		mServerClient = new ServerClient(server_address, server_port);
 	}
 
 	public void start() throws TTransportException {
@@ -91,9 +98,11 @@ public class HWorker {
 				new TThreadedSelectorServer.Args(mWorkerTNonblockingServerSocket).processor(workerServiceProcessor)
 						.selectorThreads(SELECTOR_THREADS).acceptQueueSizePerThread(QUEUE_SIZE_PER_SELECTOR)
 						.workerThreads(SERVER_THREADS));
-//		mWorkerServiceServer = new TNonblockingServer(new TNonblockingServer.Args(mWorkerTNonblockingServerSocket)
-//				.processor(workerServiceProcessor).transportFactory(new TFramedTransport.Factory())
-//				.protocolFactory(new TBinaryProtocol.Factory()));
+		// mWorkerServiceServer = new TNonblockingServer(new
+		// TNonblockingServer.Args(mWorkerTNonblockingServerSocket)
+		// .processor(workerServiceProcessor).transportFactory(new
+		// TFramedTransport.Factory())
+		// .protocolFactory(new TBinaryProtocol.Factory()));
 		new Thread(new Runnable() {
 
 			@Override
@@ -105,24 +114,41 @@ public class HWorker {
 		try {
 			Thread.sleep(2000);
 		} catch (InterruptedException e) {
-			LOG.error(e);
+			LOG.error(e.getMessage());
 		}
+		mHeartbeatThread = new HeartbeatThread("worker_hearbeat", this, Constants.WORKER_HEARTBEAT_INTERVAL_TIME);
+		mHeartbeatThread.start();
 		mIsStarted = true;
 		LOG.info("worker@" + ADDRESS + ":" + PORT + " started!......");
-		LOG.info("registering this worker to server......");
+	}
+
+	@Override
+	public void heartbeat() {
 		try {
-			ServerClient serverClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
-			ServerWorkerInfo serverWorkerInfo = new ServerWorkerInfo(ADDRESS, PORT, DBMSINFO);
-			if (serverClient.worker_register(serverWorkerInfo)) {
-				LOG.info("register succeeded!");
-			} else {
-				LOG.warn("faild to register this worker: worker already exists");
+			if (!mServerClient.serverExist()) {
+				LOG.error("server is down!....");
+				mIsRegistered = false;
 				return;
 			}
-			serverClient.shutdown();
 		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mServerClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			return;
+		}
+		if (mIsRegistered)
+			return;
+		LOG.info("registering this worker to server....");
+		try {
+			if (mServerClient.worker_register(new ServerWorkerInfo(ADDRESS, PORT, DBMSINFO))) {
+				LOG.info("register succeeded!");
+			} else {
+				LOG.info("faild to register this worker: worker already exists");
+			}
+			mIsRegistered = true;
+		} catch (ClientShutdownException | NoServerConnectionException e) {
 			LOG.error(e.getMessage());
 			return;
 		}
 	}
+
 }

@@ -9,6 +9,7 @@ import thrift.DType;
 import thrift.DbmsException;
 import thrift.DbmsInfo;
 import thrift.DbmsType;
+import thrift.OperationPara;
 import thrift.TableInfo;
 import thrift.TempTableInfo;
 import thrift.TenantInfo;

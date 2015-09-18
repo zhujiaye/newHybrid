@@ -70,6 +70,10 @@ public class ServerTenant {
 		return res;
 	}
 
+	public void setDbStatus(DbStatus newDbStatus) {
+		mDbStatus = newDbStatus;
+	}
+
 	public boolean login() {
 		if (mLoggedIn)
 			return false;

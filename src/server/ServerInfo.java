@@ -10,6 +10,7 @@ import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.log4j.Logger;
 
@@ -21,12 +22,18 @@ import dbInfo.HConnectionPool;
 import dbInfo.HSQLException;
 import dbInfo.Table;
 import newhybrid.NoHConnectionException;
+import thrift.DbStatus;
 import thrift.DbStatusInfo;
 import thrift.DbmsInfo;
+import thrift.DbmsType;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
+import thrift.Operation;
+import thrift.OperationPara;
+import thrift.OperationType;
 import thrift.ServerWorkerInfo;
 import thrift.TableInfo;
+import thrift.TableOperationPara;
 import thrift.TenantInfo;
 
 public class ServerInfo {
@@ -38,6 +45,7 @@ public class ServerInfo {
 	private Map<Integer, ServerTenant> mTenants;
 
 	private ArrayList<ServerWorkerInfo> mWorkers;
+	private ArrayList<DbMigrator> mDbMigrators;
 
 	public ServerInfo(String serverAddress, int serverPort, String imagePath) {
 		SERVER_ADDRESS = serverAddress;
@@ -45,6 +53,7 @@ public class ServerInfo {
 		IMAGE_PATH = imagePath;
 		mTenants = new HashMap<>();
 		mWorkers = new ArrayList<>();
+		mDbMigrators = new ArrayList<>();
 	}
 
 	private ServerWorkerInfo findWorkerForTenant(int ID) {
@@ -90,6 +99,47 @@ public class ServerInfo {
 			throw new NoWorkerException("no worker is registered for tenant's dbms,tenant ID is " + tenant.getID());
 	}
 
+	public void offload() {
+		LOG.info("offloading....");
+		ServerTenant tenant;
+		synchronized (mTenants) {
+			if (mTenants.isEmpty())
+				return;
+			Random random = new Random(System.nanoTime());
+			tenant = mTenants.get(random.nextInt(mTenants.size()) + 1);
+		}
+		synchronized (mWorkers) {
+			if (mWorkers.size() < 2)
+				return;
+			ServerWorkerInfo from = null, to = null;
+			for (int i = 0; i < mWorkers.size(); i++) {
+				ServerWorkerInfo currentWorker = mWorkers.get(i);
+				if (currentWorker.mDbmsInfo.mCompleteConnectionString
+						.equals(tenant.getDbmsInfo().mCompleteConnectionString)) {
+					from = currentWorker;
+				} else {
+					to = currentWorker;
+				}
+			}
+			if (from == null || to == null)
+				return;
+			synchronized (mDbMigrators) {
+				for (int i = 0; i < mDbMigrators.size(); i++) {
+					DbMigrator currentMigrator = mDbMigrators.get(i);
+					synchronized (currentMigrator) {
+						if (currentMigrator.isMigrating() && currentMigrator.getTenantID() == tenant.getID()) {
+							// currentMigrator.migrateToNewWorker(to);
+							return;
+						}
+					}
+				}
+				DbMigrator migrator = new DbMigrator(this, tenant.getID(), from, to);
+				mDbMigrators.add(migrator);
+				migrator.start();
+			}
+		}
+	}
+
 	public boolean registerWorker(ServerWorkerInfo workerInfo) {
 		synchronized (mWorkers) {
 			for (int i = 0; i < mWorkers.size(); i++) {
@@ -120,22 +170,29 @@ public class ServerInfo {
 		}
 	}
 
-	public boolean createTableForTenant(int ID, TableInfo tableInfo)
+	public boolean createTableForTenant(int tenantID, TableInfo tableInfo)
 			throws NoTenantException, NoWorkerException, NoHConnectionException, HSQLException {
 		ServerTenant tenant;
 		synchronized (mTenants) {
-			checkTenantExist(ID);
-			tenant = mTenants.get(ID);
+			checkTenantExist(tenantID);
+			tenant = mTenants.get(tenantID);
 		}
 		checkTenantWorker(tenant);
-		DbmsInfo dbmsInfo = tenant.getDbmsInfo();
+		DbStatusInfo dbStatusInfo = tenant.generateDbStatusInfo();
+		DbmsInfo dbmsInfo = dbStatusInfo.mDbmsInfo;
+		HConnectionPool pool = HConnectionPool.getPool();
+		HConnection hConnection = null;
 		try {
-			HConnectionPool pool = HConnectionPool.getPool();
-			HConnection hConnection = pool.getConnectionByDbmsInfo(dbmsInfo);
-			boolean success = hConnection.createTable(new Table(ID, tableInfo));
-			pool.putConnection(hConnection);
+			hConnection = pool.getConnectionByDbmsInfo(dbmsInfo);
+			boolean success = hConnection.createTable(tenantID, tableInfo);
 			if (success) {
 				tenant.addTable(tableInfo);
+				if (dbStatusInfo.mDbStatus == DbStatus.MIGRATING) {
+					TableOperationPara tableParas = new TableOperationPara(tenantID, tableInfo);
+					OperationPara paras = new OperationPara();
+					paras.setMTableOpPara(tableParas);
+					addOperationToMigrator(tenantID, new Operation(OperationType.TABLE_CREATE, paras));
+				}
 				return true;
 			} else
 				return false;
@@ -143,6 +200,8 @@ public class ServerInfo {
 			throw e;
 		} catch (HSQLException e) {
 			throw e;
+		} finally {
+			pool.putConnection(hConnection);
 		}
 	}
 
@@ -251,17 +310,26 @@ public class ServerInfo {
 			tenant = mTenants.get(ID);
 		}
 		checkTenantWorker(tenant);
-		DbmsInfo dbmsInfo = tenant.getDbmsInfo();
+		HConnectionPool pool = HConnectionPool.getPool();
+		HConnection hConnection = null;
+		DbStatusInfo dbStatusInfo = tenant.generateDbStatusInfo();
+		DbmsInfo dbmsInfo = dbStatusInfo.mDbmsInfo;
 		try {
-			HConnectionPool pool = HConnectionPool.getPool();
-			HConnection hConnection = pool.getConnectionByDbmsInfo(dbmsInfo);
-			hConnection.dropTable(new Table(ID, tableInfo));
-			pool.putConnection(hConnection);
+			hConnection = pool.getConnectionByDbmsInfo(dbmsInfo);
+			hConnection.dropTable(ID, tableInfo);
 			tenant.dropTable(tableInfo.mName);
+			if (dbStatusInfo.mDbStatus == DbStatus.MIGRATING) {
+				TableOperationPara tableParas = new TableOperationPara(ID, tableInfo);
+				OperationPara paras = new OperationPara();
+				paras.setMTableOpPara(tableParas);
+				addOperationToMigrator(ID, new Operation(OperationType.TABLE_DROP, paras));
+			}
 		} catch (NoHConnectionException e) {
 			throw e;
 		} catch (HSQLException e) {
 			throw e;
+		} finally {
+			pool.putConnection(hConnection);
 		}
 	}
 
@@ -275,7 +343,7 @@ public class ServerInfo {
 		return tenant.generateDbStatusInfo();
 	}
 
-	public void lockLockForTenant(int ID) throws NoTenantException, InterruptedException {
+	public void lockLockForTenant(int ID) throws InterruptedException, NoTenantException {
 		ServerTenant tenant;
 		synchronized (mTenants) {
 			checkTenantExist(ID);
@@ -284,12 +352,47 @@ public class ServerInfo {
 		tenant.getLock().lock();
 	}
 
-	public void releaseLockForTenant(int ID) throws NoTenantException {
+	public void releaseLockForTenant(int ID) {
+		ServerTenant tenant;
+		synchronized (mTenants) {
+			try {
+				checkTenantExist(ID);
+			} catch (NoTenantException e) {
+				return;
+			}
+			tenant = mTenants.get(ID);
+		}
+		tenant.getLock().release();
+	}
+
+	public void setDbStatusForTenant(int ID, DbStatus newDbStatus) throws NoTenantException {
 		ServerTenant tenant;
 		synchronized (mTenants) {
 			checkTenantExist(ID);
 			tenant = mTenants.get(ID);
 		}
-		tenant.getLock().release();
+		tenant.setDbStatus(newDbStatus);
+	}
+
+	public void setDbmsForTenant(int ID, DbmsInfo newDbmsInfo) throws NoTenantException {
+		ServerTenant tenant;
+		synchronized (mTenants) {
+			checkTenantExist(ID);
+			tenant = mTenants.get(ID);
+		}
+		tenant.setDbms(newDbmsInfo);
+	}
+
+	public void addOperationToMigrator(int tenantID, Operation operation) {
+		synchronized (mDbMigrators) {
+			for (int i = 0; i < mDbMigrators.size(); i++) {
+				DbMigrator current = mDbMigrators.get(i);
+				// TODO dead-lock here
+				if (current.getTenantID() == tenantID) {
+					current.addOperation(operation);
+					return;
+				}
+			}
+		}
 	}
 }

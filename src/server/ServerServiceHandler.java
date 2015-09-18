@@ -14,10 +14,10 @@ import thrift.DbmsException;
 import thrift.LockException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
+import thrift.Operation;
 import thrift.ServerService;
 import thrift.ServerWorkerInfo;
 import thrift.TableInfo;
-import thrift.TenantResult;
 
 public class ServerServiceHandler implements ServerService.Iface {
 	final static private Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
@@ -115,8 +115,13 @@ public class ServerServiceHandler implements ServerService.Iface {
 	}
 
 	@Override
-	public void tenant_lock_release(int ID) throws LockException, NoTenantException, TException {
+	public void tenant_lock_release(int ID) throws TException {
 		mServerInfo.releaseLockForTenant(ID);
+	}
+
+	@Override
+	public void addOperationToMigrator(int ID, Operation operation) throws TException {
+		mServerInfo.addOperationToMigrator(ID, operation);
 	}
 
 }

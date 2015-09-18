@@ -38,6 +38,8 @@ public class Constants {
 	final public static long OFFLOADER_FIXED_INTERVAL_TIME = 5 * S;
 	final public static int OFFLOADER_BATCH = 200;
 
+	final public static long WORKER_HEARTBEAT_INTERVAL_TIME = 5 * S;
+
 	final public static long SPLIT_TIME = 60 * S;
 	final public static long NUMBEROF_AHEAD_SPLITS = 10;
 

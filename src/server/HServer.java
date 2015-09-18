@@ -8,7 +8,10 @@ import org.apache.thrift.server.TThreadedSelectorServer;
 import org.apache.thrift.transport.TNonblockingServerSocket;
 import org.apache.thrift.transport.TTransportException;
 
+import thrift.DbmsInfo;
+import thrift.DbmsType;
 import thrift.ServerService;
+import thrift.ServerWorkerInfo;
 import newhybrid.HeartbeatThread;
 import config.Constants;
 import config.ServerConf;
@@ -73,7 +76,12 @@ public class HServer {
 		mServerMonitorThread.start();
 		mIsStarted = true;
 		LOG.info("server@" + ADDRESS + ":" + PORT + " started!......");
-		mServerServiceServer.serve();
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				mServerServiceServer.serve();
+			}
+		}).start();
 	}
 
 	public void stop() {

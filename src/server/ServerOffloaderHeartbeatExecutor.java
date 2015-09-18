@@ -11,6 +11,7 @@ public class ServerOffloaderHeartbeatExecutor implements HeartbeatExecutor {
 
 	@Override
 	public void heartbeat() {
+		mServerInfo.offload();
 	}
 
 }

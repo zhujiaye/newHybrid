@@ -17,6 +17,7 @@ import thrift.DbStatusInfo;
 import thrift.LockException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
+import thrift.Operation;
 import thrift.ServerService;
 import thrift.ServerWorkerInfo;
 import thrift.TableInfo;
@@ -308,6 +309,20 @@ public class ServerClient {
 			try {
 				connect();
 				mClient.tenant_lock_release(ID);
+				return;
+			} catch (TException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+	}
+
+	public void addOperationToMigrator(int ID, Operation operation)
+			throws ClientShutdownException, NoServerConnectionException {
+		while (true) {
+			try {
+				connect();
+				mClient.addOperationToMigrator(ID, operation);
 				return;
 			} catch (TException e) {
 				LOG.error(e.getMessage());

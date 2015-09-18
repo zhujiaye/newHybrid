@@ -1,30 +1,5 @@
 namespace java thrift
 
-struct SplitResult{
- 	1: i32 mSplitID;
-	2: i32 mRemainQueriesBefore;
-	3: i32 mWorkload;
-	4: i32 mRemainQueriesAfter;
-	5: i32 mSentQueries;
-	6: i32 mSuccessQueries;
-}
-struct SuccessQueryResult{
-	1: i32 mID;
-	2: bool mIsInMysql;
-	3: bool mIsRead;
-	4: i64 	mStartTime;
-	5: i64  mEndTime;
-	6: i64  mLatency;
-	7: i32 mSplit;
-}
-struct TenantResult{
-	1: i32 mID;
-	2: i32 mSLO;
-	3: i32 mDataSize;
-	4: i32 mWH;
-	5: list<SplitResult> mSplitResults;
-	6: list<SuccessQueryResult> mQueryResults;
-}
 struct TenantInfo{
 	1: i32 mId; //this is unique across the whole system
 	//more information about tenant can be added here
@@ -74,6 +49,27 @@ struct TempTableInfo{
 struct TempDbInfo{
 	1:list<TempTableInfo> mTempTablesInfo;
 }
+enum OperationType{
+	TABLE_CREATE=1,
+	TABLE_DROP=2,
+	EXECUTE_SQL=3,
+}
+struct TableOperationPara{
+	1:i32 mTenantID;
+	2:TableInfo mTableInfo;
+}
+struct SqlOperationPara{
+	1:i32 mTenantID;
+	2:string mSqlString;
+}
+union OperationPara{
+	1:TableOperationPara mTableOpPara;
+	2:SqlOperationPara mSqlOpPara;
+}
+struct Operation{
+	1:OperationType mType;
+	2:OperationPara mParas;
+}
 exception DbmsException{
 	1:string message;
 }
@@ -99,8 +95,10 @@ service ServerService{
 	bool worker_register(1:ServerWorkerInfo workerInfo);
 	void tenant_lock_lock(1:i32 ID) throws (1:LockException eA, 2:NoTenantException eB);
 	void tenant_lock_release(1:i32 ID);
+	void addOperationToMigrator(1:i32 ID, 2:Operation operation);
 }
 service WorkerService{
 	void tenant_exportTempDb(1:i32 ID, 2:TempDbInfo tempDbInfo) throws (1:DbmsException e); 
 	void tenant_moveTempDb(1:i32 ID, 2:TempDbInfo tempDbInfo, 3:ServerWorkerInfo workerInfo) throws (1:DbmsException e); 
+	void replay(1:list<Operation> operations) throws (1:DbmsException e);
 }

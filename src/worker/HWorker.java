@@ -51,7 +51,6 @@ public class HWorker implements HeartbeatExecutor {
 	private HeartbeatThread mHeartbeatThread = null;
 
 	private boolean mIsStarted = false;
-	private boolean mIsRegistered = false;
 
 	public static void main(String[] args) throws TTransportException {
 		WorkerConf conf = WorkerConf.getConf();
@@ -127,7 +126,6 @@ public class HWorker implements HeartbeatExecutor {
 		try {
 			if (!mServerClient.serverExist()) {
 				LOG.error("server is down!....");
-				mIsRegistered = false;
 				return;
 			}
 		} catch (ClientShutdownException e) {
@@ -135,16 +133,10 @@ public class HWorker implements HeartbeatExecutor {
 			mServerClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
 			return;
 		}
-		if (mIsRegistered)
-			return;
-		LOG.info("registering this worker to server....");
 		try {
 			if (mServerClient.worker_register(new ServerWorkerInfo(ADDRESS, PORT, DBMSINFO))) {
-				LOG.info("register succeeded!");
-			} else {
-				LOG.info("faild to register this worker: worker already exists");
+				LOG.info("registered this worker to server....");
 			}
-			mIsRegistered = true;
 		} catch (ClientShutdownException | NoServerConnectionException e) {
 			LOG.error(e.getMessage());
 			return;

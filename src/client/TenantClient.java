@@ -20,6 +20,10 @@ import thrift.DbmsException;
 import thrift.LockException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
+import thrift.Operation;
+import thrift.OperationPara;
+import thrift.OperationType;
+import thrift.SqlOperationPara;
 import thrift.TableInfo;
 
 import org.apache.log4j.Logger;
@@ -162,6 +166,16 @@ public class TenantClient {
 		}
 	}
 
+	private void addOperationToMigrator(int ID, Operation operation) throws NoServerConnectionException {
+		try {
+			mClient.addOperationToMigrator(ID, operation);
+		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			addOperationToMigrator(ID, operation);
+		}
+	}
+
 	public DbStatusInfo getDbStatusInfo() throws NoWorkerException, NoTenantException, NoServerConnectionException {
 		try {
 			return mClient.tenant_getDbInfo(ID);
@@ -183,7 +197,6 @@ public class TenantClient {
 	 * @throws DbmsException
 	 * @throws NoServerConnectionException
 	 */
-
 	public HResult executeSql(String sqlString)
 			throws NoWorkerException, NoTenantException, DbmsException, NoServerConnectionException {
 		DbStatusInfo dbInfo = getDbStatusInfo();
@@ -194,8 +207,13 @@ public class TenantClient {
 			try {
 				hConnection = pool.getConnectionByDbmsInfo(dbInfo.mDbmsInfo);
 				result = hConnection.executeSql(ID, sqlString);
-				if (result.isSuccess() && dbInfo.mDbStatus == DbStatus.MIGRATING){
-					
+				if (result.isSuccess() && dbInfo.mDbStatus == DbStatus.MIGRATING) {
+					if (sqlString.indexOf("select") == -1) {
+						SqlOperationPara sqlParas = new SqlOperationPara(ID, sqlString);
+						OperationPara paras = new OperationPara();
+						paras.setMSqlOpPara(sqlParas);
+						addOperationToMigrator(ID, new Operation(OperationType.EXECUTE_SQL, paras));
+					}
 				}
 			} catch (NoHConnectionException e) {
 				throw new DbmsException(e.getMessage());

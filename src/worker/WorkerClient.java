@@ -36,6 +36,7 @@ import server.MoveTempDbResultHandler;
 import thrift.DbmsInfo;
 import thrift.DbmsType;
 import thrift.NoTenantException;
+import thrift.Operation;
 import thrift.ServerService;
 import thrift.ServerWorkerInfo;
 import thrift.TableInfo;
@@ -166,6 +167,22 @@ public class WorkerClient {
 				connect();
 				WorkerService.AsyncClient asyncClient = getUsefulAsyncClient();
 				asyncClient.tenant_moveTempDb(ID, tempDbInfo, workerInfo, resultHandler);
+				return;
+			} catch (TException | IOException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+	}
+
+	public void async_replay(List<Operation> operations,
+			AsyncMethodCallback<WorkerService.AsyncClient.replay_call> resultHandler)
+					throws ClientShutdownException, NoServerConnectionException {
+		while (true) {
+			try {
+				connect();
+				WorkerService.AsyncClient asyncClient = getUsefulAsyncClient();
+				asyncClient.replay(operations, resultHandler);
 				return;
 			} catch (TException | IOException e) {
 				LOG.error(e.getMessage());

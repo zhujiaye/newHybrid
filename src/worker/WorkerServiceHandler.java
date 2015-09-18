@@ -5,11 +5,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import org.apache.thrift.TException;
 
 import thrift.DbmsException;
 import thrift.DbmsInfo;
+import thrift.Operation;
 import thrift.ServerWorkerInfo;
 import thrift.TempDbInfo;
 import thrift.WorkerService;
@@ -32,6 +34,11 @@ public class WorkerServiceHandler implements WorkerService.Iface {
 	public void tenant_moveTempDb(int ID, TempDbInfo tempDbInfo, ServerWorkerInfo workerInfo)
 			throws DbmsException, TException {
 		mWorkerInfo.moveTempDbForTenant(ID, tempDbInfo, workerInfo);
+	}
+
+	@Override
+	public void replay(List<Operation> operations) throws DbmsException, TException {
+		mWorkerInfo.replayOperations(operations);
 	}
 
 }

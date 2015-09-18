@@ -8,13 +8,19 @@ import org.apache.log4j.Logger;
 import config.Constants;
 import dbInfo.HConnection;
 import dbInfo.HConnectionPool;
+import dbInfo.HSQLException;
 import newhybrid.NoHConnectionException;
 import thrift.DbmsException;
 import thrift.DbmsInfo;
+import thrift.Operation;
+import thrift.OperationType;
 import thrift.ServerWorkerInfo;
+import thrift.SqlOperationPara;
 import thrift.TableInfo;
+import thrift.TableOperationPara;
 import thrift.TempDbInfo;
 import thrift.TempTableInfo;
+import thrift.OperationType;
 
 public class WorkerInfo {
 	static private final Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
@@ -67,6 +73,36 @@ public class WorkerInfo {
 						TEMPFOLDER + "/" + tempTableInfo.mTablePath);
 			}
 		} catch (NoHConnectionException e) {
+			throw new DbmsException(e.getMessage());
+		} finally {
+			pool.putConnection(hConnection);
+		}
+	}
+
+	public void replayOperations(List<Operation> operations) throws DbmsException {
+		for (int i = 0; i < operations.size(); i++) {
+			System.out.println("replay:"+operations.get(i).toString());
+		}
+		HConnectionPool pool = HConnectionPool.getPool();
+		HConnection hConnection = null;
+		try {
+			hConnection = pool.getConnectionByDbmsInfo(DBMSINFO);
+			for (int i = 0; i < operations.size(); i++) {
+				Operation current = operations.get(i);
+				if (current.mType == OperationType.TABLE_CREATE) {
+					TableOperationPara paras = current.mParas.getMTableOpPara();
+					hConnection.createTable(paras.mTenantID, paras.mTableInfo);
+				}
+				if (current.mType == OperationType.TABLE_DROP) {
+					TableOperationPara paras = current.mParas.getMTableOpPara();
+					hConnection.dropTable(paras.mTenantID, paras.mTableInfo);
+				}
+				if (current.mType == OperationType.EXECUTE_SQL) {
+					SqlOperationPara paras = current.mParas.getMSqlOpPara();
+					hConnection.executeSql(paras.mTenantID, paras.mSqlString);
+				}
+			}
+		} catch (NoHConnectionException | HSQLException e) {
 			throw new DbmsException(e.getMessage());
 		} finally {
 			pool.putConnection(hConnection);

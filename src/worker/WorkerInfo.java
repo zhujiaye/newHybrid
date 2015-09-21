@@ -80,9 +80,6 @@ public class WorkerInfo {
 	}
 
 	public void replayOperations(List<Operation> operations) throws DbmsException {
-		for (int i = 0; i < operations.size(); i++) {
-			System.out.println("replay:"+operations.get(i).toString());
-		}
 		HConnectionPool pool = HConnectionPool.getPool();
 		HConnection hConnection = null;
 		try {

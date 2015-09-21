@@ -127,9 +127,14 @@ public class ServerInfo {
 				for (int i = 0; i < mDbMigrators.size(); i++) {
 					DbMigrator currentMigrator = mDbMigrators.get(i);
 					synchronized (currentMigrator) {
-						if (currentMigrator.isMigrating() && currentMigrator.getTenantID() == tenant.getID()) {
-							// currentMigrator.migrateToNewWorker(to);
-							return;
+						if (currentMigrator.getTenantID() == tenant.getID()) {
+							if (currentMigrator.isMigrating()) {
+								// currentMigrator.migrateToNewWorker(to);
+								return;
+							} else {
+								mDbMigrators.remove(i);
+								break;
+							}
 						}
 					}
 				}
@@ -384,15 +389,18 @@ public class ServerInfo {
 	}
 
 	public void addOperationToMigrator(int tenantID, Operation operation) {
+		DbMigrator migrator = null;
 		synchronized (mDbMigrators) {
 			for (int i = 0; i < mDbMigrators.size(); i++) {
 				DbMigrator current = mDbMigrators.get(i);
-				// TODO dead-lock here
 				if (current.getTenantID() == tenantID) {
-					current.addOperation(operation);
-					return;
+					migrator = current;
+					break;
 				}
 			}
 		}
+		if (migrator == null)
+			return;
+		migrator.addOperation(operation);
 	}
 }

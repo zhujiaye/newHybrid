@@ -101,7 +101,7 @@ public class DbMigrator extends Thread {
 				mIsReplaying = true;
 				synchronized (mOperations) {
 					for (int i = 0; i < mOperations.size(); i++)
-						System.out.println(mOperations.get(i));
+						LOG.debug(mOperations.get(i).toString());
 					TOCLIENT.async_replay(mOperations, new ReplayResultHandler(TOCLIENT, this));
 				}
 			} catch (ClientShutdownException | NoServerConnectionException e) {
@@ -115,7 +115,7 @@ public class DbMigrator extends Thread {
 		if (mIsLocked)
 			return;
 		SERVERINFO.lockLockForTenant(TENANTID);
-		System.out.println("++++++++++++++lock++++++++++++++++++");
+		LOG.debug("++++++++++++++lock++++++++++++++++++");
 		mIsLocked = true;
 	}
 
@@ -123,14 +123,13 @@ public class DbMigrator extends Thread {
 		if (!mIsLocked)
 			return;
 		SERVERINFO.releaseLockForTenant(TENANTID);
-		System.out.println("---------------unlock---------------");
+		LOG.debug("---------------unlock---------------");
 		mIsLocked = false;
 	}
 
 	public void addOperation(Operation operation) {
 		synchronized (mOperations) {
 			mOperations.add(operation);
-			System.out.println(operation);
 		}
 	}
 
@@ -143,7 +142,7 @@ public class DbMigrator extends Thread {
 				mIsCanceled = true;
 			} else {
 				mIsExported = true;
-				System.out.format("export DB for tenant %d finished....%n", TENANTID);
+				LOG.debug(String.format("export DB for tenant %d finished....%n", TENANTID));
 			}
 			this.notify();
 		}
@@ -158,7 +157,7 @@ public class DbMigrator extends Thread {
 				mIsCanceled = true;
 			} else {
 				mIsMoved = true;
-				System.out.format("move DB for tenant %d finished....%n", TENANTID);
+				LOG.debug(String.format("move DB for tenant %d finished....%n", TENANTID));
 			}
 			this.notifyAll();
 		}
@@ -173,7 +172,7 @@ public class DbMigrator extends Thread {
 				mIsCanceled = true;
 			} else {
 				mIsReplayed = true;
-				System.out.format("replay for tenant %d finished....%n", TENANTID);
+				LOG.debug(String.format("replay for tenant %d finished....%n", TENANTID));
 			}
 			this.notifyAll();
 		}
@@ -208,7 +207,7 @@ public class DbMigrator extends Thread {
 					if (mIsExporting || mIsMoving || mIsReplaying) {
 						this.wait();
 					} else if (mChangingTo) {
-						System.out.format("change destination to new worker for tenant %d....%n", TENANTID);
+						LOG.debug(String.format("change destination to new worker for tenant %d....%n", TENANTID));
 						mChangingTo = false;
 						TOCLIENT.shutdown();
 						TO = newTO;
@@ -222,36 +221,32 @@ public class DbMigrator extends Thread {
 						try_release();
 					} else if (!mIsExported) {
 						try_lock();
-						System.out.format("export DB for tenant %d....%n", TENANTID);
-						this.wait(15000);
+						LOG.debug(String.format("export DB for tenant %d....%n", TENANTID));
 						exportTempDb();
 					} else if (!mIsMoved) {
 						try_lock();
-						System.out.format("mark tenant %d's DB as MIGRATING....%n", TENANTID);
+						LOG.debug(String.format("mark tenant %d's DB as MIGRATING....%n", TENANTID));
 						SERVERINFO.setDbStatusForTenant(TENANTID, DbStatus.MIGRATING);
 						try_release();
-						System.out.format("move DB for tenant %d....%n", TENANTID);
-						this.wait(15000);
+						LOG.debug(String.format("move DB for tenant %d....%n", TENANTID));
 						moveTempDb();
 					} else if (!mIsReplayed) {
 						try_lock();
-						System.out.format("replay for tenant %d....%n", TENANTID);
-						this.wait(15000);
+						LOG.debug(String.format("replay for tenant %d....%n", TENANTID));
 						replay();
 					} else {
 						try_lock();
-						System.out.format("mark tenant %d's DB as NORMAL....%n", TENANTID);
+						LOG.debug(String.format("mark tenant %d's DB as NORMAL....%n", TENANTID));
 						SERVERINFO.setDbStatusForTenant(TENANTID, DbStatus.NORMAL);
 						SERVERINFO.setDbmsForTenant(TENANTID, TO.mDbmsInfo);
 						SERVERINFO.writeToImage();
-						System.out.format("migrate for tenant %d succeeded!....%n", TENANTID);
+						LOG.debug(String.format("migrate for tenant %d succeeded!....%n", TENANTID));
 						try_release();
-						this.wait(15000);
 						mIsFinished = true;
 					}
 				}
 				if (mIsCanceled) {
-					System.out.format("migrate for tenant %d canceled!....%n", TENANTID);
+					LOG.debug(String.format("migrate for tenant %d canceled!....%n", TENANTID));
 				}
 			} catch (NoTenantException | InterruptedException | NoWorkerException | DbmsException e) {
 				LOG.error(e.getMessage());
@@ -267,7 +262,7 @@ public class DbMigrator extends Thread {
 					LOG.error(e.getMessage());
 				}
 				try_release();
-				System.out.println("thread finish....");
+				LOG.debug("thread finish....");
 			}
 		}
 	}

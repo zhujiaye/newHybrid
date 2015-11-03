@@ -4,10 +4,19 @@ struct TenantInfo{
 	1: i32 mId; //this is unique across the whole system
 	//more information about tenant can be added here
 }
-enum DType{
-	INT=0,
-	FLOAT=1,
-	VARCHAR=2, //we now fix the varchar length to 20,can be changed if needed
+enum Type{
+	TINY_INT=0,
+	SMALL_INT=1,
+	INT=2,
+	BIG_INT=3,
+	DECIMAL=4,
+	FLOAT=5,
+	VARCHAR=6,
+	TIMESTAMP=7,
+}
+struct DType{
+	1:Type type;
+	2:list<i32> paras;
 }
 struct ColumnInfo{
 	1:string mName;

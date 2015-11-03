@@ -29,7 +29,8 @@ public class Table {
 	 *            the delimiter used in the expression
 	 * @return result string
 	 */
-	static public String convertPairs(ArrayList<Pair<String, Data>> pairs, String delimiter) {
+	static public String convertPairs(ArrayList<Pair<String, Data>> pairs,
+			String delimiter) {
 		StringBuilder res = new StringBuilder();
 		for (int i = 0; i < pairs.size(); i++) {
 			Pair<String, Data> pair = pairs.get(i);
@@ -105,8 +106,8 @@ public class Table {
 		ArrayList<Data> res = new ArrayList<>();
 		for (int i = 0; i < COLUMNS.size(); i++) {
 			ColumnInfo nowColumn = COLUMNS.get(i);
-			DataType dataType = DataType.getDataTypeByValue(nowColumn.mDType.getValue());
-			String value = dataType.getRandomValue();
+			DataType dataType = DataType.getDataTypeByDType(nowColumn.mDType);
+			String value = dataType.generateRandomValue();
 			res.add(new Data(dataType, value));
 		}
 		return res;
@@ -124,9 +125,10 @@ public class Table {
 		ArrayList<Pair<String, Data>> pairs = new ArrayList<>();
 		for (int i = 0; i < pos.size(); i++) {
 			ColumnInfo nowColumn = COLUMNS.get(pos.get(i));
-			DataType dataType = DataType.getDataTypeByValue(nowColumn.mDType.getValue());
-			String value = dataType.getRandomValue();
-			pairs.add(new Pair<String, Data>(nowColumn.mName, new Data(dataType, value)));
+			DataType dataType = DataType.getDataTypeByDType(nowColumn.mDType);
+			String value = dataType.generateRandomValue();
+			pairs.add(new Pair<String, Data>(nowColumn.mName, new Data(
+					dataType, value)));
 		}
 		return pairs;
 	}
@@ -180,7 +182,7 @@ public class Table {
 			ColumnInfo nowColumn = COLUMNS.get(i);
 			stringBuilder.append(nowColumn.mName);
 			stringBuilder.append(" ");
-			DataType dataType = DataType.getDataTypeByValue(nowColumn.mDType.getValue());
+			DataType dataType = DataType.getDataTypeByDType(nowColumn.mDType);
 			stringBuilder.append(dataType.getDataTypeString());
 			stringBuilder.append(" not null");
 			res.add(stringBuilder.toString());
@@ -214,7 +216,8 @@ public class Table {
 	}
 
 	public String generateRandomUpdateString() {
-		return "update " + NAME + " set " + generateSetClause() + " where " + generateWhereClause(true);
+		return "update " + NAME + " set " + generateSetClause() + " where "
+				+ generateWhereClause(true);
 	}
 
 	public String generateRandomInsertString() {

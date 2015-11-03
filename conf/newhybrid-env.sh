@@ -13,7 +13,7 @@ export NEWHYBRID_JAVA_OPTS+="
  -Dnewhybrid.confdir=$NEWHYBRID_CONFDIR
  -Dnewhybrid.workloaddir=$NEWHYBRID_WORKLOADDIR
  -Dlog4j.configuration=file:${NEWHYBRID_CONFDIR}/log4j.properties
- -Dnewhybrid.server.address=192.168.0.35
+ -Dnewhybrid.server.address=10.20.2.20
 "
 #another configurable system variable
 #format name(default value)
@@ -42,6 +42,6 @@ export NEWHYBRID_CLIENT_JAVA_OPTS="
 export NEWHYBRID_WORKER_JAVA_OPTS="
  ${NEWHYBRID_JAVA_OPTS}
  -Dnewhybrid.logname=WORKER_LOGGER
- -Dnewhybrid.mysql.db.name=newhybrid
+ -Dnewhybrid.mysql.db.name=tpcc_icde
  -Dnewhybrid.voltdb.capacity.mb=2000
 "

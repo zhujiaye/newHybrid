@@ -22,6 +22,7 @@ import thrift.LockException;
 import thrift.NoTenantException;
 import thrift.NoWorkerException;
 import thrift.TableInfo;
+import thrift.Type;
 
 public class Command {
 	static private final Logger LOG = Logger.getLogger(Constants.LOGGER_NAME);
@@ -45,7 +46,8 @@ public class Command {
 		while (true) {
 			if (TCLIENT != null)
 				System.out.format("tenant" + TCLIENT.getID() + "@");
-			System.out.format("newhybrid(%s:%d) > ", CONF.SERVER_ADDRESS, CONF.SERVER_PORT);
+			System.out.format("newhybrid(%s:%d) > ", CONF.SERVER_ADDRESS,
+					CONF.SERVER_PORT);
 			String str = in.nextLine();
 			String command;
 			StringTokenizer tokenizer = new StringTokenizer(str);
@@ -61,9 +63,12 @@ public class Command {
 					} else if (command.equals("login")) {
 						int ID = Integer.parseInt(tokenizer.nextToken());
 						if (TCLIENT != null) {
-							System.out.println("already logged in as tenant with ID=" + TCLIENT.getID());
+							System.out
+									.println("already logged in as tenant with ID="
+											+ TCLIENT.getID());
 						} else {
-							TCLIENT = new TenantClient(ID, CONF.SERVER_ADDRESS, CONF.SERVER_PORT);
+							TCLIENT = new TenantClient(ID, CONF.SERVER_ADDRESS,
+									CONF.SERVER_PORT);
 							try {
 								System.out.println(TCLIENT.login());
 							} catch (NoTenantException e) {
@@ -92,16 +97,26 @@ public class Command {
 							String tableName = tokenizer.nextToken();
 							List<ColumnInfo> columns = new ArrayList<>();
 							List<Integer> primary_key_pos = new ArrayList<>();
-							columns.add(new ColumnInfo("id", DType.INT));
-							columns.add(new ColumnInfo("value1", DType.INT));
-							columns.add(new ColumnInfo("value2", DType.FLOAT));
-							columns.add(new ColumnInfo("value3", DType.VARCHAR));
+							columns.add(new ColumnInfo("id", new DType(
+									Type.INT, new ArrayList<Integer>())));
+							columns.add(new ColumnInfo("value_int", new DType(
+									Type.INT, new ArrayList<Integer>())));
+							columns.add(new ColumnInfo("value_float",
+									new DType(Type.FLOAT,
+											new ArrayList<Integer>())));
+							ArrayList<Integer> varcharParas = new ArrayList<>();
+							varcharParas.add(20);
+							columns.add(new ColumnInfo("value_varchar_20",
+									new DType(Type.VARCHAR, varcharParas)));
 							primary_key_pos.add(0);
-							TableInfo tableInfo = new TableInfo(tableName, columns, primary_key_pos);
+							TableInfo tableInfo = new TableInfo(tableName,
+									columns, primary_key_pos);
 							try {
 								TCLIENT.lock_lock();
-								System.out.println(TCLIENT.createTable(tableInfo));
-							} catch (NoWorkerException | NoTenantException | LockException e) {
+								System.out.println(TCLIENT
+										.createTable(tableInfo));
+							} catch (NoWorkerException | NoTenantException
+									| LockException e) {
 								LOG.error(e.getMessage());
 							} finally {
 								TCLIENT.lock_release();
@@ -151,7 +166,8 @@ public class Command {
 								TCLIENT.lock_lock();
 								TCLIENT.dropAllTables();
 								System.out.println("success");
-							} catch (NoTenantException | NoWorkerException | LockException e) {
+							} catch (NoTenantException | NoWorkerException
+									| LockException e) {
 								LOG.error(e.getMessage());
 							} finally {
 								TCLIENT.lock_release();
@@ -166,13 +182,16 @@ public class Command {
 								TCLIENT.lock_lock();
 								TCLIENT.dropTable(tableName);
 								System.out.println("success");
-							} catch (NoTenantException | NoWorkerException | LockException e) {
+							} catch (NoTenantException | NoWorkerException
+									| LockException e) {
 								LOG.error(e.getMessage());
 							} finally {
 								TCLIENT.lock_release();
 							}
 						}
-					} else if (command.equals("select") || command.equals("insert") || command.equals("update")
+					} else if (command.equals("select")
+							|| command.equals("insert")
+							|| command.equals("update")
 							|| command.equals("delete")) {
 						if (TCLIENT == null) {
 							System.out.println("no tenant logged in!");
@@ -184,13 +203,15 @@ public class Command {
 									if (result.isSuccess()) {
 										result.print(System.out);
 									} else {
-										System.out.println("unsuccess:" + result.getMessage());
+										System.out.println("unsuccess:"
+												+ result.getMessage());
 									}
 									result.release();
 								} else {
 									System.out.println("ERROR:no results!");
 								}
-							} catch (NoWorkerException | NoTenantException | DbmsException e) {
+							} catch (NoWorkerException | NoTenantException
+									| DbmsException e) {
 								LOG.error(e.getMessage());
 							} catch (HSQLException e) {
 								LOG.error(e.getMessage());
@@ -208,9 +229,13 @@ public class Command {
 							try {
 								TCLIENT.lock_lock();
 								DbStatusInfo dbInfo = TCLIENT.getDbStatusInfo();
-								System.out.println("DB status:" + dbInfo.mDbStatus.name());
-								System.out.println("DBMS status:" + dbInfo.mDbmsInfo.mCompleteConnectionString);
-							} catch (NoWorkerException | NoTenantException | LockException e) {
+								System.out.println("DB status:"
+										+ dbInfo.mDbStatus.name());
+								System.out
+										.println("DBMS status:"
+												+ dbInfo.mDbmsInfo.mCompleteConnectionString);
+							} catch (NoWorkerException | NoTenantException
+									| LockException e) {
 								LOG.error(e.getMessage());
 							} finally {
 								TCLIENT.lock_release();
@@ -236,13 +261,15 @@ public class Command {
 									if (result.isSuccess()) {
 										result.print(System.out);
 									} else {
-										System.out.println("unsuccess:" + result.getMessage());
+										System.out.println("unsuccess:"
+												+ result.getMessage());
 									}
 									result.release();
 								} else {
 									System.out.println("ERROR:no results!");
 								}
-							} catch (NoWorkerException | NoTenantException | DbmsException e) {
+							} catch (NoWorkerException | NoTenantException
+									| DbmsException e) {
 								LOG.error(e.getMessage());
 							} catch (HSQLException e) {
 								LOG.error(e.getMessage());

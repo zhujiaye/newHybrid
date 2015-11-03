@@ -152,13 +152,5 @@ public abstract class HConnection {
 		info3 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.30", null, null, 2000);
 		info4 = new DbmsInfo(DbmsType.VOLTDB, "192.168.0.31", null, null, 2000);
 		HConnection hConnection = pool.getConnectionByDbmsInfo(info1);
-		List<ColumnInfo> columns = new ArrayList<>();
-		List<Integer> primary_key_pos = new ArrayList<>();
-		columns.add(new ColumnInfo("id", DType.INT));
-		columns.add(new ColumnInfo("value1", DType.INT));
-		columns.add(new ColumnInfo("value2", DType.FLOAT));
-		columns.add(new ColumnInfo("value3", DType.VARCHAR));
-		primary_key_pos.add(0);
-		TableInfo tableInfo = new TableInfo("stock", columns, primary_key_pos);
 	}
 }

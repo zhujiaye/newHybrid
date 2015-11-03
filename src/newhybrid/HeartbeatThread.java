@@ -35,7 +35,7 @@ public class HeartbeatThread extends Thread {
 				EXECUTOR.heartbeat();
 				long executionTime = System.nanoTime() - lastTime;
 				if (executionTime > FIXED_EXECUTION_INTERVAL_TIME) {
-					LOG.warn(THREAD_NAME + " last execution took "
+					LOG.debug(THREAD_NAME + " last execution took "
 							+ executionTime + " ns. Longer than "
 							+ " the FIXED_EXECUTION_INTERVAL_TIME "
 							+ FIXED_EXECUTION_INTERVAL_TIME);

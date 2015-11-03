@@ -39,8 +39,10 @@ public class HServer {
 
 	private volatile boolean mIsStarted = false;
 
-	public HServer(String address, int port, int selector_threads, int queue_size_per_selector, int server_threads,
-			boolean use_memmonitor, boolean model_deterministic, String imagePath) {
+	public HServer(String address, int port, int selector_threads,
+			int queue_size_per_selector, int server_threads,
+			boolean use_memmonitor, boolean model_deterministic,
+			String imagePath) {
 		ADDRESS = address;
 		PORT = port;
 		SELECTOR_THREADS = selector_threads;
@@ -57,21 +59,28 @@ public class HServer {
 		LOG.info("starting server@" + ADDRESS + ":" + PORT + "......");
 		LOG.info("retrivering all system information from journal......");
 		mServerInfo.init();
+	//	mServerInfo.importTpccTable();
 		LOG.info("setting up server service......");
 		mServerServiceHandler = new ServerServiceHandler(mServerInfo);
 		ServerService.Processor<ServerServiceHandler> serverServiceProcessor = new ServerService.Processor<ServerServiceHandler>(
 				mServerServiceHandler);
-		mServerTNonblockingServerSocket = new TNonblockingServerSocket(new InetSocketAddress(ADDRESS, PORT));
+		mServerTNonblockingServerSocket = new TNonblockingServerSocket(
+				new InetSocketAddress(ADDRESS, PORT));
 		mServerServiceServer = new TThreadedSelectorServer(
-				new TThreadedSelectorServer.Args(mServerTNonblockingServerSocket).processor(serverServiceProcessor)
-						.selectorThreads(SELECTOR_THREADS).acceptQueueSizePerThread(QUEUE_SIZE_PER_SELECTOR)
+				new TThreadedSelectorServer.Args(
+						mServerTNonblockingServerSocket)
+						.processor(serverServiceProcessor)
+						.selectorThreads(SELECTOR_THREADS)
+						.acceptQueueSizePerThread(QUEUE_SIZE_PER_SELECTOR)
 						.workerThreads(SERVER_THREADS));
 		LOG.info("setting up server offloader......");
 		mServerOffloaderThread = new HeartbeatThread("server_offloader",
-				new ServerOffloaderHeartbeatExecutor(mServerInfo), Constants.OFFLOADER_FIXED_INTERVAL_TIME);
+				new ServerOffloaderHeartbeatExecutor(mServerInfo),
+				Constants.OFFLOADER_FIXED_INTERVAL_TIME);
 		mServerOffloaderThread.start();
 		LOG.info("setting up server monitor......");
-		mServerMonitorThread = new HeartbeatThread("server_monitor", new ServerMonitorHeartbeatExecutor(mServerInfo),
+		mServerMonitorThread = new HeartbeatThread("server_monitor",
+				new ServerMonitorHeartbeatExecutor(mServerInfo),
 				Constants.SPLIT_TIME);
 		mServerMonitorThread.start();
 		mIsStarted = true;
@@ -118,8 +127,10 @@ public class HServer {
 
 	public static void main(String[] args) throws TTransportException {
 		ServerConf conf = ServerConf.getConf();
-		HServer server = new HServer(conf.SERVER_ADDRESS, conf.SERVER_PORT, conf.SERVER_SELECTOR_THREADS,
-				conf.SERVER_QUEUE_SIZE_PER_SELECTOR, conf.SERVER_SERVER_THREADS, conf.SERVER_USE_MEMMONITOR,
+		HServer server = new HServer(conf.SERVER_ADDRESS, conf.SERVER_PORT,
+				conf.SERVER_SELECTOR_THREADS,
+				conf.SERVER_QUEUE_SIZE_PER_SELECTOR,
+				conf.SERVER_SERVER_THREADS, conf.SERVER_USE_MEMMONITOR,
 				conf.MODEL_DETERMINISTIC, conf.SERVER_IMAGE_PATH);
 		server.start();
 	}

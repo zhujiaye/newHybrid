@@ -1,54 +1,170 @@
 #!/usr/bin/env bash
-FRUGALDB_HOME=`cd "$(dirname "$0")";cd ..;pwd`
-OPTS="
--Dnewhybrid.envpath=$FRUGALDB_HOME/conf/newhybrid-env
--Dlog4j.configuration=file:$FRUGALDB_HOME/conf/log4j.properties
--Dnewhybrid.logdir=$FRUGALDB_HOME/logs
--Dnewhybrid.logger.name=CLIENT_LOGGER
--Dnewhybrid.workloaddir=$FRUGALDB_HOME/workloads
+USAGE="Usage: test.sh [-h] WHAT
+where WHAT is one of:
+\ttpcc-data-import\t\timport tpcc data
+\ttest-consolidation\t\ttest consolidation
+-h to display help information
 "
-do_client(){
-	declare -a processIDs
-	for ((i=0;i<15;i++))
-	do
-		((start=i*200+1))	
-		((end=(i+1)*200))
-		(nohup java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestMain>/dev/null 2>$FRUGALDB_HOME/logs/error_client.log $start $end $1 $2)&
-		processIDs[i]=$!
-	done
-	for ((i=0;i<15;i++))
-	do
-		wait ${processIDs[i]}
-	done
+get_env(){
+	. $home/conf/newhybrid-env.sh
 }
-workloadlist=`ls $FRUGALDB_HOME/workloads | grep .txt$`
-for workloadfile in $workloadlist
-do
-	echo "start testing for workload ${workloadfile}..."
-	if [ -z `echo ${workloadfile} | grep load550500_0.250.1` ]; then
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure mysql 2000 
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
-		do_client $workloadfile ${workloadfile}_mysql.results 
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 2000 
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
-		do_client $workloadfile ${workloadfile}_hybrid_2000M.results
-	else
-		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure mysql 2000 
-		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
-		#do_client $workloadfile ${workloadfile}_mysql.results 
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 2000 
-		java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
-		do_client $workloadfile ${workloadfile}_hybrid_2000M.results
-		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 1500 
-		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
-		#do_client $workloadfile ${workloadfile}_hybrid_1500M.results
-		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 1000 
-		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
-		#do_client $workloadfile ${workloadfile}_hybrid_1000M.results
-		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReconfigure hybrid 500 
-		#java -classpath $CLASSPATH:$FRUGALDB_HOME/lib/*:$FRUGALDB_HOME/bin $OPTS test.TestServerReloadWorkload $workloadfile 
-		#do_client $workloadfile ${workloadfile}_hybrid_500M.results
+tpccDataImport(){
+        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_CLIENT_JAVA_OPTS test.TpccDataImporter 
+}
+testConsolidation_single(){
+	echo -e "testing consolidation for slo $1\n"
+	left=1
+	if [ ${1} -eq 500 ]; then
+		right=200
+	else 
+		right=2000 
 	fi
-	echo "${workloadfile} testing finished."
+	for ((;left+1<right;))
+	do
+		((mid=(left+right)/2))
+		echo "before testing the interval is (${left},${right})"
+		echo "testing ${mid} tenant with slo $1................."
+		result_file="SLO${1}_1_${mid}"
+		java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_CLIENT_JAVA_OPTS test.TestSLO 1 ${mid} ${1} ${result_file}
+		if [ -f $result_file ]; then
+			i=0
+			declare -a array
+			for num in `grep . ${result_file}`; do
+				array[i]=${num}
+				((i=i+1))
+			done
+			tot=${array[0]}
+			success=${array[1]}
+			((min=tot*95/100))
+			echo "${min} query needed,${success} query success"
+			if [ ${success} -lt ${min} ]; then 
+				((right=mid))
+			else
+				((left=mid))
+			fi
+		else
+			echo "${result_file} not exists!"
+			exit 1
+		fi
+		echo "after testing the interval is (${left},${right})"
+		echo -e "\n"
+	done
+	echo "${1}:${left}" >> "consolidation_single"
+}
+testConsolidation_hybrid(){
+	user500=$1
+	user50=$2
+	user5=$3
+	result_file_500="SLO_h_500"
+	result_file_50="SLO_h_50"
+	result_file_5="SLO_h_5"
+	left1=1
+	right1=$1
+	((left2=right1+1))
+	((right2=left2+user50-1))
+	((left3=right2+1))
+	((right3=left3+user5-1))
+	echo "testing consolidation for hybrid (${user500},${user50},${user5})......" 
+	declare -a processIDs
+	echo "${left1},${right1}"
+	echo "${left2},${right2}"
+	echo "${left3},${right3}"
+	(nohup java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_CLIENT_JAVA_OPTS test.TestSLO 1 ${user500} 500 ${result_file_500})&
+	 processIDs[0]=$!
+	 (nohup java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_CLIENT_JAVA_OPTS test.TestSLO 1 ${user50} 50 ${result_file_50})&
+	 processIDs[1]=$!
+	 (nohup java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_CLIENT_JAVA_OPTS test.TestSLO 1 ${user5} 5 ${result_file_5})&
+	 processIDs[2]=$!
+	wait ${processID[0]}
+	wait ${processID[1]}
+	wait ${processID[2]}
+	#echo -e "100\n100">${result_file_500}
+	#echo -e "100\n90">${result_file_50}
+	#echo -e "100\n95">${result_file_5}
+	i=0
+	declare -a array
+	for num in `grep . ${result_file_500}`; do
+		array[i]=${num}
+		((i=i+1))
+	done
+	for num in `grep . ${result_file_50}`; do
+		array[i]=${num}
+		((i=i+1))
+	done
+	for num in `grep . ${result_file_5}`; do
+		array[i]=${num}
+		((i=i+1))
+	done
+	((tot=${array[0]}+${array[2]}+${array[4]}))
+	((success=${array[1]}+${array[3]}+${array[5]}))
+	((min=tot*95/100))
+	echo "${min} query needed,${success} query success"
+	if [ ${success} -lt ${min} ]; then 
+		echo "failed!"
+	else
+		echo "success!"
+		echo -e "(${user500},${user50},${user5})" >> consolidation_hybrid
+	fi
+}
+testConsolidation(){
+	#testConsolidation_single 500
+	#testConsolidation_single 50
+	#testConsolidation_single 5
+	#500:100 50:1033 5:2000
+	testConsolidation_hybrid 80 500 500
+	testConsolidation_hybrid 80 500 0 
+	testConsolidation_hybrid 80 250 1000 
+	testConsolidation_hybrid 80 250 0 
+	testConsolidation_hybrid 80 100 1000 
+	testConsolidation_hybrid 80 100 0 
+	testConsolidation_hybrid 60 750 500 
+	testConsolidation_hybrid 60 750 0 
+	testConsolidation_hybrid 60 500 1000 
+	testConsolidation_hybrid 60 500 0 
+	testConsolidation_hybrid 60 250 1000 
+	testConsolidation_hybrid 60 250 0 
+	testConsolidation_hybrid 40 750 1000 
+	testConsolidation_hybrid 40 750 0 
+	testConsolidation_hybrid 40 500 1000 
+	testConsolidation_hybrid 40 500 0 
+	testConsolidation_hybrid 20 1000 0 
+	testConsolidation_hybrid 20 1000 250 
+	testConsolidation_hybrid 20 750 1000 
+	testConsolidation_hybrid 20 750 0 
+	testConsolidation_hybrid 20 500 1000 
+	testConsolidation_hybrid 20 500 0 
+	testConsolidation_hybrid 0 1000 1000 
+	testConsolidation_hybrid 0 1000 500 
+}
+home=`cd "$(dirname "$0")";cd ..;pwd`
+get_env
+while getopts "h" o; do
+	case "${o}" in
+		h)
+			echo -e "${USAGE}"
+			exit 0
+			;;
+		*)
+			echo -e "${USAGE}"
+			exit 1
+			;;
+	esac
 done
-
+shift $((OPTIND-1))
+WHAT=$1
+if [ -z "${WHAT}" ]; then echo "Error: no WHAT specified"
+	echo -e "${USAGE}"
+	exit 1
+fi
+case "${WHAT}" in
+    tpcc-data-import)
+        tpccDataImport 
+        ;;
+    test-consolidation)
+	testConsolidation
+        ;;
+    *)
+        echo -e "${USAGE}"
+        exit 1
+        ;;
+esac

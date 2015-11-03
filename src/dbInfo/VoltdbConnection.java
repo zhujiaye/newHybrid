@@ -41,7 +41,8 @@ public class VoltdbConnection extends HConnection {
 	 * @return voltdb HConnection,not null
 	 * @throws NoHConnectionException
 	 */
-	static public HConnection getConnection(DbmsInfo dbmsInfo) throws NoHConnectionException {
+	static public HConnection getConnection(DbmsInfo dbmsInfo)
+			throws NoHConnectionException {
 		int cnt = 0;
 		Client newConnection = null;
 		ClientConfig config = new ClientConfig();
@@ -49,19 +50,23 @@ public class VoltdbConnection extends HConnection {
 		config.setProcedureCallTimeout(0);
 		newConnection = ClientFactory.createClient(config);
 		try {
-			while (cnt++ < MAX_RETRY && newConnection.getConnectedHostList().isEmpty()) {
-				newConnection.createConnection(dbmsInfo.mCompleteConnectionString);
+			while (cnt++ < MAX_RETRY
+					&& newConnection.getConnectedHostList().isEmpty()) {
+				newConnection
+						.createConnection(dbmsInfo.mCompleteConnectionString);
 				if (!newConnection.getConnectedHostList().isEmpty())
 					break;
 			}
-			if (newConnection == null || newConnection.getConnectedHostList().isEmpty()) {
-				throw new NoHConnectionException(dbmsInfo,
-						"tried " + MAX_RETRY + " times but can not establish connection!");
+			if (newConnection == null
+					|| newConnection.getConnectedHostList().isEmpty()) {
+				throw new NoHConnectionException(dbmsInfo, "tried " + MAX_RETRY
+						+ " times but can not establish connection!");
 			}
 			HConnection res = new VoltdbConnection(dbmsInfo, newConnection);
 			return res;
 		} catch (IOException e) {
-			throw new NoHConnectionException(dbmsInfo, "java network or connection problem");
+			throw new NoHConnectionException(dbmsInfo,
+					"java network or connection problem");
 		}
 	}
 
@@ -73,11 +78,11 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	private String getRealTableName(int tenantID, TableInfo tableInfo) {
-		return tableInfo.mName + "_" + tenantID;
+		return tableInfo.mName + tenantID;
 	}
 
 	private String getRealTableName(String tableName, int tenantID) {
-		return tableName + "_" + tenantID;
+		return tableName + tenantID;
 	}
 
 	@Override
@@ -103,15 +108,19 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	@Override
-	public void dropTable(int tenantID, TableInfo tableInfo) throws HSQLException {
+	public void dropTable(int tenantID, TableInfo tableInfo)
+			throws HSQLException {
 		String realTableName = getRealTableName(tenantID, tableInfo);
-		HResult result = _sql("drop table " + realTableName + " if exists cascade");
+		HResult result = _sql("drop table " + realTableName
+				+ " if exists cascade");
 		if (!result.isSuccess())
-			throw new HSQLException("failed to drop table " + realTableName + ":" + result.getMessage());
+			throw new HSQLException("failed to drop table " + realTableName
+					+ ":" + result.getMessage());
 	}
 
 	@Override
-	public boolean createTable(int tenantID, TableInfo tableInfo) throws HSQLException {
+	public boolean createTable(int tenantID, TableInfo tableInfo)
+			throws HSQLException {
 		if (tableExist(tenantID, tableInfo))
 			return false;
 		String realTableName = getRealTableName(tenantID, tableInfo);
@@ -138,14 +147,16 @@ public class VoltdbConnection extends HConnection {
 		result = _sql("partition table " + realTableName + " on column "
 				+ table.getColumns().get(table.getPrimaryKeyPos().get(0)).mName);
 		if (!result.isSuccess())
-			throw new HSQLException("failed to partition table " + realTableName + ":" + result.getMessage());
+			throw new HSQLException("failed to partition table "
+					+ realTableName + ":" + result.getMessage());
 		return true;
 	}
 
 	private ArrayList<String> getAllTableNames() throws HSQLException {
 		ArrayList<String> res = new ArrayList<>();
 		try {
-			ClientResponse response = mVoltdbConnection.callProcedure("@SystemCatalog", "TABLES");
+			ClientResponse response = mVoltdbConnection.callProcedure(
+					"@SystemCatalog", "TABLES");
 			if (response.getStatus() == ClientResponse.SUCCESS) {
 				VoltTable tables = response.getResults()[0];
 				while (tables.advanceRow()) {
@@ -153,7 +164,8 @@ public class VoltdbConnection extends HConnection {
 					res.add(name);
 				}
 			} else {
-				throw new HSQLException("voltdb unsuccess:" + response.getStatusString());
+				throw new HSQLException("voltdb unsuccess:"
+						+ response.getStatusString());
 			}
 		} catch (IOException | ProcCallException e) {
 			throw new HSQLException("voltdb exception:" + e.getMessage());
@@ -162,10 +174,12 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	@Override
-	public boolean tableExist(int tenantID, TableInfo tableInfo) throws HSQLException {
+	public boolean tableExist(int tenantID, TableInfo tableInfo)
+			throws HSQLException {
 		String realTableName = getRealTableName(tenantID, tableInfo);
 		ArrayList<String> allNames = getAllTableNames();
-		return allNames.contains(realTableName.toLowerCase()) || allNames.contains(realTableName.toUpperCase());
+		return allNames.contains(realTableName.toLowerCase())
+				|| allNames.contains(realTableName.toUpperCase());
 	}
 
 	private HResult _sql(String sqlString) {
@@ -177,17 +191,21 @@ public class VoltdbConnection extends HConnection {
 				VoltTable[] results = response.getResults();
 				if (results.length == 0) {
 					LOG.warn("VoltTable length equals zero");
-					return new VoltdbResult(QueryType.UNKNOWN, true, "success", -1);
+					return new VoltdbResult(QueryType.UNKNOWN, true, "success",
+							-1);
 				} else {
 					VoltTable result = results[0];
 					if (result.getColumnName(0).equals("modified_tuples")) {
 						result.advanceRow();
-						return new VoltdbResult(QueryType.WRITE, true, "success", (int) result.getLong(0));
+						return new VoltdbResult(QueryType.WRITE, true,
+								"success", (int) result.getLong(0));
 					} else
-						return new VoltdbResult(QueryType.READ, true, "success", result);
+						return new VoltdbResult(QueryType.READ, true,
+								"success", result);
 				}
 			} else {
-				return new VoltdbResult(QueryType.FAILED, false, response.getStatusString(), -1);
+				return new VoltdbResult(QueryType.FAILED, false,
+						response.getStatusString(), -1);
 			}
 		} catch (IOException | ProcCallException e) {
 			return new VoltdbResult(QueryType.FAILED, false, e.getMessage(), -1);
@@ -210,13 +228,16 @@ public class VoltdbConnection extends HConnection {
 				if (type == QueryType.INSERT)
 					current = "upsert";
 			}
-			if (pre != null && pre.equals("from") && (type == QueryType.SELECT || type == QueryType.DELETE)) {
+			if (pre != null && pre.equals("from")
+					&& (type == QueryType.SELECT || type == QueryType.DELETE)) {
 				current = getRealTableName(current, tenantID);
 			}
-			if (pre != null && pre.equals("update") && cnt == 2 && type == QueryType.UPDATE) {
+			if (pre != null && pre.equals("update") && cnt == 2
+					&& type == QueryType.UPDATE) {
 				current = getRealTableName(current, tenantID);
 			}
-			if (pre != null && pre.equals("into") && cnt == 3 && type == QueryType.INSERT) {
+			if (pre != null && pre.equals("into") && cnt == 3
+					&& type == QueryType.INSERT) {
 				current = getRealTableName(current, tenantID);
 			}
 			builder.append(current + " ");
@@ -225,7 +246,8 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	@Override
-	public void exportTempTable(int tenantID, TableInfo tableInfo, String tempPath) throws DbmsException {
+	public void exportTempTable(int tenantID, TableInfo tableInfo,
+			String tempPath) throws DbmsException {
 		String realTableName = getRealTableName(tableInfo.mName, tenantID);
 		HResult result = _sql("select * from " + realTableName);
 		if (result.isSuccess()) {
@@ -264,9 +286,11 @@ public class VoltdbConnection extends HConnection {
 	}
 
 	@Override
-	public void importTempTable(int tenantID, TableInfo tableInfo, String tempPath) throws DbmsException {
+	public void importTempTable(int tenantID, TableInfo tableInfo,
+			String tempPath) throws DbmsException {
 		String realTableName = getRealTableName(tableInfo.mName, tenantID);
-		InetSocketAddress host = mVoltdbConnection.getConnectedHostList().get(0);
+		InetSocketAddress host = mVoltdbConnection.getConnectedHostList()
+				.get(0);
 		try {
 			dropTable(tenantID, tableInfo);
 			createTable(tenantID, tableInfo);
@@ -285,7 +309,8 @@ public class VoltdbConnection extends HConnection {
 			int totLines = lines.size();
 			Object lock = new Object();
 			reader.close();
-			CountProcedureCallback procedureCallback = new CountProcedureCallback(totLines, lock);
+			CountProcedureCallback procedureCallback = new CountProcedureCallback(
+					totLines, lock);
 			for (int i = 0; i < lines.size(); i++) {
 				line = lines.get(i);
 				String[] values = line.split(",");
@@ -293,7 +318,8 @@ public class VoltdbConnection extends HConnection {
 					int len = values[j].length();
 					values[j] = values[j].substring(1, len - 1);
 				}
-				mVoltdbConnection.callProcedure(procedureCallback, realTableName + ".upsert", (Object[]) values);
+				mVoltdbConnection.callProcedure(procedureCallback,
+						realTableName + ".upsert", (Object[]) values);
 			}
 			synchronized (lock) {
 				while (procedureCallback.getCount() < totLines) {
@@ -325,7 +351,8 @@ public class VoltdbConnection extends HConnection {
 		}
 
 		@Override
-		public void clientCallback(ClientResponse clientResponse) throws Exception {
+		public void clientCallback(ClientResponse clientResponse)
+				throws Exception {
 			synchronized (LOCK) {
 				mCount++;
 				if (mCount >= COUNT) {

@@ -1,4 +1,4 @@
-package newhybrid;
+package test;
 
 public class TenantWorkload {
 	final private int mID;

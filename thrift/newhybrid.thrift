@@ -105,6 +105,7 @@ service ServerService{
 	void tenant_lock_lock(1:i32 ID) throws (1:LockException eA, 2:NoTenantException eB);
 	void tenant_lock_release(1:i32 ID);
 	void addOperationToMigrator(1:i32 ID, 2:Operation operation);
+	bool test_tenantMigrate(1:i32 ID) throws (1:NoTenantException e);
 }
 service WorkerService{
 	void tenant_exportTempDb(1:i32 ID, 2:TempDbInfo tempDbInfo) throws (1:DbmsException e); 

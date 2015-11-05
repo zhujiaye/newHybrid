@@ -77,8 +77,8 @@ public class TenantClient {
 	 *             if this tenant does not exist
 	 * @throws NoServerConnectionException
 	 */
-	public boolean createTable(TableInfo tableInfo)
-			throws NoWorkerException, NoTenantException, NoServerConnectionException {
+	public boolean createTable(TableInfo tableInfo) throws NoWorkerException,
+			NoTenantException, NoServerConnectionException {
 		try {
 			return mClient.tenant_createTable(ID, tableInfo);
 		} catch (ClientShutdownException e) {
@@ -97,7 +97,8 @@ public class TenantClient {
 	 *             if this tenant does not exist
 	 * @throws NoServerConnectionException
 	 */
-	public boolean login() throws NoTenantException, NoServerConnectionException {
+	public boolean login() throws NoTenantException,
+			NoServerConnectionException {
 		try {
 			return mClient.tenant_login(ID);
 		} catch (ClientShutdownException e) {
@@ -116,7 +117,8 @@ public class TenantClient {
 	 *             if this tenant does not exist
 	 * @throws NoServerConnectionException
 	 */
-	public boolean logout() throws NoTenantException, NoServerConnectionException {
+	public boolean logout() throws NoTenantException,
+			NoServerConnectionException {
 		try {
 			return mClient.tenant_logout(ID);
 		} catch (ClientShutdownException e) {
@@ -126,7 +128,8 @@ public class TenantClient {
 		}
 	}
 
-	public List<TableInfo> getTables() throws NoTenantException, NoServerConnectionException {
+	public List<TableInfo> getTables() throws NoTenantException,
+			NoServerConnectionException {
 		try {
 			return mClient.tenant_getTables(ID);
 		} catch (ClientShutdownException e) {
@@ -136,7 +139,8 @@ public class TenantClient {
 		}
 	}
 
-	public List<TableInfo> getTable(String tableName) throws NoTenantException, NoServerConnectionException {
+	public List<TableInfo> getTable(String tableName) throws NoTenantException,
+			NoServerConnectionException {
 		try {
 			return mClient.tenant_getTable(ID, tableName);
 		} catch (ClientShutdownException e) {
@@ -146,7 +150,8 @@ public class TenantClient {
 		}
 	}
 
-	public void dropAllTables() throws NoTenantException, NoWorkerException, NoServerConnectionException {
+	public void dropAllTables() throws NoTenantException, NoWorkerException,
+			NoServerConnectionException {
 		try {
 			mClient.tenant_dropAllTables(ID);
 		} catch (ClientShutdownException e) {
@@ -156,7 +161,8 @@ public class TenantClient {
 		}
 	}
 
-	public void dropTable(String tableName) throws NoTenantException, NoWorkerException, NoServerConnectionException {
+	public void dropTable(String tableName) throws NoTenantException,
+			NoWorkerException, NoServerConnectionException {
 		try {
 			mClient.tenant_dropTable(ID, tableName);
 		} catch (ClientShutdownException e) {
@@ -166,7 +172,8 @@ public class TenantClient {
 		}
 	}
 
-	private void addOperationToMigrator(int ID, Operation operation) throws NoServerConnectionException {
+	private void addOperationToMigrator(int ID, Operation operation)
+			throws NoServerConnectionException {
 		try {
 			mClient.addOperationToMigrator(ID, operation);
 		} catch (ClientShutdownException e) {
@@ -176,7 +183,18 @@ public class TenantClient {
 		}
 	}
 
-	public DbStatusInfo getDbStatusInfo() throws NoWorkerException, NoTenantException, NoServerConnectionException {
+	public boolean migrate() throws NoServerConnectionException {
+		try {
+			return mClient.migrateTenant(ID);
+		} catch (ClientShutdownException e) {
+			LOG.error(e.getMessage());
+			mClient = new ServerClient(SERVER_ADDRESS, SERVER_PORT);
+			return migrate();
+		}
+	}
+
+	public DbStatusInfo getDbStatusInfo() throws NoWorkerException,
+			NoTenantException, NoServerConnectionException {
 		try {
 			return mClient.tenant_getDbInfo(ID);
 		} catch (ClientShutdownException e) {
@@ -197,22 +215,26 @@ public class TenantClient {
 	 * @throws DbmsException
 	 * @throws NoServerConnectionException
 	 */
-	public HResult executeSql(String sqlString)
-			throws NoWorkerException, NoTenantException, DbmsException, NoServerConnectionException {
+	public HResult executeSql(String sqlString) throws NoWorkerException,
+			NoTenantException, DbmsException, NoServerConnectionException {
 		DbStatusInfo dbInfo = getDbStatusInfo();
 		HResult result = null;
-		if (dbInfo.mDbStatus == DbStatus.NORMAL || dbInfo.mDbStatus == DbStatus.MIGRATING) {
+		if (dbInfo.mDbStatus == DbStatus.NORMAL
+				|| dbInfo.mDbStatus == DbStatus.MIGRATING) {
 			HConnectionPool pool = HConnectionPool.getPool();
 			HConnection hConnection = null;
 			try {
 				hConnection = pool.getConnectionByDbmsInfo(dbInfo.mDbmsInfo);
 				result = hConnection.executeSql(ID, sqlString);
-				if (result.isSuccess() && dbInfo.mDbStatus == DbStatus.MIGRATING) {
+				if (result.isSuccess()
+						&& dbInfo.mDbStatus == DbStatus.MIGRATING) {
 					if (sqlString.indexOf("select") == -1) {
-						SqlOperationPara sqlParas = new SqlOperationPara(ID, sqlString);
+						SqlOperationPara sqlParas = new SqlOperationPara(ID,
+								sqlString);
 						OperationPara paras = new OperationPara();
 						paras.setMSqlOpPara(sqlParas);
-						addOperationToMigrator(ID, new Operation(OperationType.EXECUTE_SQL, paras));
+						addOperationToMigrator(ID, new Operation(
+								OperationType.EXECUTE_SQL, paras));
 					}
 				}
 			} catch (NoHConnectionException e) {
@@ -226,43 +248,48 @@ public class TenantClient {
 		return result;
 	}
 
-	public HResult selectRandomly()
-			throws NoTenantException, NoServerConnectionException, NoWorkerException, DbmsException {
+	public HResult selectRandomly() throws NoTenantException,
+			NoServerConnectionException, NoWorkerException, DbmsException {
 		List<TableInfo> tablesInfo = getTables();
 		Random random = new Random(System.nanoTime());
-		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo.size()));
+		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo
+				.size()));
 		Table randomTable = new Table(randomTableInfo);
 		return executeSql(randomTable.generateRandomSelectString());
 	}
 
-	public HResult updateRandomly()
-			throws NoTenantException, NoServerConnectionException, NoWorkerException, DbmsException {
+	public HResult updateRandomly() throws NoTenantException,
+			NoServerConnectionException, NoWorkerException, DbmsException {
 		List<TableInfo> tablesInfo = getTables();
 		Random random = new Random(System.nanoTime());
-		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo.size()));
+		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo
+				.size()));
 		Table randomTable = new Table(randomTableInfo);
 		return executeSql(randomTable.generateRandomUpdateString());
 	}
 
-	public HResult insertRandomly()
-			throws NoTenantException, NoServerConnectionException, NoWorkerException, DbmsException {
+	public HResult insertRandomly() throws NoTenantException,
+			NoServerConnectionException, NoWorkerException, DbmsException {
 		List<TableInfo> tablesInfo = getTables();
 		Random random = new Random(System.nanoTime());
-		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo.size()));
+		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo
+				.size()));
 		Table randomTable = new Table(randomTableInfo);
 		return executeSql(randomTable.generateRandomInsertString());
 	}
 
-	public HResult deleteRandomly()
-			throws NoTenantException, NoServerConnectionException, NoWorkerException, DbmsException {
+	public HResult deleteRandomly() throws NoTenantException,
+			NoServerConnectionException, NoWorkerException, DbmsException {
 		List<TableInfo> tablesInfo = getTables();
 		Random random = new Random(System.nanoTime());
-		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo.size()));
+		TableInfo randomTableInfo = tablesInfo.get(random.nextInt(tablesInfo
+				.size()));
 		Table randomTable = new Table(randomTableInfo);
 		return executeSql(randomTable.generateRandomDeleteString());
 	}
 
-	public void lock_lock() throws NoTenantException, LockException, NoServerConnectionException {
+	public void lock_lock() throws NoTenantException, LockException,
+			NoServerConnectionException {
 		try {
 			mClient.tenant_lock_lock(ID);
 		} catch (ClientShutdownException e) {
@@ -282,13 +309,15 @@ public class TenantClient {
 		}
 	}
 
-	static public void main(String[] args) throws NoWorkerException, NoTenantException, DbmsException, HSQLException,
-			IOException, InterruptedException {
+	static public void main(String[] args) throws NoWorkerException,
+			NoTenantException, DbmsException, HSQLException, IOException,
+			InterruptedException {
 		new Thread(new Runnable() {
 			@Override
 			public void run() {
 				try {
-					TenantClient client = new TenantClient(3, "192.168.0.35", 12345);
+					TenantClient client = new TenantClient(3, "192.168.0.35",
+							12345);
 					client.lock_lock();
 					HResult result = client.executeSql("select * from stock");
 					if (result.isSuccess()) {
@@ -297,8 +326,9 @@ public class TenantClient {
 						System.out.println(result.getMessage());
 					Thread.sleep(5000);
 					client.lock_release();
-				} catch (NoWorkerException | NoTenantException | DbmsException | HSQLException | InterruptedException
-						| LockException | NoServerConnectionException e) {
+				} catch (NoWorkerException | NoTenantException | DbmsException
+						| HSQLException | InterruptedException | LockException
+						| NoServerConnectionException e) {
 					LOG.error(e.getMessage());
 				}
 			}
@@ -307,7 +337,8 @@ public class TenantClient {
 			@Override
 			public void run() {
 				try {
-					TenantClient client = new TenantClient(3, "192.168.0.35", 12345);
+					TenantClient client = new TenantClient(3, "192.168.0.35",
+							12345);
 					client.lock_lock();
 					HResult result = client.executeSql("select * from stock");
 					client.lock_release();
@@ -317,8 +348,9 @@ public class TenantClient {
 						System.out.println(result.getMessage());
 					Thread.sleep(5000);
 					client.lock_release();
-				} catch (NoWorkerException | NoTenantException | DbmsException | HSQLException | InterruptedException
-						| LockException | NoServerConnectionException e) {
+				} catch (NoWorkerException | NoTenantException | DbmsException
+						| HSQLException | InterruptedException | LockException
+						| NoServerConnectionException e) {
 					LOG.error(e.getMessage());
 				}
 			}

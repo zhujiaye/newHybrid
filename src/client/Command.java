@@ -279,6 +279,26 @@ public class Command {
 								TCLIENT.lock_release();
 							}
 						}
+					} else if (command.equals("migrate")) {
+						if (TCLIENT == null) {
+							System.out.println("no tenant logged in!");
+						} else {
+							try {
+								TCLIENT.lock_lock();
+								if (TCLIENT.migrate()) {
+									System.out.println("Migrating start......");
+								} else {
+									System.out
+											.println("No workers to migrate to or is being migrating!");
+								}
+							} catch (NoTenantException e) {
+								LOG.error(e.getMessage());
+							} catch (LockException e) {
+								LOG.error(e.getMessage());
+							} finally {
+								TCLIENT.lock_release();
+							}
+						}
 					} else {
 						System.out.println("please input correct commands!");
 						help();

@@ -117,49 +117,49 @@ public class ServerInfo {
 
 	public void offload() {
 		LOG.info("offloading....");
-		ServerTenant tenant;
-		synchronized (mTenants) {
-			if (mTenants.isEmpty())
-				return;
-			Random random = new Random(System.nanoTime());
-			tenant = mTenants.get(random.nextInt(mTenants.size()) + 1);
-		}
-		synchronized (mWorkers) {
-			if (mWorkers.size() < 2)
-				return;
-			ServerWorkerInfo from = null, to = null;
-			for (int i = 0; i < mWorkers.size(); i++) {
-				ServerWorkerInfo currentWorker = mWorkers.get(i);
-				if (currentWorker.mDbmsInfo.mCompleteConnectionString
-						.equals(tenant.getDbmsInfo().mCompleteConnectionString)) {
-					from = currentWorker;
-				} else {
-					to = currentWorker;
-				}
-			}
-			if (from == null || to == null)
-				return;
-			synchronized (mDbMigrators) {
-				for (int i = 0; i < mDbMigrators.size(); i++) {
-					DbMigrator currentMigrator = mDbMigrators.get(i);
-					synchronized (currentMigrator) {
-						if (currentMigrator.getTenantID() == tenant.getID()) {
-							if (currentMigrator.isMigrating()) {
-								// currentMigrator.migrateToNewWorker(to);
-								return;
-							} else {
-								mDbMigrators.remove(i);
-								break;
-							}
-						}
-					}
-				}
-				DbMigrator migrator = new DbMigrator(this, tenant.getID(),
-						from, to);
-				mDbMigrators.add(migrator);
-				migrator.start();
-			}
-		}
+		// ServerTenant tenant;
+		// synchronized (mTenants) {
+		// if (mTenants.isEmpty())
+		// return;
+		// Random random = new Random(System.nanoTime());
+		// tenant = mTenants.get(random.nextInt(mTenants.size()) + 1);
+		// }
+		// synchronized (mWorkers) {
+		// if (mWorkers.size() < 2)
+		// return;
+		// ServerWorkerInfo from = null, to = null;
+		// for (int i = 0; i < mWorkers.size(); i++) {
+		// ServerWorkerInfo currentWorker = mWorkers.get(i);
+		// if (currentWorker.mDbmsInfo.mCompleteConnectionString
+		// .equals(tenant.getDbmsInfo().mCompleteConnectionString)) {
+		// from = currentWorker;
+		// } else {
+		// to = currentWorker;
+		// }
+		// }
+		// if (from == null || to == null)
+		// return;
+		// synchronized (mDbMigrators) {
+		// for (int i = 0; i < mDbMigrators.size(); i++) {
+		// DbMigrator currentMigrator = mDbMigrators.get(i);
+		// synchronized (currentMigrator) {
+		// if (currentMigrator.getTenantID() == tenant.getID()) {
+		// if (currentMigrator.isMigrating()) {
+		// // currentMigrator.migrateToNewWorker(to);
+		// return;
+		// } else {
+		// mDbMigrators.remove(i);
+		// break;
+		// }
+		// }
+		// }
+		// }
+		// DbMigrator migrator = new DbMigrator(this, tenant.getID(),
+		// from, to);
+		// mDbMigrators.add(migrator);
+		// migrator.start();
+		// }
+		// }
 	}
 
 	public boolean registerWorker(ServerWorkerInfo workerInfo) {
@@ -461,5 +461,51 @@ public class ServerInfo {
 			tenant.addTable(DistrictTable.getTableInfo());
 		}
 		this.writeToImage();
+	}
+
+	// just for test
+	public boolean migrateTenant(int ID) throws NoTenantException {
+		ServerTenant tenant;
+		synchronized (mTenants) {
+			checkTenantExist(ID);
+			tenant = mTenants.get(ID);
+		}
+		synchronized (mWorkers) {
+			if (mWorkers.size() < 2)
+				return false;
+			ServerWorkerInfo from = null, to = null;
+			for (int i = 0; i < mWorkers.size(); i++) {
+				ServerWorkerInfo currentWorker = mWorkers.get(i);
+				if (currentWorker.mDbmsInfo.mCompleteConnectionString
+						.equals(tenant.getDbmsInfo().mCompleteConnectionString)) {
+					from = currentWorker;
+				} else {
+					to = currentWorker;
+				}
+			}
+			if (from == null || to == null)
+				return false;
+			synchronized (mDbMigrators) {
+				for (int i = 0; i < mDbMigrators.size(); i++) {
+					DbMigrator currentMigrator = mDbMigrators.get(i);
+					synchronized (currentMigrator) {
+						if (currentMigrator.getTenantID() == tenant.getID()) {
+							if (currentMigrator.isMigrating()) {
+								// currentMigrator.migrateToNewWorker(to);
+								return false;
+							} else {
+								mDbMigrators.remove(i);
+								break;
+							}
+						}
+					}
+				}
+				DbMigrator migrator = new DbMigrator(this, tenant.getID(),
+						from, to);
+				mDbMigrators.add(migrator);
+				migrator.start();
+			}
+			return true;
+		}
 	}
 }

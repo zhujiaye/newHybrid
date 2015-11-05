@@ -49,7 +49,8 @@ public class DbMigrator extends Thread {
 
 	private List<Operation> mOperations;
 
-	public DbMigrator(ServerInfo serverInfo, int tenantID, ServerWorkerInfo from, ServerWorkerInfo to) {
+	public DbMigrator(ServerInfo serverInfo, int tenantID,
+			ServerWorkerInfo from, ServerWorkerInfo to) {
 		SERVERINFO = serverInfo;
 		TENANTID = tenantID;
 		FROM = from;
@@ -59,14 +60,18 @@ public class DbMigrator extends Thread {
 		mOperations = new ArrayList<>();
 	}
 
-	private void exportTempDb() throws NoTenantException, NoWorkerException, DbmsException {
-		ArrayList<TableInfo> tablesInfo = SERVERINFO.getTablesForTenant(TENANTID);
+	private void exportTempDb() throws NoTenantException, NoWorkerException,
+			DbmsException {
+		ArrayList<TableInfo> tablesInfo = SERVERINFO
+				.getTablesForTenant(TENANTID);
 		ArrayList<TempTableInfo> tempTablesInfo = new ArrayList<>();
 		int nTables = tablesInfo.size();
 		for (int i = 0; i < nTables; i++) {
 			TableInfo currentTableInfo = tablesInfo.get(i);
-			String tempPath = "tenant" + TENANTID + "_" + currentTableInfo.mName;
-			TempTableInfo currentTempTableInfo = new TempTableInfo(currentTableInfo, tempPath);
+			String tempPath = "tenant" + TENANTID + "_"
+					+ currentTableInfo.mName;
+			TempTableInfo currentTempTableInfo = new TempTableInfo(
+					currentTableInfo, tempPath);
 			tempTablesInfo.add(currentTempTableInfo);
 		}
 		tempDbInfo = new TempDbInfo(tempTablesInfo);
@@ -102,7 +107,8 @@ public class DbMigrator extends Thread {
 				synchronized (mOperations) {
 					for (int i = 0; i < mOperations.size(); i++)
 						LOG.debug(mOperations.get(i).toString());
-					TOCLIENT.async_replay(mOperations, new ReplayResultHandler(TOCLIENT, this));
+					TOCLIENT.async_replay(mOperations, new ReplayResultHandler(
+							TOCLIENT, this));
 				}
 			} catch (ClientShutdownException | NoServerConnectionException e) {
 				mIsReplayed = false;
@@ -111,7 +117,8 @@ public class DbMigrator extends Thread {
 		}
 	}
 
-	private synchronized void try_lock() throws NoTenantException, InterruptedException {
+	private synchronized void try_lock() throws NoTenantException,
+			InterruptedException {
 		if (mIsLocked)
 			return;
 		SERVERINFO.lockLockForTenant(TENANTID);
@@ -142,7 +149,8 @@ public class DbMigrator extends Thread {
 				mIsCanceled = true;
 			} else {
 				mIsExported = true;
-				LOG.debug(String.format("export DB for tenant %d finished....%n", TENANTID));
+				LOG.debug(String.format(
+						"export DB for tenant %d finished....%n", TENANTID));
 			}
 			this.notify();
 		}
@@ -157,7 +165,8 @@ public class DbMigrator extends Thread {
 				mIsCanceled = true;
 			} else {
 				mIsMoved = true;
-				LOG.debug(String.format("move DB for tenant %d finished....%n", TENANTID));
+				LOG.debug(String.format("move DB for tenant %d finished....%n",
+						TENANTID));
 			}
 			this.notifyAll();
 		}
@@ -172,7 +181,8 @@ public class DbMigrator extends Thread {
 				mIsCanceled = true;
 			} else {
 				mIsReplayed = true;
-				LOG.debug(String.format("replay for tenant %d finished....%n", TENANTID));
+				LOG.debug(String.format("replay for tenant %d finished....%n",
+						TENANTID));
 			}
 			this.notifyAll();
 		}
@@ -196,7 +206,8 @@ public class DbMigrator extends Thread {
 	}
 
 	public synchronized boolean isMigrating() {
-		return !mIsCanceled && !mIsFinished || mIsExporting || mIsMoving || mIsReplaying;
+		return !mIsCanceled && !mIsFinished || mIsExporting || mIsMoving
+				|| mIsReplaying;
 	}
 
 	@Override
@@ -207,7 +218,9 @@ public class DbMigrator extends Thread {
 					if (mIsExporting || mIsMoving || mIsReplaying) {
 						this.wait();
 					} else if (mChangingTo) {
-						LOG.debug(String.format("change destination to new worker for tenant %d....%n", TENANTID));
+						LOG.debug(String
+								.format("change destination to new worker for tenant %d....%n",
+										TENANTID));
 						mChangingTo = false;
 						TOCLIENT.shutdown();
 						TO = newTO;
@@ -217,38 +230,52 @@ public class DbMigrator extends Thread {
 							mOperations.clear();
 						}
 						try_lock();
-						SERVERINFO.setDbStatusForTenant(TENANTID, DbStatus.NORMAL);
+						SERVERINFO.setDbStatusForTenant(TENANTID,
+								DbStatus.NORMAL);
 						try_release();
 					} else if (!mIsExported) {
-						try_lock();
-						LOG.debug(String.format("export DB for tenant %d....%n", TENANTID));
+						// try_lock();
+						// LOG.debug(String.format("export DB for tenant %d....%n",
+						// TENANTID));
 						exportTempDb();
 					} else if (!mIsMoved) {
 						try_lock();
-						LOG.debug(String.format("mark tenant %d's DB as MIGRATING....%n", TENANTID));
-						SERVERINFO.setDbStatusForTenant(TENANTID, DbStatus.MIGRATING);
+						LOG.debug(String.format(
+								"mark tenant %d's DB as MIGRATING....%n",
+								TENANTID));
+						SERVERINFO.setDbStatusForTenant(TENANTID,
+								DbStatus.MIGRATING);
 						try_release();
-						LOG.debug(String.format("move DB for tenant %d....%n", TENANTID));
+						// LOG.debug(String.format("move DB for tenant %d....%n",
+						// TENANTID));
 						moveTempDb();
 					} else if (!mIsReplayed) {
-						try_lock();
-						LOG.debug(String.format("replay for tenant %d....%n", TENANTID));
+						// try_lock();
+						// LOG.debug(String.format("replay for tenant %d....%n",
+						// TENANTID));
 						replay();
 					} else {
-						try_lock();
-						LOG.debug(String.format("mark tenant %d's DB as NORMAL....%n", TENANTID));
-						SERVERINFO.setDbStatusForTenant(TENANTID, DbStatus.NORMAL);
+						// try_lock();
+						// LOG.debug(String
+						// .format("mark tenant %d's DB as NORMAL....%n",
+						// TENANTID));
+						SERVERINFO.setDbStatusForTenant(TENANTID,
+								DbStatus.NORMAL);
 						SERVERINFO.setDbmsForTenant(TENANTID, TO.mDbmsInfo);
 						SERVERINFO.writeToImage();
-						LOG.debug(String.format("migrate for tenant %d succeeded!....%n", TENANTID));
-						try_release();
+						// LOG.debug(String.format(
+						// "migrate for tenant %d succeeded!....%n",
+						// TENANTID));
+						// try_release();
 						mIsFinished = true;
 					}
 				}
 				if (mIsCanceled) {
-					LOG.debug(String.format("migrate for tenant %d canceled!....%n", TENANTID));
+					LOG.debug(String.format(
+							"migrate for tenant %d canceled!....%n", TENANTID));
 				}
-			} catch (NoTenantException | InterruptedException | NoWorkerException | DbmsException e) {
+			} catch (NoTenantException | InterruptedException
+					| NoWorkerException | DbmsException e) {
 				LOG.error(e.getMessage());
 				mIsCanceled = true;
 				return;

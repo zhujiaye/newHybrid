@@ -59,7 +59,7 @@ public class HServer {
 		LOG.info("starting server@" + ADDRESS + ":" + PORT + "......");
 		LOG.info("retrivering all system information from journal......");
 		mServerInfo.init();
-	//	mServerInfo.importTpccTable();
+		// mServerInfo.importTpccTable();
 		LOG.info("setting up server service......");
 		mServerServiceHandler = new ServerServiceHandler(mServerInfo);
 		ServerService.Processor<ServerServiceHandler> serverServiceProcessor = new ServerService.Processor<ServerServiceHandler>(

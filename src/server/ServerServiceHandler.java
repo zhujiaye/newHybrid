@@ -28,7 +28,8 @@ public class ServerServiceHandler implements ServerService.Iface {
 	}
 
 	@Override
-	public boolean worker_register(ServerWorkerInfo workerInfo) throws TException {
+	public boolean worker_register(ServerWorkerInfo workerInfo)
+			throws TException {
 		return mServerInfo.registerWorker(workerInfo);
 	}
 
@@ -41,7 +42,8 @@ public class ServerServiceHandler implements ServerService.Iface {
 
 	@Override
 	public boolean tenant_createTable(int ID, TableInfo tableInfo)
-			throws NoWorkerException, NoTenantException, DbmsException, TException {
+			throws NoWorkerException, NoTenantException, DbmsException,
+			TException {
 		try {
 			boolean success = mServerInfo.createTableForTenant(ID, tableInfo);
 			if (success)
@@ -63,12 +65,14 @@ public class ServerServiceHandler implements ServerService.Iface {
 	}
 
 	@Override
-	public List<TableInfo> tenant_getTables(int ID) throws NoTenantException, TException {
+	public List<TableInfo> tenant_getTables(int ID) throws NoTenantException,
+			TException {
 		return mServerInfo.getTablesForTenant(ID);
 	}
 
 	@Override
-	public List<TableInfo> tenant_getTable(int ID, String tableName) throws NoTenantException, TException {
+	public List<TableInfo> tenant_getTable(int ID, String tableName)
+			throws NoTenantException, TException {
 		List<TableInfo> result = new ArrayList<>();
 		TableInfo tableInfo = mServerInfo.getTableForTenant(ID, tableName);
 		if (tableInfo != null)
@@ -77,7 +81,8 @@ public class ServerServiceHandler implements ServerService.Iface {
 	}
 
 	@Override
-	public void tenant_dropAllTables(int ID) throws NoTenantException, NoWorkerException, TException {
+	public void tenant_dropAllTables(int ID) throws NoTenantException,
+			NoWorkerException, TException {
 		try {
 			mServerInfo.dropAllTablesForTenant(ID);
 			mServerInfo.writeToImage();
@@ -87,7 +92,8 @@ public class ServerServiceHandler implements ServerService.Iface {
 	}
 
 	@Override
-	public void tenant_dropTable(int ID, String tableName) throws NoTenantException, NoWorkerException, TException {
+	public void tenant_dropTable(int ID, String tableName)
+			throws NoTenantException, NoWorkerException, TException {
 		TableInfo tableInfo = mServerInfo.getTableForTenant(ID, tableName);
 		if (tableInfo == null)
 			return;
@@ -101,16 +107,19 @@ public class ServerServiceHandler implements ServerService.Iface {
 	}
 
 	@Override
-	public DbStatusInfo tenant_getDbStatusInfo(int ID) throws NoTenantException, NoWorkerException, TException {
+	public DbStatusInfo tenant_getDbStatusInfo(int ID)
+			throws NoTenantException, NoWorkerException, TException {
 		return mServerInfo.getDbStatusInfoForTenant(ID);
 	}
 
 	@Override
-	public void tenant_lock_lock(int ID) throws LockException, NoTenantException, TException {
+	public void tenant_lock_lock(int ID) throws LockException,
+			NoTenantException, TException {
 		try {
 			mServerInfo.lockLockForTenant(ID);
 		} catch (InterruptedException e) {
-			throw new LockException("require lock for tenant with ID=" + ID + " while being interrupted");
+			throw new LockException("require lock for tenant with ID=" + ID
+					+ " while being interrupted");
 		}
 	}
 
@@ -120,8 +129,14 @@ public class ServerServiceHandler implements ServerService.Iface {
 	}
 
 	@Override
-	public void addOperationToMigrator(int ID, Operation operation) throws TException {
+	public void addOperationToMigrator(int ID, Operation operation)
+			throws TException {
 		mServerInfo.addOperationToMigrator(ID, operation);
+	}
+
+	@Override
+	public boolean test_tenantMigrate(int ID) throws NoTenantException, TException {
+		return mServerInfo.migrateTenant(ID);
 	}
 
 }

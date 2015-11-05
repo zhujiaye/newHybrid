@@ -63,17 +63,20 @@ public class ServerClient {
 		// }
 	}
 
-	private synchronized void connect() throws ClientShutdownException, NoServerConnectionException {
+	private synchronized void connect() throws ClientShutdownException,
+			NoServerConnectionException {
 		mLastAccessTime = System.nanoTime();
 		if (mIsShutdown) {
-			throw new ClientShutdownException("server client is already shut down!");
+			throw new ClientShutdownException(
+					"server client is already shut down!");
 		}
 		if (mIsConnected)
 			return;
 		cleanConnect();
 		int tries = 0;
 		while (tries++ < Constants.MAX_CONNECT_TRY && !mIsShutdown) {
-			mProtocol = new TBinaryProtocol(new TFramedTransport(new TSocket(mServerAddress, mServerPort)));
+			mProtocol = new TBinaryProtocol(new TFramedTransport(new TSocket(
+					mServerAddress, mServerPort)));
 			mClient = new ServerService.Client(mProtocol);
 			mLastAccessTime = System.nanoTime();
 			try {
@@ -86,14 +89,16 @@ public class ServerClient {
 				// mConf.getServerClientTimeout() / 2);
 				// mHeartbeatThread.start();
 			} catch (TTransportException e) {
-				LOG.error("Failed to connect (" + tries + ") to server:" + e.getMessage());
+				LOG.error("Failed to connect (" + tries + ") to server:"
+						+ e.getMessage());
 				// if (mHeartbeatThread != null) {
 				// mHeartbeatThread.shutdown();
 				// }
 				try {
 					Thread.sleep(Constants.S / 1000000);
 				} catch (InterruptedException e1) {
-					LOG.error("Interrupted while waiting to connect to server:" + e1.getMessage());
+					LOG.error("Interrupted while waiting to connect to server:"
+							+ e1.getMessage());
 				}
 				continue;
 			}
@@ -102,8 +107,9 @@ public class ServerClient {
 		}
 
 		// Reaching here indicates that we did not successfully connect.
-		throw new NoServerConnectionException("Failed to connect to server " + mServerAddress + ":" + mServerPort
-				+ " after " + (tries - 1) + " attempts");
+		throw new NoServerConnectionException("Failed to connect to server "
+				+ mServerAddress + ":" + mServerPort + " after " + (tries - 1)
+				+ " attempts");
 	}
 
 	public synchronized void shutdown() {
@@ -155,7 +161,8 @@ public class ServerClient {
 	 * @throws ClientShutdownException
 	 * @throws NoServerConnectionException
 	 */
-	public int tenant_createTenant() throws ClientShutdownException, NoServerConnectionException {
+	public int tenant_createTenant() throws ClientShutdownException,
+			NoServerConnectionException {
 		while (true) {
 			try {
 				connect();
@@ -168,7 +175,8 @@ public class ServerClient {
 	}
 
 	public boolean tenant_createTable(int ID, TableInfo tableInfo)
-			throws ClientShutdownException, NoServerConnectionException, NoWorkerException, NoTenantException {
+			throws ClientShutdownException, NoServerConnectionException,
+			NoWorkerException, NoTenantException {
 		while (true) {
 			try {
 				connect();
@@ -182,7 +190,8 @@ public class ServerClient {
 		}
 	}
 
-	public boolean tenant_login(int ID) throws NoTenantException, ClientShutdownException, NoServerConnectionException {
+	public boolean tenant_login(int ID) throws NoTenantException,
+			ClientShutdownException, NoServerConnectionException {
 		while (true) {
 			try {
 				connect();
@@ -196,8 +205,8 @@ public class ServerClient {
 		}
 	}
 
-	public boolean tenant_logout(int ID)
-			throws NoTenantException, ClientShutdownException, NoServerConnectionException {
+	public boolean tenant_logout(int ID) throws NoTenantException,
+			ClientShutdownException, NoServerConnectionException {
 		while (true) {
 			try {
 				connect();
@@ -211,8 +220,8 @@ public class ServerClient {
 		}
 	}
 
-	public List<TableInfo> tenant_getTables(int ID)
-			throws NoTenantException, ClientShutdownException, NoServerConnectionException {
+	public List<TableInfo> tenant_getTables(int ID) throws NoTenantException,
+			ClientShutdownException, NoServerConnectionException {
 		while (true) {
 			try {
 				connect();
@@ -227,7 +236,8 @@ public class ServerClient {
 	}
 
 	public List<TableInfo> tenant_getTable(int ID, String tableName)
-			throws NoTenantException, ClientShutdownException, NoServerConnectionException {
+			throws NoTenantException, ClientShutdownException,
+			NoServerConnectionException {
 		while (true) {
 			try {
 				connect();
@@ -241,8 +251,8 @@ public class ServerClient {
 		}
 	}
 
-	public void tenant_dropAllTables(int ID)
-			throws ClientShutdownException, NoTenantException, NoWorkerException, NoServerConnectionException {
+	public void tenant_dropAllTables(int ID) throws ClientShutdownException,
+			NoTenantException, NoWorkerException, NoServerConnectionException {
 		while (true) {
 			try {
 				connect();
@@ -258,7 +268,8 @@ public class ServerClient {
 	}
 
 	public void tenant_dropTable(int ID, String tableName)
-			throws ClientShutdownException, NoTenantException, NoWorkerException, NoServerConnectionException {
+			throws ClientShutdownException, NoTenantException,
+			NoWorkerException, NoServerConnectionException {
 		while (true) {
 			try {
 				connect();
@@ -273,8 +284,9 @@ public class ServerClient {
 		}
 	}
 
-	public DbStatusInfo tenant_getDbInfo(int ID)
-			throws NoWorkerException, NoTenantException, ClientShutdownException, NoServerConnectionException {
+	public DbStatusInfo tenant_getDbInfo(int ID) throws NoWorkerException,
+			NoTenantException, ClientShutdownException,
+			NoServerConnectionException {
 		while (true) {
 			try {
 				connect();
@@ -288,8 +300,8 @@ public class ServerClient {
 		}
 	}
 
-	public void tenant_lock_lock(int ID)
-			throws NoTenantException, LockException, ClientShutdownException, NoServerConnectionException {
+	public void tenant_lock_lock(int ID) throws NoTenantException,
+			LockException, ClientShutdownException, NoServerConnectionException {
 		while (true) {
 			try {
 				connect();
@@ -304,7 +316,8 @@ public class ServerClient {
 		}
 	}
 
-	public void tenant_lock_release(int ID) throws ClientShutdownException, NoServerConnectionException {
+	public void tenant_lock_release(int ID) throws ClientShutdownException,
+			NoServerConnectionException {
 		while (true) {
 			try {
 				connect();
@@ -324,6 +337,19 @@ public class ServerClient {
 				connect();
 				mClient.addOperationToMigrator(ID, operation);
 				return;
+			} catch (TException e) {
+				LOG.error(e.getMessage());
+				mIsConnected = false;
+			}
+		}
+	}
+
+	public boolean migrateTenant(int ID) throws ClientShutdownException,
+			NoServerConnectionException {
+		while (true) {
+			try {
+				connect();
+				return mClient.test_tenantMigrate(ID);
 			} catch (TException e) {
 				LOG.error(e.getMessage());
 				mIsConnected = false;

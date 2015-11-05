@@ -1,15 +1,12 @@
-package utility;
+package test;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
 import java.util.Scanner;
 
-import javax.swing.text.Position;
-
 import org.apache.log4j.Logger;
 
-import test.TenantWorkload;
 import config.Constants;
 
 public class WorkloadLoader {
@@ -64,7 +61,7 @@ public class WorkloadLoader {
 			DS[i] = in.nextInt();
 		}
 		for (int i = 0; i < mNumberOfTenants; i++) {
-			WH[i] = 20;
+			WH[i] = 50;
 		}
 		for (int i = 0; i < mNumberOfTenants; i++) {
 			mTenantWorkloads[i] = new TenantWorkload(idList[i], SLO[i], DS[i],
@@ -88,15 +85,17 @@ public class WorkloadLoader {
 				return false;
 			}
 			for (int j = 0; j < mNumberOfTenants; j++) {
-				int actualWorkload = in.nextInt();
-				int estimatedWorkload = in.nextInt();
+				int actualWorkload;
+				int estimatedWorkload;
+				actualWorkload = in.nextInt();
+				estimatedWorkload = actualWorkload;
 				mTenantWorkloads[j].setWorkloadAtSplit(split - 1,
 						actualWorkload, estimatedWorkload);
 			}
-			//total actual workloads
+			// total actual workloads
 			in.nextInt();
-			//total estimated workloads
-			in.nextInt();
+			// total estimated workloads
+			// in.nextInt();
 		}
 		in.close();
 		return true;
@@ -117,38 +116,8 @@ public class WorkloadLoader {
 		return mTenantWorkloads[mPosition.get(id)];
 	}
 
-	/**
-	 * This is just for test
-	 */
-	public void print() {
-		int[] totWorkload = new int[mSplits];
-		for (int i = 0; i < mSplits; i++) {
-			totWorkload[i] = 0;
-			for (int j = 0; j < mNumberOfTenants; j++)
-				totWorkload[i] += mTenantWorkloads[j]
-						.getActualWorkloadAtSplit(i);
-		}
-		for (int i = 0; i < mSplits; i++) {
-			System.out.format("%30d", totWorkload[i]);
-		}
-		System.out.println();
-		for (int j = 0; j < mNumberOfTenants; j++) {
-			TenantWorkload tenantWorkload = mTenantWorkloads[j];
-			for (int i = 0; i < mSplits; i++) {
-				if (tenantWorkload.isActiveAtSplit(i)) {
-					System.out.format("%30s", String.format(
-							"%d(ID:%d,SLO:%d,DataSize:%d)",
-							tenantWorkload.getActualWorkloadAtSplit(i),
-							tenantWorkload.getID(), tenantWorkload.getSLO(),
-							tenantWorkload.getDataSize()));
-					// System.out.format("%7s", String.format(
-					// "%d",
-					// tenantWorkload.getActualWorkloadAtSplit(i)));
-				} else {
-					System.out.format("%30s", "");
-				}
-			}
-			System.out.println();
-		}
+	public void generateMigratingFlow() {
+		
 	}
+
 }

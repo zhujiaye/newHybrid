@@ -24,14 +24,14 @@ start_mysql_worker(){
     if [ -z "${1}" ]; then 
         java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=mysql worker.HWorker 
     else        
-        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=mysql -Dnewhybrid.worker.port=$1 worker.HWorker 
+        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=mysql -Dnewhybrid.worker.address=$1 -Dnewhybrid.worker.port=$2 worker.HWorker 
     fi
 }
 start_voltdb_worker(){
     if [ -z "${1}" ]; then 
         java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=voltdb worker.HWorker 
     else        
-        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=voltdb -Dnewhybrid.worker.port=$1 worker.HWorker 
+        java -classpath $CLASSPATH:$NEWHYBRID_LIBDIR/*:$NEWHYBRID_BINDIR $NEWHYBRID_WORKER_JAVA_OPTS -Dnewhybrid.worker.dbms.type=voltdb -Dnewhybrid.worker.address=$1 -Dnewhybrid.worker.port=$2 worker.HWorker 
     fi
 }
 start_cli(){
@@ -66,10 +66,10 @@ case "${WHAT}" in
         start_server $2
         ;;
     mysql-worker)
-        start_mysql_worker $2
+        start_mysql_worker $2 $3
         ;;
     voltdb-worker)
-        start_voltdb_worker $2 
+        start_voltdb_worker $2 $3
         ;;
     command-line)
         start_cli $2
